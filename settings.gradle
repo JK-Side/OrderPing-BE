@@ -11,7 +11,6 @@ pluginManagement {
 
 rootProject.name = 'orderping'
 
-
 include 'orderping-api'
 include 'orderping-domain'
 include 'orderping-infra'
