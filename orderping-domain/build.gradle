@@ -20,8 +20,9 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.30'
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
 
-    // Test
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    // Test - Spring Boot 3.5.0과 호환되는 JUnit 5.12.2 사용
+    testImplementation platform('org.junit:junit-bom:5.12.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
 test {
