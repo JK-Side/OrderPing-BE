@@ -11,6 +11,5 @@ public class StoreAccount {
     private final String bankCode;
     private final String accountNumberEnc;
     private final String accountNumberMask;
-    private final Boolean isPrimary;
     private final Boolean isActive;
 }

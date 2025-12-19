@@ -12,6 +12,7 @@ public class Order {
     private final Long id;
     private final Long tableId;
     private final Long storeId;
+    private final String sessionId;
     private final OrderStatus status;
     private final Long totalPrice;
     private final LocalDateTime createdAt;
