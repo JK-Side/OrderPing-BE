@@ -9,7 +9,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 def get_changed_files(pr):
     changed_files = []
     for file in pr.get_files():
-        if file.filename.endswith(('.ts')):
+        if file.filename.endswith(('.java', '.yml', '.yaml', '.gradle')):
+            if file.patch is None:
+                continue  # diff 없는 파일은 제외
             changed_files.append({
                 'filename': file.filename,
                 'patch': file.patch,
