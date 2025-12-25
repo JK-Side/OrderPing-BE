@@ -103,7 +103,7 @@ def call_claude_api(changes, related_files):
             system_content += f"  - {related_file}\n"
 
     payload = {
-        "model": "claude-3-5-sonnet-20240620",
+        "model": "claude-sonnet-4-20250514",
         "max_tokens": 2000,
         "system": system_content,
         "messages": [
