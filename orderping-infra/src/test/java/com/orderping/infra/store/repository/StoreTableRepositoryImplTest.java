@@ -1,12 +1,10 @@
 package com.orderping.infra.store.repository;
 
-import com.orderping.domain.enums.Role;
-import com.orderping.domain.enums.TableStatus;
-import com.orderping.domain.store.Store;
-import com.orderping.domain.store.StoreTable;
-import com.orderping.domain.user.User;
-import com.orderping.infra.config.TestConfig;
-import com.orderping.infra.user.repository.UserRepositoryImpl;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,10 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import com.orderping.domain.enums.Role;
+import com.orderping.domain.enums.TableStatus;
+import com.orderping.domain.store.Store;
+import com.orderping.domain.store.StoreTable;
+import com.orderping.domain.user.User;
+import com.orderping.infra.config.TestConfig;
+import com.orderping.infra.user.repository.UserRepositoryImpl;
 
 @SpringBootTest(classes = TestConfig.class)
 @Transactional
@@ -37,15 +38,15 @@ class StoreTableRepositoryImplTest {
     @BeforeEach
     void setUp() {
         User savedUser = userRepository.save(User.builder()
-                .role(Role.OWNER)
-                .nickname("사장님")
-                .build());
+            .role(Role.OWNER)
+            .nickname("사장님")
+            .build());
 
         savedStore = storeRepository.save(Store.builder()
-                .userId(savedUser.getId())
-                .name("테스트 가게")
-                .isOpen(true)
-                .build());
+            .userId(savedUser.getId())
+            .name("테스트 가게")
+            .isOpen(true)
+            .build());
     }
 
     @Test
@@ -53,10 +54,10 @@ class StoreTableRepositoryImplTest {
     void saveAndFindTable() {
         // given
         StoreTable table = StoreTable.builder()
-                .storeId(savedStore.getId())
-                .tableNum(1)
-                .status(TableStatus.EMPTY)
-                .build();
+            .storeId(savedStore.getId())
+            .tableNum(1)
+            .status(TableStatus.EMPTY)
+            .build();
 
         // when
         StoreTable savedTable = storeTableRepository.save(table);
@@ -72,26 +73,26 @@ class StoreTableRepositoryImplTest {
     void findByStoreIdAndStatus() {
         // given
         storeTableRepository.save(StoreTable.builder()
-                .storeId(savedStore.getId())
-                .tableNum(1)
-                .status(TableStatus.EMPTY)
-                .build());
+            .storeId(savedStore.getId())
+            .tableNum(1)
+            .status(TableStatus.EMPTY)
+            .build());
 
         storeTableRepository.save(StoreTable.builder()
-                .storeId(savedStore.getId())
-                .tableNum(2)
-                .status(TableStatus.OCCUPIED)
-                .build());
+            .storeId(savedStore.getId())
+            .tableNum(2)
+            .status(TableStatus.OCCUPIED)
+            .build());
 
         storeTableRepository.save(StoreTable.builder()
-                .storeId(savedStore.getId())
-                .tableNum(3)
-                .status(TableStatus.EMPTY)
-                .build());
+            .storeId(savedStore.getId())
+            .tableNum(3)
+            .status(TableStatus.EMPTY)
+            .build());
 
         // when
         List<StoreTable> emptyTables = storeTableRepository.findByStoreIdAndStatus(
-                savedStore.getId(), TableStatus.EMPTY);
+            savedStore.getId(), TableStatus.EMPTY);
 
         // then
         assertEquals(2, emptyTables.size());
@@ -102,14 +103,14 @@ class StoreTableRepositoryImplTest {
     void findByStoreIdAndTableNum() {
         // given
         storeTableRepository.save(StoreTable.builder()
-                .storeId(savedStore.getId())
-                .tableNum(5)
-                .status(TableStatus.RESERVED)
-                .build());
+            .storeId(savedStore.getId())
+            .tableNum(5)
+            .status(TableStatus.RESERVED)
+            .build());
 
         // when
         Optional<StoreTable> foundTable = storeTableRepository.findByStoreIdAndTableNum(
-                savedStore.getId(), 5);
+            savedStore.getId(), 5);
 
         // then
         assertTrue(foundTable.isPresent());

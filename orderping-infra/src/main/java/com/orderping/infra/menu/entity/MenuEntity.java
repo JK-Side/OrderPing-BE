@@ -1,7 +1,14 @@
 package com.orderping.infra.menu.entity;
 
 import com.orderping.domain.menu.Menu;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -46,7 +53,8 @@ public class MenuEntity {
     private Boolean isSoldOut;
 
     @Builder
-    public MenuEntity(Long id, Long storeId, Long categoryId, String name, Long price, String description, String imageUrl, Long initialStock, Long stock, Boolean isSoldOut) {
+    public MenuEntity(Long id, Long storeId, Long categoryId, String name, Long price, String description,
+        String imageUrl, Long initialStock, Long stock, Boolean isSoldOut) {
         this.id = id;
         this.storeId = storeId;
         this.categoryId = categoryId;
@@ -57,6 +65,22 @@ public class MenuEntity {
         this.initialStock = initialStock;
         this.stock = stock;
         this.isSoldOut = isSoldOut;
+    }
+
+    // Domain -> Entity
+    public static MenuEntity from(Menu menu) {
+        return MenuEntity.builder()
+            .id(menu.getId())
+            .storeId(menu.getStoreId())
+            .categoryId(menu.getCategoryId())
+            .name(menu.getName())
+            .price(menu.getPrice())
+            .description(menu.getDescription())
+            .imageUrl(menu.getImageUrl())
+            .initialStock(menu.getInitialStock())
+            .stock(menu.getStock())
+            .isSoldOut(menu.getIsSoldOut())
+            .build();
     }
 
     @PrePersist
@@ -72,35 +96,19 @@ public class MenuEntity {
         }
     }
 
-    // Domain -> Entity
-    public static MenuEntity from(Menu menu) {
-        return MenuEntity.builder()
-                .id(menu.getId())
-                .storeId(menu.getStoreId())
-                .categoryId(menu.getCategoryId())
-                .name(menu.getName())
-                .price(menu.getPrice())
-                .description(menu.getDescription())
-                .imageUrl(menu.getImageUrl())
-                .initialStock(menu.getInitialStock())
-                .stock(menu.getStock())
-                .isSoldOut(menu.getIsSoldOut())
-                .build();
-    }
-
     // Entity -> Domain
     public Menu toDomain() {
         return Menu.builder()
-                .id(this.id)
-                .storeId(this.storeId)
-                .categoryId(this.categoryId)
-                .name(this.name)
-                .price(this.price)
-                .description(this.description)
-                .imageUrl(this.imageUrl)
-                .initialStock(this.initialStock)
-                .stock(this.stock)
-                .isSoldOut(this.isSoldOut)
-                .build();
+            .id(this.id)
+            .storeId(this.storeId)
+            .categoryId(this.categoryId)
+            .name(this.name)
+            .price(this.price)
+            .description(this.description)
+            .imageUrl(this.imageUrl)
+            .initialStock(this.initialStock)
+            .stock(this.stock)
+            .isSoldOut(this.isSoldOut)
+            .build();
     }
 }

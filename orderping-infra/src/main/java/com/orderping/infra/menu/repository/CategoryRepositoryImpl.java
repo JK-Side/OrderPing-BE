@@ -1,13 +1,15 @@
 package com.orderping.infra.menu.repository;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Repository;
+
 import com.orderping.domain.menu.Category;
 import com.orderping.domain.menu.repository.CategoryRepository;
 import com.orderping.infra.menu.entity.CategoryEntity;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
@@ -25,14 +27,14 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     @Override
     public Optional<Category> findById(Long id) {
         return jpaRepository.findById(id)
-                .map(CategoryEntity::toDomain);
+            .map(CategoryEntity::toDomain);
     }
 
     @Override
     public List<Category> findAll() {
         return jpaRepository.findAll().stream()
-                .map(CategoryEntity::toDomain)
-                .toList();
+            .map(CategoryEntity::toDomain)
+            .toList();
     }
 
     @Override

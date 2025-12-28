@@ -1,7 +1,13 @@
 package com.orderping.infra.menu.entity;
 
 import com.orderping.domain.menu.Category;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,16 +36,16 @@ public class CategoryEntity {
     // Domain -> Entity
     public static CategoryEntity from(Category category) {
         return CategoryEntity.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .build();
+            .id(category.getId())
+            .name(category.getName())
+            .build();
     }
 
     // Entity -> Domain
     public Category toDomain() {
         return Category.builder()
-                .id(this.id)
-                .name(this.name)
-                .build();
+            .id(this.id)
+            .name(this.name)
+            .build();
     }
 }

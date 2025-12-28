@@ -2,7 +2,15 @@ package com.orderping.infra.store.entity;
 
 import com.orderping.domain.store.StoreAccount;
 import com.orderping.infra.crypto.EncryptConverter;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -39,7 +47,8 @@ public class StoreAccountEntity {
     private Boolean isActive;
 
     @Builder
-    public StoreAccountEntity(Long id, Long storeId, String bankCode, String accountHolder, String accountNumberEnc, String accountNumberMask, Boolean isActive) {
+    public StoreAccountEntity(Long id, Long storeId, String bankCode, String accountHolder, String accountNumberEnc,
+        String accountNumberMask, Boolean isActive) {
         this.id = id;
         this.storeId = storeId;
         this.bankCode = bankCode;
@@ -49,6 +58,19 @@ public class StoreAccountEntity {
         this.isActive = isActive;
     }
 
+    // Domain -> Entity
+    public static StoreAccountEntity from(StoreAccount storeAccount) {
+        return StoreAccountEntity.builder()
+            .id(storeAccount.getId())
+            .storeId(storeAccount.getStoreId())
+            .bankCode(storeAccount.getBankCode())
+            .accountHolder(storeAccount.getAccountHolder())
+            .accountNumberEnc(storeAccount.getAccountNumberEnc())
+            .accountNumberMask(storeAccount.getAccountNumberMask())
+            .isActive(storeAccount.getIsActive())
+            .build();
+    }
+
     @PrePersist
     protected void onCreate() {
         if (this.isActive == null) {
@@ -56,29 +78,16 @@ public class StoreAccountEntity {
         }
     }
 
-    // Domain -> Entity
-    public static StoreAccountEntity from(StoreAccount storeAccount) {
-        return StoreAccountEntity.builder()
-                .id(storeAccount.getId())
-                .storeId(storeAccount.getStoreId())
-                .bankCode(storeAccount.getBankCode())
-                .accountHolder(storeAccount.getAccountHolder())
-                .accountNumberEnc(storeAccount.getAccountNumberEnc())
-                .accountNumberMask(storeAccount.getAccountNumberMask())
-                .isActive(storeAccount.getIsActive())
-                .build();
-    }
-
     // Entity -> Domain
     public StoreAccount toDomain() {
         return StoreAccount.builder()
-                .id(this.id)
-                .storeId(this.storeId)
-                .bankCode(this.bankCode)
-                .accountHolder(this.accountHolder)
-                .accountNumberEnc(this.accountNumberEnc)
-                .accountNumberMask(this.accountNumberMask)
-                .isActive(this.isActive)
-                .build();
+            .id(this.id)
+            .storeId(this.storeId)
+            .bankCode(this.bankCode)
+            .accountHolder(this.accountHolder)
+            .accountNumberEnc(this.accountNumberEnc)
+            .accountNumberMask(this.accountNumberMask)
+            .isActive(this.isActive)
+            .build();
     }
 }

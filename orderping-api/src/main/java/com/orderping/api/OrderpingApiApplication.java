@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication(scanBasePackages = {
-        "com.orderping.api",
-        "com.orderping.infra"
+    "com.orderping.api",
+    "com.orderping.infra"
 })
 @EntityScan(basePackages = "com.orderping.infra")
 @EnableJpaRepositories(basePackages = "com.orderping.infra")

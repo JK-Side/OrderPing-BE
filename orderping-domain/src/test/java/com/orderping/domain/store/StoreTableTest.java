@@ -1,10 +1,12 @@
 package com.orderping.domain.store;
 
-import com.orderping.domain.enums.TableStatus;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.orderping.domain.enums.TableStatus;
 
 class StoreTableTest {
 
@@ -13,11 +15,11 @@ class StoreTableTest {
     void createStoreTable() {
         // when
         StoreTable table = StoreTable.builder()
-                .id(1L)
-                .storeId(1L)
-                .tableNum(1)
-                .status(TableStatus.EMPTY)
-                .build();
+            .id(1L)
+            .storeId(1L)
+            .tableNum(1)
+            .status(TableStatus.EMPTY)
+            .build();
 
         // then
         assertNotNull(table);
@@ -32,25 +34,25 @@ class StoreTableTest {
     void tableStatusTest() {
         // given
         StoreTable emptyTable = StoreTable.builder()
-                .id(1L)
-                .storeId(1L)
-                .tableNum(1)
-                .status(TableStatus.EMPTY)
-                .build();
+            .id(1L)
+            .storeId(1L)
+            .tableNum(1)
+            .status(TableStatus.EMPTY)
+            .build();
 
         StoreTable occupiedTable = StoreTable.builder()
-                .id(2L)
-                .storeId(1L)
-                .tableNum(2)
-                .status(TableStatus.OCCUPIED)
-                .build();
+            .id(2L)
+            .storeId(1L)
+            .tableNum(2)
+            .status(TableStatus.OCCUPIED)
+            .build();
 
         StoreTable reservedTable = StoreTable.builder()
-                .id(3L)
-                .storeId(1L)
-                .tableNum(3)
-                .status(TableStatus.RESERVED)
-                .build();
+            .id(3L)
+            .storeId(1L)
+            .tableNum(3)
+            .status(TableStatus.RESERVED)
+            .build();
 
         // then
         assertEquals(TableStatus.EMPTY, emptyTable.getStatus());

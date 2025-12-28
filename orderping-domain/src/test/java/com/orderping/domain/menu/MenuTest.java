@@ -1,9 +1,9 @@
 package com.orderping.domain.menu;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class MenuTest {
 
@@ -12,16 +12,16 @@ class MenuTest {
     void createMenu() {
         // when
         Menu menu = Menu.builder()
-                .id(1L)
-                .storeId(1L)
-                .categoryId(1L)
-                .name("소주")
-                .price(5000L)
-                .description("참이슬 후레쉬")
-                .imageUrl("https://example.com/soju.jpg")
-                .stock(100L)
-                .isSoldOut(false)
-                .build();
+            .id(1L)
+            .storeId(1L)
+            .categoryId(1L)
+            .name("소주")
+            .price(5000L)
+            .description("참이슬 후레쉬")
+            .imageUrl("https://example.com/soju.jpg")
+            .stock(100L)
+            .isSoldOut(false)
+            .build();
 
         // then
         assertNotNull(menu);
@@ -40,14 +40,14 @@ class MenuTest {
     void soldOutMenuTest() {
         // when
         Menu soldOutMenu = Menu.builder()
-                .id(1L)
-                .storeId(1L)
-                .categoryId(1L)
-                .name("인기안주")
-                .price(15000L)
-                .stock(0L)
-                .isSoldOut(true)
-                .build();
+            .id(1L)
+            .storeId(1L)
+            .categoryId(1L)
+            .name("인기안주")
+            .price(15000L)
+            .stock(0L)
+            .isSoldOut(true)
+            .build();
 
         // then
         assertTrue(soldOutMenu.getIsSoldOut());

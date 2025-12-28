@@ -1,13 +1,15 @@
 package com.orderping.infra.order.repository;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Repository;
+
 import com.orderping.domain.order.OrderMenu;
 import com.orderping.domain.order.repository.OrderMenuRepository;
 import com.orderping.infra.order.entity.OrderMenuEntity;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
@@ -25,14 +27,14 @@ public class OrderMenuRepositoryImpl implements OrderMenuRepository {
     @Override
     public Optional<OrderMenu> findById(Long id) {
         return jpaRepository.findById(id)
-                .map(OrderMenuEntity::toDomain);
+            .map(OrderMenuEntity::toDomain);
     }
 
     @Override
     public List<OrderMenu> findByOrderId(Long orderId) {
         return jpaRepository.findByOrderId(orderId).stream()
-                .map(OrderMenuEntity::toDomain)
-                .toList();
+            .map(OrderMenuEntity::toDomain)
+            .toList();
     }
 
     @Override

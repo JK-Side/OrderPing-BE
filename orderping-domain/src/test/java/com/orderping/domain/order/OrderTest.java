@@ -1,12 +1,13 @@
 package com.orderping.domain.order;
 
-import com.orderping.domain.enums.OrderStatus;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.orderping.domain.enums.OrderStatus;
 
 class OrderTest {
 
@@ -19,14 +20,14 @@ class OrderTest {
 
         // when
         Order order = Order.builder()
-                .id(1L)
-                .tableId(1L)
-                .storeId(1L)
-                .sessionId(sessionId)
-                .status(OrderStatus.PENDING)
-                .totalPrice(25000L)
-                .createdAt(now)
-                .build();
+            .id(1L)
+            .tableId(1L)
+            .storeId(1L)
+            .sessionId(sessionId)
+            .status(OrderStatus.PENDING)
+            .totalPrice(25000L)
+            .createdAt(now)
+            .build();
 
         // then
         assertNotNull(order);
@@ -45,31 +46,31 @@ class OrderTest {
         String sessionId = "session-001";
 
         Order pendingOrder = Order.builder()
-                .id(1L)
-                .tableId(1L)
-                .storeId(1L)
-                .sessionId(sessionId)
-                .status(OrderStatus.PENDING)
-                .totalPrice(10000L)
-                .build();
+            .id(1L)
+            .tableId(1L)
+            .storeId(1L)
+            .sessionId(sessionId)
+            .status(OrderStatus.PENDING)
+            .totalPrice(10000L)
+            .build();
 
         Order cookingOrder = Order.builder()
-                .id(2L)
-                .tableId(1L)
-                .storeId(1L)
-                .sessionId(sessionId)
-                .status(OrderStatus.COOKING)
-                .totalPrice(10000L)
-                .build();
+            .id(2L)
+            .tableId(1L)
+            .storeId(1L)
+            .sessionId(sessionId)
+            .status(OrderStatus.COOKING)
+            .totalPrice(10000L)
+            .build();
 
         Order completeOrder = Order.builder()
-                .id(3L)
-                .tableId(1L)
-                .storeId(1L)
-                .sessionId(sessionId)
-                .status(OrderStatus.COMPLETE)
-                .totalPrice(10000L)
-                .build();
+            .id(3L)
+            .tableId(1L)
+            .storeId(1L)
+            .sessionId(sessionId)
+            .status(OrderStatus.COMPLETE)
+            .totalPrice(10000L)
+            .build();
 
         assertEquals(OrderStatus.PENDING, pendingOrder.getStatus());
         assertEquals(OrderStatus.COOKING, cookingOrder.getStatus());
@@ -85,22 +86,22 @@ class OrderTest {
 
         // when
         Order orderA = Order.builder()
-                .id(1L)
-                .tableId(1L)
-                .storeId(1L)
-                .sessionId(sessionA)
-                .status(OrderStatus.COMPLETE)
-                .totalPrice(20000L)
-                .build();
+            .id(1L)
+            .tableId(1L)
+            .storeId(1L)
+            .sessionId(sessionA)
+            .status(OrderStatus.COMPLETE)
+            .totalPrice(20000L)
+            .build();
 
         Order orderB = Order.builder()
-                .id(2L)
-                .tableId(1L)
-                .storeId(1L)
-                .sessionId(sessionB)
-                .status(OrderStatus.PENDING)
-                .totalPrice(15000L)
-                .build();
+            .id(2L)
+            .tableId(1L)
+            .storeId(1L)
+            .sessionId(sessionB)
+            .status(OrderStatus.PENDING)
+            .totalPrice(15000L)
+            .build();
 
         // then
         assertEquals(orderA.getTableId(), orderB.getTableId());

@@ -1,9 +1,10 @@
 package com.orderping.domain.order;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class OrderMenuTest {
 
@@ -12,12 +13,12 @@ class OrderMenuTest {
     void createOrderMenu() {
         // when
         OrderMenu orderMenu = OrderMenu.builder()
-                .id(1L)
-                .orderId(1L)
-                .menuId(1L)
-                .quantity(2L)
-                .price(10000L)
-                .build();
+            .id(1L)
+            .orderId(1L)
+            .menuId(1L)
+            .quantity(2L)
+            .price(10000L)
+            .build();
 
         // then
         assertNotNull(orderMenu);
@@ -37,12 +38,12 @@ class OrderMenuTest {
 
         // when
         OrderMenu orderMenu = OrderMenu.builder()
-                .id(1L)
-                .orderId(1L)
-                .menuId(1L)
-                .quantity(quantity)
-                .price(unitPrice * quantity)
-                .build();
+            .id(1L)
+            .orderId(1L)
+            .menuId(1L)
+            .quantity(quantity)
+            .price(unitPrice * quantity)
+            .build();
 
         // then
         assertEquals(24000L, orderMenu.getPrice());

@@ -1,6 +1,7 @@
 package com.orderping.domain.store;
 
 import com.orderping.domain.enums.TableStatus;
+
 import lombok.Builder;
 import lombok.Getter;
 

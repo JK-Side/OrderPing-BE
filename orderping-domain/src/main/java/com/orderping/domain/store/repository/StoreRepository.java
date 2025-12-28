@@ -1,9 +1,9 @@
 package com.orderping.domain.store.repository;
 
-import com.orderping.domain.store.Store;
-
 import java.util.List;
 import java.util.Optional;
+
+import com.orderping.domain.store.Store;
 
 public interface StoreRepository {
 

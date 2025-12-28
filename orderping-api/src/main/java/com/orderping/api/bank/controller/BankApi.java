@@ -1,12 +1,14 @@
 package com.orderping.api.bank.controller;
 
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+
 import com.orderping.api.bank.dto.BankResponse;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
-
-import java.util.List;
 
 @Tag(name = "Bank", description = "은행 코드 API")
 public interface BankApi {

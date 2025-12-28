@@ -1,9 +1,10 @@
 package com.orderping.infra.order.repository;
 
-import com.orderping.infra.order.entity.OrderMenuEntity;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
+import com.orderping.infra.order.entity.OrderMenuEntity;
 
 public interface OrderMenuJpaRepository extends JpaRepository<OrderMenuEntity, Long> {
 

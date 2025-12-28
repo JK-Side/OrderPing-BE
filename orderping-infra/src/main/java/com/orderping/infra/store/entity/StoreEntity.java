@@ -1,13 +1,20 @@
 package com.orderping.infra.store.entity;
 
+import java.time.LocalDateTime;
+
 import com.orderping.domain.store.Store;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "stores")
@@ -39,7 +46,8 @@ public class StoreEntity {
     private String imageUrl;
 
     @Builder
-    public StoreEntity(Long id, Long userId, String name, String description, LocalDateTime createdAt, Boolean isOpen, String imageUrl) {
+    public StoreEntity(Long id, Long userId, String name, String description, LocalDateTime createdAt, Boolean isOpen,
+        String imageUrl) {
         this.id = id;
         this.userId = userId;
         this.name = name;
@@ -47,6 +55,19 @@ public class StoreEntity {
         this.createdAt = createdAt;
         this.isOpen = isOpen;
         this.imageUrl = imageUrl;
+    }
+
+    // Domain -> Entity
+    public static StoreEntity from(Store store) {
+        return StoreEntity.builder()
+            .id(store.getId())
+            .userId(store.getUserId())
+            .name(store.getName())
+            .description(store.getDescription())
+            .createdAt(store.getCreatedAt())
+            .isOpen(store.getIsOpen())
+            .imageUrl(store.getImageUrl())
+            .build();
     }
 
     @PrePersist
@@ -57,29 +78,16 @@ public class StoreEntity {
         }
     }
 
-    // Domain -> Entity
-    public static StoreEntity from(Store store) {
-        return StoreEntity.builder()
-                .id(store.getId())
-                .userId(store.getUserId())
-                .name(store.getName())
-                .description(store.getDescription())
-                .createdAt(store.getCreatedAt())
-                .isOpen(store.getIsOpen())
-                .imageUrl(store.getImageUrl())
-                .build();
-    }
-
     // Entity -> Domain
     public Store toDomain() {
         return Store.builder()
-                .id(this.id)
-                .userId(this.userId)
-                .name(this.name)
-                .description(this.description)
-                .createdAt(this.createdAt)
-                .isOpen(this.isOpen)
-                .imageUrl(this.imageUrl)
-                .build();
+            .id(this.id)
+            .userId(this.userId)
+            .name(this.name)
+            .description(this.description)
+            .createdAt(this.createdAt)
+            .isOpen(this.isOpen)
+            .imageUrl(this.imageUrl)
+            .build();
     }
 }

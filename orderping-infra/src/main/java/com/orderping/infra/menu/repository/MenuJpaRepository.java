@@ -1,12 +1,13 @@
 package com.orderping.infra.menu.repository;
 
-import com.orderping.infra.menu.entity.MenuEntity;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
+import com.orderping.infra.menu.entity.MenuEntity;
 
 public interface MenuJpaRepository extends JpaRepository<MenuEntity, Long> {
 

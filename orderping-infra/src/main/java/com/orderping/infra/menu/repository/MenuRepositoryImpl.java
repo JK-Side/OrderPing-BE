@@ -1,13 +1,15 @@
 package com.orderping.infra.menu.repository;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Repository;
+
 import com.orderping.domain.menu.Menu;
 import com.orderping.domain.menu.repository.MenuRepository;
 import com.orderping.infra.menu.entity.MenuEntity;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
@@ -25,28 +27,28 @@ public class MenuRepositoryImpl implements MenuRepository {
     @Override
     public Optional<Menu> findById(Long id) {
         return jpaRepository.findById(id)
-                .map(MenuEntity::toDomain);
+            .map(MenuEntity::toDomain);
     }
 
     @Override
     public List<Menu> findByStoreId(Long storeId) {
         return jpaRepository.findByStoreId(storeId).stream()
-                .map(MenuEntity::toDomain)
-                .toList();
+            .map(MenuEntity::toDomain)
+            .toList();
     }
 
     @Override
     public List<Menu> findByCategoryId(Long categoryId) {
         return jpaRepository.findByCategoryId(categoryId).stream()
-                .map(MenuEntity::toDomain)
-                .toList();
+            .map(MenuEntity::toDomain)
+            .toList();
     }
 
     @Override
     public List<Menu> findAvailableByStoreId(Long storeId) {
         return jpaRepository.findByStoreIdAndIsSoldOutFalse(storeId).stream()
-                .map(MenuEntity::toDomain)
-                .toList();
+            .map(MenuEntity::toDomain)
+            .toList();
     }
 
     @Override

@@ -1,17 +1,18 @@
 package com.orderping.infra.user.repository;
 
-import com.orderping.domain.enums.Role;
-import com.orderping.domain.user.User;
-import com.orderping.infra.config.TestConfig;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Optional;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import com.orderping.domain.enums.Role;
+import com.orderping.domain.user.User;
+import com.orderping.infra.config.TestConfig;
 
 @SpringBootTest(classes = TestConfig.class)
 @Transactional
@@ -25,9 +26,9 @@ class UserRepositoryImplTest {
     void saveAndFindUser() {
         // given
         User user = User.builder()
-                .role(Role.OWNER)
-                .nickname("테스트사장님")
-                .build();
+            .role(Role.OWNER)
+            .nickname("테스트사장님")
+            .build();
 
         // when
         User savedUser = userRepository.save(user);
@@ -44,9 +45,9 @@ class UserRepositoryImplTest {
     void findById() {
         // given
         User user = User.builder()
-                .role(Role.OWNER)
-                .nickname("조회테스트")
-                .build();
+            .role(Role.OWNER)
+            .nickname("조회테스트")
+            .build();
         User savedUser = userRepository.save(user);
 
         // when
@@ -73,9 +74,9 @@ class UserRepositoryImplTest {
     void deleteUser() {
         // given
         User user = User.builder()
-                .role(Role.OWNER)
-                .nickname("삭제테스트")
-                .build();
+            .role(Role.OWNER)
+            .nickname("삭제테스트")
+            .build();
         User savedUser = userRepository.save(user);
 
         // when

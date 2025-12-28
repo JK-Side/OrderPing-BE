@@ -1,12 +1,14 @@
 package com.orderping.domain.user;
 
-import com.orderping.domain.enums.Role;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.orderping.domain.enums.Role;
 
 class UserTest {
 
@@ -18,12 +20,12 @@ class UserTest {
 
         // when
         User user = User.builder()
-                .id(1L)
-                .role(Role.OWNER)
-                .nickname("테스트사장님")
-                .createdAt(now)
-                .updatedAt(now)
-                .build();
+            .id(1L)
+            .role(Role.OWNER)
+            .nickname("테스트사장님")
+            .createdAt(now)
+            .updatedAt(now)
+            .build();
 
         // then
         assertNotNull(user);
@@ -39,10 +41,10 @@ class UserTest {
     void userCanHaveOwnerRole() {
         // when
         User user = User.builder()
-                .id(1L)
-                .role(Role.OWNER)
-                .nickname("주점사장")
-                .build();
+            .id(1L)
+            .role(Role.OWNER)
+            .nickname("주점사장")
+            .build();
 
         // then
         assertEquals(Role.OWNER, user.getRole());

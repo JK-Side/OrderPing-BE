@@ -1,7 +1,11 @@
 package com.orderping.infra.bank.entity;
 
 import com.orderping.domain.bank.Bank;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,9 +28,9 @@ public class BankEntity {
 
     public Bank toDomain() {
         return Bank.builder()
-                .code(this.code)
-                .name(this.name)
-                .isActive(this.isActive)
-                .build();
+            .code(this.code)
+            .name(this.name)
+            .isActive(this.isActive)
+            .build();
     }
 }

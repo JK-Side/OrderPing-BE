@@ -1,14 +1,23 @@
 package com.orderping.infra.order.entity;
 
+import java.time.LocalDateTime;
+
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.order.Order;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "orders")
@@ -47,7 +56,8 @@ public class OrderEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public OrderEntity(Long id, Long tableId, Long storeId, String sessionId, String depositorName, OrderStatus status, Long totalPrice, Long couponAmount, LocalDateTime createdAt) {
+    public OrderEntity(Long id, Long tableId, Long storeId, String sessionId, String depositorName, OrderStatus status,
+        Long totalPrice, Long couponAmount, LocalDateTime createdAt) {
         this.id = id;
         this.tableId = tableId;
         this.storeId = storeId;
@@ -57,6 +67,21 @@ public class OrderEntity {
         this.totalPrice = totalPrice;
         this.couponAmount = couponAmount;
         this.createdAt = createdAt;
+    }
+
+    // Domain -> Entity
+    public static OrderEntity from(Order order) {
+        return OrderEntity.builder()
+            .id(order.getId())
+            .tableId(order.getTableId())
+            .storeId(order.getStoreId())
+            .sessionId(order.getSessionId())
+            .depositorName(order.getDepositorName())
+            .status(order.getStatus())
+            .totalPrice(order.getTotalPrice())
+            .couponAmount(order.getCouponAmount())
+            .createdAt(order.getCreatedAt())
+            .build();
     }
 
     @PrePersist
@@ -73,33 +98,18 @@ public class OrderEntity {
         }
     }
 
-    // Domain -> Entity
-    public static OrderEntity from(Order order) {
-        return OrderEntity.builder()
-                .id(order.getId())
-                .tableId(order.getTableId())
-                .storeId(order.getStoreId())
-                .sessionId(order.getSessionId())
-                .depositorName(order.getDepositorName())
-                .status(order.getStatus())
-                .totalPrice(order.getTotalPrice())
-                .couponAmount(order.getCouponAmount())
-                .createdAt(order.getCreatedAt())
-                .build();
-    }
-
     // Entity -> Domain
     public Order toDomain() {
         return Order.builder()
-                .id(this.id)
-                .tableId(this.tableId)
-                .storeId(this.storeId)
-                .sessionId(this.sessionId)
-                .depositorName(this.depositorName)
-                .status(this.status)
-                .totalPrice(this.totalPrice)
-                .couponAmount(this.couponAmount)
-                .createdAt(this.createdAt)
-                .build();
+            .id(this.id)
+            .tableId(this.tableId)
+            .storeId(this.storeId)
+            .sessionId(this.sessionId)
+            .depositorName(this.depositorName)
+            .status(this.status)
+            .totalPrice(this.totalPrice)
+            .couponAmount(this.couponAmount)
+            .createdAt(this.createdAt)
+            .build();
     }
 }

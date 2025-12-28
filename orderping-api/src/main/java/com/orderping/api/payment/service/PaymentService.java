@@ -1,16 +1,18 @@
 package com.orderping.api.payment.service;
 
-import com.orderping.api.payment.dto.PaymentCreateRequest;
-import com.orderping.api.payment.dto.PaymentResponse;
-import com.orderping.domain.enums.PaymentStatus;
-import com.orderping.domain.payment.Payment;
-import com.orderping.domain.payment.repository.PaymentRepository;
-import com.orderping.domain.exception.NotFoundException;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import com.orderping.api.payment.dto.PaymentCreateRequest;
+import com.orderping.api.payment.dto.PaymentResponse;
+import com.orderping.domain.enums.PaymentStatus;
+import com.orderping.domain.exception.NotFoundException;
+import com.orderping.domain.payment.Payment;
+import com.orderping.domain.payment.repository.PaymentRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -22,11 +24,11 @@ public class PaymentService {
     @Transactional
     public PaymentResponse createPayment(PaymentCreateRequest request) {
         Payment payment = Payment.builder()
-                .orderId(request.orderId())
-                .method(request.method())
-                .amount(request.amount())
-                .status(PaymentStatus.PENDING)
-                .build();
+            .orderId(request.orderId())
+            .method(request.method())
+            .amount(request.amount())
+            .status(PaymentStatus.PENDING)
+            .build();
 
         Payment saved = paymentRepository.save(payment);
         return PaymentResponse.from(saved);
@@ -34,29 +36,29 @@ public class PaymentService {
 
     public PaymentResponse getPayment(Long id) {
         Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
+            .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
         return PaymentResponse.from(payment);
     }
 
     public List<PaymentResponse> getPaymentsByOrderId(Long orderId) {
         return paymentRepository.findByOrderId(orderId).stream()
-                .map(PaymentResponse::from)
-                .toList();
+            .map(PaymentResponse::from)
+            .toList();
     }
 
     @Transactional
     public PaymentResponse completePayment(Long id) {
         Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
+            .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
 
         Payment updated = Payment.builder()
-                .id(payment.getId())
-                .orderId(payment.getOrderId())
-                .method(payment.getMethod())
-                .amount(payment.getAmount())
-                .status(PaymentStatus.COMPLETED)
-                .createdAt(payment.getCreatedAt())
-                .build();
+            .id(payment.getId())
+            .orderId(payment.getOrderId())
+            .method(payment.getMethod())
+            .amount(payment.getAmount())
+            .status(PaymentStatus.COMPLETED)
+            .createdAt(payment.getCreatedAt())
+            .build();
 
         Payment saved = paymentRepository.save(updated);
         return PaymentResponse.from(saved);
@@ -65,16 +67,16 @@ public class PaymentService {
     @Transactional
     public PaymentResponse failPayment(Long id) {
         Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
+            .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
 
         Payment updated = Payment.builder()
-                .id(payment.getId())
-                .orderId(payment.getOrderId())
-                .method(payment.getMethod())
-                .amount(payment.getAmount())
-                .status(PaymentStatus.FAILED)
-                .createdAt(payment.getCreatedAt())
-                .build();
+            .id(payment.getId())
+            .orderId(payment.getOrderId())
+            .method(payment.getMethod())
+            .amount(payment.getAmount())
+            .status(PaymentStatus.FAILED)
+            .createdAt(payment.getCreatedAt())
+            .build();
 
         Payment saved = paymentRepository.save(updated);
         return PaymentResponse.from(saved);

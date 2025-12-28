@@ -1,12 +1,14 @@
 package com.orderping.infra.user.repository;
 
+import java.util.Optional;
+
+import org.springframework.stereotype.Repository;
+
 import com.orderping.domain.user.User;
 import com.orderping.domain.user.repository.UserRepository;
 import com.orderping.infra.user.entity.UserEntity;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
@@ -24,7 +26,7 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public Optional<User> findById(Long id) {
         return jpaRepository.findById(id)
-                .map(UserEntity::toDomain);
+            .map(UserEntity::toDomain);
     }
 
     @Override

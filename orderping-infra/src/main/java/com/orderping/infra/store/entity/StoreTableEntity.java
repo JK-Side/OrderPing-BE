@@ -2,7 +2,16 @@ package com.orderping.infra.store.entity;
 
 import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.store.StoreTable;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -37,6 +46,16 @@ public class StoreTableEntity {
         this.status = status;
     }
 
+    // Domain -> Entity
+    public static StoreTableEntity from(StoreTable storeTable) {
+        return StoreTableEntity.builder()
+            .id(storeTable.getId())
+            .storeId(storeTable.getStoreId())
+            .tableNum(storeTable.getTableNum())
+            .status(storeTable.getStatus())
+            .build();
+    }
+
     @PrePersist
     protected void onCreate() {
         if (this.status == null) {
@@ -44,23 +63,13 @@ public class StoreTableEntity {
         }
     }
 
-    // Domain -> Entity
-    public static StoreTableEntity from(StoreTable storeTable) {
-        return StoreTableEntity.builder()
-                .id(storeTable.getId())
-                .storeId(storeTable.getStoreId())
-                .tableNum(storeTable.getTableNum())
-                .status(storeTable.getStatus())
-                .build();
-    }
-
     // Entity -> Domain
     public StoreTable toDomain() {
         return StoreTable.builder()
-                .id(this.id)
-                .storeId(this.storeId)
-                .tableNum(this.tableNum)
-                .status(this.status)
-                .build();
+            .id(this.id)
+            .storeId(this.storeId)
+            .tableNum(this.tableNum)
+            .status(this.status)
+            .build();
     }
 }

@@ -1,13 +1,15 @@
 package com.orderping.domain.payment;
 
-import com.orderping.domain.enums.PaymentMethod;
-import com.orderping.domain.enums.PaymentStatus;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.orderping.domain.enums.PaymentMethod;
+import com.orderping.domain.enums.PaymentStatus;
 
 class PaymentTest {
 
@@ -19,13 +21,13 @@ class PaymentTest {
 
         // when
         Payment payment = Payment.builder()
-                .id(1L)
-                .orderId(1L)
-                .method(PaymentMethod.CASH)
-                .amount(25000L)
-                .status(PaymentStatus.COMPLETED)
-                .createdAt(now)
-                .build();
+            .id(1L)
+            .orderId(1L)
+            .method(PaymentMethod.CASH)
+            .amount(25000L)
+            .status(PaymentStatus.COMPLETED)
+            .createdAt(now)
+            .build();
 
         // then
         assertNotNull(payment);
@@ -41,12 +43,12 @@ class PaymentTest {
     void createCouponPayment() {
         // when
         Payment payment = Payment.builder()
-                .id(2L)
-                .orderId(1L)
-                .method(PaymentMethod.COUPON)
-                .amount(5000L)
-                .status(PaymentStatus.COMPLETED)
-                .build();
+            .id(2L)
+            .orderId(1L)
+            .method(PaymentMethod.COUPON)
+            .amount(5000L)
+            .status(PaymentStatus.COMPLETED)
+            .build();
 
         // then
         assertEquals(PaymentMethod.COUPON, payment.getMethod());
@@ -63,20 +65,20 @@ class PaymentTest {
 
         // when
         Payment couponPayment = Payment.builder()
-                .id(1L)
-                .orderId(1L)
-                .method(PaymentMethod.COUPON)
-                .amount(couponAmount)
-                .status(PaymentStatus.COMPLETED)
-                .build();
+            .id(1L)
+            .orderId(1L)
+            .method(PaymentMethod.COUPON)
+            .amount(couponAmount)
+            .status(PaymentStatus.COMPLETED)
+            .build();
 
         Payment cashPayment = Payment.builder()
-                .id(2L)
-                .orderId(1L)
-                .method(PaymentMethod.CASH)
-                .amount(cashAmount)
-                .status(PaymentStatus.COMPLETED)
-                .build();
+            .id(2L)
+            .orderId(1L)
+            .method(PaymentMethod.CASH)
+            .amount(cashAmount)
+            .status(PaymentStatus.COMPLETED)
+            .build();
 
         // then
         assertEquals(5000L, couponPayment.getAmount());

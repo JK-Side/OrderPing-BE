@@ -1,12 +1,14 @@
 package com.orderping.domain.user;
 
-import com.orderping.domain.enums.AuthProvider;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.orderping.domain.enums.AuthProvider;
 
 class AuthAccountTest {
 
@@ -18,13 +20,13 @@ class AuthAccountTest {
 
         // when
         AuthAccount authAccount = AuthAccount.builder()
-                .id(1L)
-                .userId(1L)
-                .provider(AuthProvider.GOOGLE)
-                .socialId("google_12345")
-                .email("test@gmail.com")
-                .createdAt(now)
-                .build();
+            .id(1L)
+            .userId(1L)
+            .provider(AuthProvider.GOOGLE)
+            .socialId("google_12345")
+            .email("test@gmail.com")
+            .createdAt(now)
+            .build();
 
         // then
         assertNotNull(authAccount);
@@ -40,12 +42,12 @@ class AuthAccountTest {
     void createAuthAccountWithKakao() {
         // when
         AuthAccount authAccount = AuthAccount.builder()
-                .id(2L)
-                .userId(1L)
-                .provider(AuthProvider.KAKAO)
-                .socialId("kakao_67890")
-                .email("test@kakao.com")
-                .build();
+            .id(2L)
+            .userId(1L)
+            .provider(AuthProvider.KAKAO)
+            .socialId("kakao_67890")
+            .email("test@kakao.com")
+            .build();
 
         // then
         assertEquals(AuthProvider.KAKAO, authAccount.getProvider());

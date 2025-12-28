@@ -1,9 +1,9 @@
 package com.orderping.domain.menu.repository;
 
-import com.orderping.domain.menu.Menu;
-
 import java.util.List;
 import java.util.Optional;
+
+import com.orderping.domain.menu.Menu;
 
 public interface MenuRepository {
 

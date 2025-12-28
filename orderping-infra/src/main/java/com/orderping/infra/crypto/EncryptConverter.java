@@ -1,8 +1,9 @@
 package com.orderping.infra.crypto;
 
+import org.springframework.stereotype.Component;
+
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import org.springframework.stereotype.Component;
 
 @Converter
 @Component

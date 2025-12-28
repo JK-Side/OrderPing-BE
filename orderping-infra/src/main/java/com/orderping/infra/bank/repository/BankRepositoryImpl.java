@@ -1,12 +1,14 @@
 package com.orderping.infra.bank.repository;
 
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
 import com.orderping.domain.bank.Bank;
 import com.orderping.domain.bank.repository.BankRepository;
 import com.orderping.infra.bank.entity.BankEntity;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
@@ -17,7 +19,7 @@ public class BankRepositoryImpl implements BankRepository {
     @Override
     public List<Bank> findAllActive() {
         return jpaRepository.findByIsActiveTrue().stream()
-                .map(BankEntity::toDomain)
-                .toList();
+            .map(BankEntity::toDomain)
+            .toList();
     }
 }

@@ -1,10 +1,11 @@
 package com.orderping.domain.order;
 
+import java.time.LocalDateTime;
+
 import com.orderping.domain.enums.OrderStatus;
+
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Builder
