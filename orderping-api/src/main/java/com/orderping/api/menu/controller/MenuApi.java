@@ -1,0 +1,72 @@
+package com.orderping.api.menu.controller;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+
+import com.orderping.api.menu.dto.MenuCreateRequest;
+import com.orderping.api.menu.dto.MenuResponse;
+import com.orderping.api.menu.dto.MenuUpdateRequest;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "Menu", description = "메뉴 관리 API")
+public interface MenuApi {
+
+    @Operation(summary = "메뉴 생성", description = "새로운 메뉴를 생성합니다")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "메뉴 생성 성공"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청")
+    })
+    ResponseEntity<MenuResponse> createMenu(MenuCreateRequest request);
+
+    @Operation(summary = "메뉴 조회", description = "ID로 메뉴를 조회합니다")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "404", description = "메뉴를 찾을 수 없음")
+    })
+    ResponseEntity<MenuResponse> getMenu(
+        @Parameter(description = "메뉴 ID", required = true) Long id
+    );
+
+    @Operation(summary = "매장별 메뉴 목록", description = "매장 ID로 메뉴 목록을 조회합니다")
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    ResponseEntity<List<MenuResponse>> getMenusByStoreId(
+        @Parameter(description = "매장 ID", required = true) Long storeId
+    );
+
+    @Operation(summary = "카테고리별 메뉴 목록", description = "카테고리 ID로 메뉴 목록을 조회합니다")
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    ResponseEntity<List<MenuResponse>> getMenusByCategoryId(
+        @Parameter(description = "카테고리 ID", required = true) Long categoryId
+    );
+
+    @Operation(summary = "판매 가능한 메뉴 목록", description = "매장의 판매 가능한 메뉴 목록을 조회합니다")
+    @ApiResponse(responseCode = "200", description = "조회 성공")
+    ResponseEntity<List<MenuResponse>> getAvailableMenusByStoreId(
+        @Parameter(description = "매장 ID", required = true) Long storeId
+    );
+
+    @Operation(summary = "메뉴 삭제", description = "ID로 메뉴를 삭제합니다")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "삭제 성공"),
+        @ApiResponse(responseCode = "404", description = "메뉴를 찾을 수 없음")
+    })
+    ResponseEntity<Void> deleteMenu(
+        @Parameter(description = "메뉴 ID", required = true) Long id
+    );
+
+    @Operation(summary = "메뉴 수정", description = "메뉴 정보를 수정합니다")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "수정 성공"),
+        @ApiResponse(responseCode = "404", description = "메뉴를 찾을 수 없음")
+    })
+    ResponseEntity<MenuResponse> updateMenu(
+        @Parameter(description = "메뉴 ID", required = true) Long id,
+        MenuUpdateRequest request
+    );
+}

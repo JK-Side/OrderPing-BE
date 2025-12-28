@@ -11,4 +11,5 @@ public class OrderMenu {
     private final Long menuId;
     private final Long quantity;
     private final Long price;
+    private final Boolean isService;
 }

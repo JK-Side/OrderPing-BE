@@ -1,7 +1,13 @@
 package com.orderping.infra.menu.entity;
 
 import com.orderping.domain.menu.Category;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,34 +24,28 @@ public class CategoryEntity {
     @Column(name = "category_id")
     private Long id;
 
-    @Column(name = "store_id", nullable = false)
-    private Long storeId;
-
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, unique = true)
     private String name;
 
     @Builder
-    public CategoryEntity(Long id, Long storeId, String name) {
+    public CategoryEntity(Long id, String name) {
         this.id = id;
-        this.storeId = storeId;
         this.name = name;
     }
 
     // Domain -> Entity
     public static CategoryEntity from(Category category) {
         return CategoryEntity.builder()
-                .id(category.getId())
-                .storeId(category.getStoreId())
-                .name(category.getName())
-                .build();
+            .id(category.getId())
+            .name(category.getName())
+            .build();
     }
 
     // Entity -> Domain
     public Category toDomain() {
         return Category.builder()
-                .id(this.id)
-                .storeId(this.storeId)
-                .name(this.name)
-                .build();
+            .id(this.id)
+            .name(this.name)
+            .build();
     }
 }

@@ -1,10 +1,11 @@
 package com.orderping.infra.user.repository;
 
-import com.orderping.domain.enums.AuthProvider;
-import com.orderping.infra.user.entity.AuthAccountEntity;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Optional;
+import com.orderping.domain.enums.AuthProvider;
+import com.orderping.infra.user.entity.AuthAccountEntity;
 
 public interface AuthAccountJpaRepository extends JpaRepository<AuthAccountEntity, Long> {
 

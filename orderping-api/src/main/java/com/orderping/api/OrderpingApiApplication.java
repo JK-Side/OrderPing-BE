@@ -2,11 +2,18 @@ package com.orderping.api;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+    "com.orderping.api",
+    "com.orderping.infra"
+})
+@EntityScan(basePackages = "com.orderping.infra")
+@EnableJpaRepositories(basePackages = "com.orderping.infra")
 public class OrderpingApiApplication {
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         SpringApplication.run(OrderpingApiApplication.class, args);
     }
 }

@@ -1,11 +1,11 @@
 package com.orderping.domain.store;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 class StoreTest {
 
@@ -17,14 +17,14 @@ class StoreTest {
 
         // when
         Store store = Store.builder()
-                .id(1L)
-                .userId(1L)
-                .name("맛있는 포차")
-                .description("분위기 좋은 포장마차")
-                .createdAt(now)
-                .isOpen(false)
-                .imageUrl("https://example.com/store.jpg")
-                .build();
+            .id(1L)
+            .userId(1L)
+            .name("맛있는 포차")
+            .description("분위기 좋은 포장마차")
+            .createdAt(now)
+            .isOpen(false)
+            .imageUrl("https://example.com/store.jpg")
+            .build();
 
         // then
         assertNotNull(store);
@@ -40,11 +40,11 @@ class StoreTest {
     void storeCanBeOpen() {
         // when
         Store store = Store.builder()
-                .id(1L)
-                .userId(1L)
-                .name("영업중인 포차")
-                .isOpen(true)
-                .build();
+            .id(1L)
+            .userId(1L)
+            .name("영업중인 포차")
+            .isOpen(true)
+            .build();
 
         // then
         assertTrue(store.getIsOpen());

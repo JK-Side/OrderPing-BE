@@ -1,7 +1,14 @@
 package com.orderping.infra.order.entity;
 
 import com.orderping.domain.order.OrderMenu;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,34 +37,47 @@ public class OrderMenuEntity {
     @Column(nullable = false)
     private Long price;
 
+    @Column(name = "is_service", nullable = false)
+    private Boolean isService;
+
     @Builder
-    public OrderMenuEntity(Long id, Long orderId, Long menuId, Long quantity, Long price) {
+    public OrderMenuEntity(Long id, Long orderId, Long menuId, Long quantity, Long price, Boolean isService) {
         this.id = id;
         this.orderId = orderId;
         this.menuId = menuId;
         this.quantity = quantity;
         this.price = price;
+        this.isService = isService;
     }
 
     // Domain -> Entity
     public static OrderMenuEntity from(OrderMenu orderMenu) {
         return OrderMenuEntity.builder()
-                .id(orderMenu.getId())
-                .orderId(orderMenu.getOrderId())
-                .menuId(orderMenu.getMenuId())
-                .quantity(orderMenu.getQuantity())
-                .price(orderMenu.getPrice())
-                .build();
+            .id(orderMenu.getId())
+            .orderId(orderMenu.getOrderId())
+            .menuId(orderMenu.getMenuId())
+            .quantity(orderMenu.getQuantity())
+            .price(orderMenu.getPrice())
+            .isService(orderMenu.getIsService())
+            .build();
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.isService == null) {
+            this.isService = false;
+        }
     }
 
     // Entity -> Domain
     public OrderMenu toDomain() {
         return OrderMenu.builder()
-                .id(this.id)
-                .orderId(this.orderId)
-                .menuId(this.menuId)
-                .quantity(this.quantity)
-                .price(this.price)
-                .build();
+            .id(this.id)
+            .orderId(this.orderId)
+            .menuId(this.menuId)
+            .quantity(this.quantity)
+            .price(this.price)
+            .isService(this.isService)
+            .build();
     }
 }

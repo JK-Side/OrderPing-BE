@@ -1,9 +1,9 @@
 package com.orderping.domain.user.repository;
 
+import java.util.Optional;
+
 import com.orderping.domain.enums.AuthProvider;
 import com.orderping.domain.user.AuthAccount;
-
-import java.util.Optional;
 
 public interface AuthAccountRepository {
 

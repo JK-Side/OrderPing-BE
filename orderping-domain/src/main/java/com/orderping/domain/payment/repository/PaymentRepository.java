@@ -1,10 +1,10 @@
 package com.orderping.domain.payment.repository;
 
-import com.orderping.domain.enums.PaymentStatus;
-import com.orderping.domain.payment.Payment;
-
 import java.util.List;
 import java.util.Optional;
+
+import com.orderping.domain.enums.PaymentStatus;
+import com.orderping.domain.payment.Payment;
 
 public interface PaymentRepository {
 

@@ -1,10 +1,10 @@
 package com.orderping.domain.order.repository;
 
-import com.orderping.domain.enums.OrderStatus;
-import com.orderping.domain.order.Order;
-
 import java.util.List;
 import java.util.Optional;
+
+import com.orderping.domain.enums.OrderStatus;
+import com.orderping.domain.order.Order;
 
 public interface OrderRepository {
 

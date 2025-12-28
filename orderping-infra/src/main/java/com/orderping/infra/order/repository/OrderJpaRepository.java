@@ -1,10 +1,11 @@
 package com.orderping.infra.order.repository;
 
-import com.orderping.domain.enums.OrderStatus;
-import com.orderping.infra.order.entity.OrderEntity;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
+import com.orderping.domain.enums.OrderStatus;
+import com.orderping.infra.order.entity.OrderEntity;
 
 public interface OrderJpaRepository extends JpaRepository<OrderEntity, Long> {
 

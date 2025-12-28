@@ -1,10 +1,11 @@
 package com.orderping.infra.payment.repository;
 
-import com.orderping.domain.enums.PaymentStatus;
-import com.orderping.infra.payment.entity.PaymentEntity;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
+import com.orderping.domain.enums.PaymentStatus;
+import com.orderping.infra.payment.entity.PaymentEntity;
 
 public interface PaymentJpaRepository extends JpaRepository<PaymentEntity, Long> {
 

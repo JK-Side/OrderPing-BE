@@ -1,10 +1,11 @@
 package com.orderping.domain.user;
 
+import java.time.LocalDateTime;
+
 import com.orderping.domain.enums.Role;
+
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Builder

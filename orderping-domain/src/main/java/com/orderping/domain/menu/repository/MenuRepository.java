@@ -1,9 +1,9 @@
 package com.orderping.domain.menu.repository;
 
-import com.orderping.domain.menu.Menu;
-
 import java.util.List;
 import java.util.Optional;
+
+import com.orderping.domain.menu.Menu;
 
 public interface MenuRepository {
 
@@ -18,4 +18,8 @@ public interface MenuRepository {
     List<Menu> findAvailableByStoreId(Long storeId);
 
     void deleteById(Long id);
+
+    int decreaseStock(Long id, Long quantity);
+
+    Optional<Menu> findByIdWithLock(Long id);
 }

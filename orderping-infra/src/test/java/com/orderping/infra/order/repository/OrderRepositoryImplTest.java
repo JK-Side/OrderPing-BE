@@ -1,5 +1,17 @@
 package com.orderping.infra.order.repository;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.Role;
 import com.orderping.domain.enums.TableStatus;
@@ -11,16 +23,6 @@ import com.orderping.infra.config.TestConfig;
 import com.orderping.infra.store.repository.StoreRepositoryImpl;
 import com.orderping.infra.store.repository.StoreTableRepositoryImpl;
 import com.orderping.infra.user.repository.UserRepositoryImpl;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = TestConfig.class)
 @Transactional
@@ -44,21 +46,21 @@ class OrderRepositoryImplTest {
     @BeforeEach
     void setUp() {
         User savedUser = userRepository.save(User.builder()
-                .role(Role.OWNER)
-                .nickname("사장님")
-                .build());
+            .role(Role.OWNER)
+            .nickname("사장님")
+            .build());
 
         savedStore = storeRepository.save(Store.builder()
-                .userId(savedUser.getId())
-                .name("테스트 가게")
-                .isOpen(true)
-                .build());
+            .userId(savedUser.getId())
+            .name("테스트 가게")
+            .isOpen(true)
+            .build());
 
         savedTable = storeTableRepository.save(StoreTable.builder()
-                .storeId(savedStore.getId())
-                .tableNum(1)
-                .status(TableStatus.OCCUPIED)
-                .build());
+            .storeId(savedStore.getId())
+            .tableNum(1)
+            .status(TableStatus.OCCUPIED)
+            .build());
     }
 
     @Test
@@ -66,12 +68,12 @@ class OrderRepositoryImplTest {
     void saveAndFindOrder() {
         // given
         Order order = Order.builder()
-                .tableId(savedTable.getId())
-                .storeId(savedStore.getId())
-                .sessionId("session-123")
-                .status(OrderStatus.PENDING)
-                .totalPrice(25000L)
-                .build();
+            .tableId(savedTable.getId())
+            .storeId(savedStore.getId())
+            .sessionId("session-123")
+            .status(OrderStatus.PENDING)
+            .totalPrice(25000L)
+            .build();
 
         // when
         Order savedOrder = orderRepository.save(order);
@@ -90,20 +92,20 @@ class OrderRepositoryImplTest {
         String sessionId = "customer-session-abc";
 
         orderRepository.save(Order.builder()
-                .tableId(savedTable.getId())
-                .storeId(savedStore.getId())
-                .sessionId(sessionId)
-                .status(OrderStatus.PENDING)
-                .totalPrice(10000L)
-                .build());
+            .tableId(savedTable.getId())
+            .storeId(savedStore.getId())
+            .sessionId(sessionId)
+            .status(OrderStatus.PENDING)
+            .totalPrice(10000L)
+            .build());
 
         orderRepository.save(Order.builder()
-                .tableId(savedTable.getId())
-                .storeId(savedStore.getId())
-                .sessionId(sessionId)
-                .status(OrderStatus.COOKING)
-                .totalPrice(15000L)
-                .build());
+            .tableId(savedTable.getId())
+            .storeId(savedStore.getId())
+            .sessionId(sessionId)
+            .status(OrderStatus.COOKING)
+            .totalPrice(15000L)
+            .build());
 
         // when
         List<Order> orders = orderRepository.findBySessionId(sessionId);
@@ -117,32 +119,32 @@ class OrderRepositoryImplTest {
     void findByStoreIdAndStatus() {
         // given
         orderRepository.save(Order.builder()
-                .tableId(savedTable.getId())
-                .storeId(savedStore.getId())
-                .sessionId("session-1")
-                .status(OrderStatus.PENDING)
-                .totalPrice(10000L)
-                .build());
+            .tableId(savedTable.getId())
+            .storeId(savedStore.getId())
+            .sessionId("session-1")
+            .status(OrderStatus.PENDING)
+            .totalPrice(10000L)
+            .build());
 
         orderRepository.save(Order.builder()
-                .tableId(savedTable.getId())
-                .storeId(savedStore.getId())
-                .sessionId("session-2")
-                .status(OrderStatus.COOKING)
-                .totalPrice(20000L)
-                .build());
+            .tableId(savedTable.getId())
+            .storeId(savedStore.getId())
+            .sessionId("session-2")
+            .status(OrderStatus.COOKING)
+            .totalPrice(20000L)
+            .build());
 
         orderRepository.save(Order.builder()
-                .tableId(savedTable.getId())
-                .storeId(savedStore.getId())
-                .sessionId("session-3")
-                .status(OrderStatus.PENDING)
-                .totalPrice(30000L)
-                .build());
+            .tableId(savedTable.getId())
+            .storeId(savedStore.getId())
+            .sessionId("session-3")
+            .status(OrderStatus.PENDING)
+            .totalPrice(30000L)
+            .build());
 
         // when
         List<Order> pendingOrders = orderRepository.findByStoreIdAndStatus(
-                savedStore.getId(), OrderStatus.PENDING);
+            savedStore.getId(), OrderStatus.PENDING);
 
         // then
         assertEquals(2, pendingOrders.size());

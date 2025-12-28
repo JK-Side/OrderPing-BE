@@ -1,11 +1,12 @@
 package com.orderping.domain.payment;
 
+import java.time.LocalDateTime;
+
 import com.orderping.domain.enums.PaymentMethod;
 import com.orderping.domain.enums.PaymentStatus;
+
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Builder

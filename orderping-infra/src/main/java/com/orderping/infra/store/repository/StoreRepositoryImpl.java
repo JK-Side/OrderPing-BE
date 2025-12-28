@@ -1,13 +1,15 @@
 package com.orderping.infra.store.repository;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Repository;
+
 import com.orderping.domain.store.Store;
 import com.orderping.domain.store.repository.StoreRepository;
 import com.orderping.infra.store.entity.StoreEntity;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
@@ -25,14 +27,14 @@ public class StoreRepositoryImpl implements StoreRepository {
     @Override
     public Optional<Store> findById(Long id) {
         return jpaRepository.findById(id)
-                .map(StoreEntity::toDomain);
+            .map(StoreEntity::toDomain);
     }
 
     @Override
     public List<Store> findByUserId(Long userId) {
         return jpaRepository.findByUserId(userId).stream()
-                .map(StoreEntity::toDomain)
-                .toList();
+            .map(StoreEntity::toDomain)
+            .toList();
     }
 
     @Override

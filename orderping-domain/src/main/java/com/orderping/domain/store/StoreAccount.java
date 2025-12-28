@@ -9,6 +9,7 @@ public class StoreAccount {
     private final Long id;
     private final Long storeId;
     private final String bankCode;
+    private final String accountHolder;
     private final String accountNumberEnc;
     private final String accountNumberMask;
     private final Boolean isActive;
