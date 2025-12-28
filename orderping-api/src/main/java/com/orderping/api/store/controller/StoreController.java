@@ -1,6 +1,7 @@
 package com.orderping.api.store.controller;
 
 import com.orderping.api.store.dto.StoreCreateRequest;
+import com.orderping.api.store.dto.StoreDetailResponse;
 import com.orderping.api.store.dto.StoreResponse;
 import com.orderping.api.store.dto.StoreUpdateRequest;
 import com.orderping.api.store.service.StoreService;
@@ -50,6 +51,20 @@ public class StoreController implements StoreApi {
     @Override
     public ResponseEntity<StoreResponse> updateStore(@PathVariable Long id, @RequestBody StoreUpdateRequest request) {
         StoreResponse response = storeService.updateStore(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}/manage")
+    @Override
+    public ResponseEntity<StoreDetailResponse> getStoreForManage(@PathVariable Long id, @RequestParam Long userId) {
+        StoreDetailResponse response = storeService.getStoreForManage(id, userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}/order")
+    @Override
+    public ResponseEntity<StoreDetailResponse> getStoreForOrder(@PathVariable Long id) {
+        StoreDetailResponse response = storeService.getStoreForOrder(id);
         return ResponseEntity.ok(response);
     }
 }

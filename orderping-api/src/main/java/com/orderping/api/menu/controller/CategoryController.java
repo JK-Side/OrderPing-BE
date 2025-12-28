@@ -33,8 +33,8 @@ public class CategoryController implements CategoryApi {
 
     @GetMapping
     @Override
-    public ResponseEntity<List<CategoryResponse>> getCategoriesByStoreId(@RequestParam Long storeId) {
-        List<CategoryResponse> responses = categoryService.getCategoriesByStoreId(storeId);
+    public ResponseEntity<List<CategoryResponse>> getAllCategories() {
+        List<CategoryResponse> responses = categoryService.getAllCategories();
         return ResponseEntity.ok(responses);
     }
 

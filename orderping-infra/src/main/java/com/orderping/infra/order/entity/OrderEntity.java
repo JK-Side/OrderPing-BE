@@ -30,6 +30,9 @@ public class OrderEntity {
     @Column(name = "session_id", nullable = false, length = 36)
     private String sessionId;
 
+    @Column(name = "depositor_name", length = 50)
+    private String depositorName;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private OrderStatus status;
@@ -37,17 +40,22 @@ public class OrderEntity {
     @Column(name = "total_price", nullable = false)
     private Long totalPrice;
 
+    @Column(name = "coupon_amount", nullable = false)
+    private Long couponAmount;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Builder
-    public OrderEntity(Long id, Long tableId, Long storeId, String sessionId, OrderStatus status, Long totalPrice, LocalDateTime createdAt) {
+    public OrderEntity(Long id, Long tableId, Long storeId, String sessionId, String depositorName, OrderStatus status, Long totalPrice, Long couponAmount, LocalDateTime createdAt) {
         this.id = id;
         this.tableId = tableId;
         this.storeId = storeId;
         this.sessionId = sessionId;
+        this.depositorName = depositorName;
         this.status = status;
         this.totalPrice = totalPrice;
+        this.couponAmount = couponAmount;
         this.createdAt = createdAt;
     }
 
@@ -60,6 +68,9 @@ public class OrderEntity {
         if (this.totalPrice == null) {
             this.totalPrice = 0L;
         }
+        if (this.couponAmount == null) {
+            this.couponAmount = 0L;
+        }
     }
 
     // Domain -> Entity
@@ -69,8 +80,10 @@ public class OrderEntity {
                 .tableId(order.getTableId())
                 .storeId(order.getStoreId())
                 .sessionId(order.getSessionId())
+                .depositorName(order.getDepositorName())
                 .status(order.getStatus())
                 .totalPrice(order.getTotalPrice())
+                .couponAmount(order.getCouponAmount())
                 .createdAt(order.getCreatedAt())
                 .build();
     }
@@ -82,8 +95,10 @@ public class OrderEntity {
                 .tableId(this.tableId)
                 .storeId(this.storeId)
                 .sessionId(this.sessionId)
+                .depositorName(this.depositorName)
                 .status(this.status)
                 .totalPrice(this.totalPrice)
+                .couponAmount(this.couponAmount)
                 .createdAt(this.createdAt)
                 .build();
     }

@@ -4,6 +4,7 @@ import com.orderping.api.user.dto.UserCreateRequest;
 import com.orderping.api.user.dto.UserResponse;
 import com.orderping.domain.user.User;
 import com.orderping.domain.user.repository.UserRepository;
+import com.orderping.domain.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +29,7 @@ public class UserService {
 
     public UserResponse getUser(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
+                .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
         return UserResponse.from(user);
     }
 

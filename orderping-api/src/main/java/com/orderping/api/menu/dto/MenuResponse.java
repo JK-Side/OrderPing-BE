@@ -10,7 +10,9 @@ public record MenuResponse(
         Long price,
         String description,
         String imageUrl,
+        Long initialStock,
         Long stock,
+        Long soldCount,
         Boolean isSoldOut
 ) {
     public static MenuResponse from(Menu menu) {
@@ -22,7 +24,9 @@ public record MenuResponse(
                 menu.getPrice(),
                 menu.getDescription(),
                 menu.getImageUrl(),
+                menu.getInitialStock(),
                 menu.getStock(),
+                menu.getSoldCount(),
                 menu.getIsSoldOut()
         );
     }

@@ -5,6 +5,7 @@ import com.orderping.api.menu.dto.MenuResponse;
 import com.orderping.api.menu.dto.MenuUpdateRequest;
 import com.orderping.domain.menu.Menu;
 import com.orderping.domain.menu.repository.MenuRepository;
+import com.orderping.domain.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,8 @@ public class MenuService {
 
     @Transactional
     public MenuResponse createMenu(MenuCreateRequest request) {
+        Long stockValue = request.stock() != null ? request.stock() : 0L;
+
         Menu menu = Menu.builder()
                 .storeId(request.storeId())
                 .categoryId(request.categoryId())
@@ -27,7 +30,8 @@ public class MenuService {
                 .price(request.price())
                 .description(request.description())
                 .imageUrl(request.imageUrl())
-                .stock(request.stock())
+                .initialStock(stockValue)
+                .stock(stockValue)
                 .isSoldOut(false)
                 .build();
 
@@ -37,7 +41,7 @@ public class MenuService {
 
     public MenuResponse getMenu(Long id) {
         Menu menu = menuRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Menu not found: " + id));
+                .orElseThrow(() -> new NotFoundException("메뉴를 찾을 수 없습니다."));
         return MenuResponse.from(menu);
     }
 
@@ -67,7 +71,7 @@ public class MenuService {
     @Transactional
     public MenuResponse updateMenu(Long id, MenuUpdateRequest request) {
         Menu existing = menuRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Menu not found: " + id));
+                .orElseThrow(() -> new NotFoundException("메뉴를 찾을 수 없습니다."));
 
         Menu updated = Menu.builder()
                 .id(existing.getId())
@@ -77,6 +81,7 @@ public class MenuService {
                 .price(request.price() != null ? request.price() : existing.getPrice())
                 .description(request.description() != null ? request.description() : existing.getDescription())
                 .imageUrl(request.imageUrl() != null ? request.imageUrl() : existing.getImageUrl())
+                .initialStock(request.initialStock() != null ? request.initialStock() : existing.getInitialStock())
                 .stock(request.stock() != null ? request.stock() : existing.getStock())
                 .isSoldOut(request.isSoldOut() != null ? request.isSoldOut() : existing.getIsSoldOut())
                 .build();

@@ -5,6 +5,7 @@ import com.orderping.api.store.dto.StoreAccountResponse;
 import com.orderping.api.store.dto.StoreAccountUpdateRequest;
 import com.orderping.domain.store.StoreAccount;
 import com.orderping.domain.store.repository.StoreAccountRepository;
+import com.orderping.domain.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +25,7 @@ public class StoreAccountService {
                 .storeId(request.storeId())
                 .bankCode(request.bankCode())
                 .accountHolder(request.accountHolder())
-                .accountNumberEnc(encryptAccountNumber(request.accountNumber()))
+                .accountNumberEnc(request.accountNumber()) // JPA Converter가 자동 암호화
                 .accountNumberMask(maskAccountNumber(request.accountNumber()))
                 .isActive(true)
                 .build();
@@ -35,7 +36,7 @@ public class StoreAccountService {
 
     public StoreAccountResponse getStoreAccount(Long id) {
         StoreAccount storeAccount = storeAccountRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("StoreAccount not found: " + id));
+                .orElseThrow(() -> new NotFoundException("계좌 정보를 찾을 수 없습니다."));
         return StoreAccountResponse.from(storeAccount);
     }
 
@@ -48,13 +49,13 @@ public class StoreAccountService {
     @Transactional
     public StoreAccountResponse updateStoreAccount(Long id, StoreAccountUpdateRequest request) {
         StoreAccount existing = storeAccountRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("StoreAccount not found: " + id));
+                .orElseThrow(() -> new NotFoundException("계좌 정보를 찾을 수 없습니다."));
 
-        String accountNumberEnc = existing.getAccountNumberEnc();
+        String accountNumber = existing.getAccountNumberEnc(); // 이미 복호화된 값
         String accountNumberMask = existing.getAccountNumberMask();
 
         if (request.accountNumber() != null) {
-            accountNumberEnc = encryptAccountNumber(request.accountNumber());
+            accountNumber = request.accountNumber();
             accountNumberMask = maskAccountNumber(request.accountNumber());
         }
 
@@ -63,7 +64,7 @@ public class StoreAccountService {
                 .storeId(existing.getStoreId())
                 .bankCode(request.bankCode() != null ? request.bankCode() : existing.getBankCode())
                 .accountHolder(request.accountHolder() != null ? request.accountHolder() : existing.getAccountHolder())
-                .accountNumberEnc(accountNumberEnc)
+                .accountNumberEnc(accountNumber) // JPA Converter가 자동 암호화
                 .accountNumberMask(accountNumberMask)
                 .isActive(existing.getIsActive())
                 .build();
@@ -75,11 +76,6 @@ public class StoreAccountService {
     @Transactional
     public void deleteStoreAccount(Long id) {
         storeAccountRepository.deleteById(id);
-    }
-
-    private String encryptAccountNumber(String accountNumber) {
-        // TODO: 실제 암호화 로직 구현 필요
-        return accountNumber;
     }
 
     private String maskAccountNumber(String accountNumber) {

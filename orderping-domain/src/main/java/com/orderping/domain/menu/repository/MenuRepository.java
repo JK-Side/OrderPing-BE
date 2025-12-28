@@ -18,4 +18,6 @@ public interface MenuRepository {
     List<Menu> findAvailableByStoreId(Long storeId);
 
     void deleteById(Long id);
+
+    int decreaseStock(Long id, Long quantity);
 }

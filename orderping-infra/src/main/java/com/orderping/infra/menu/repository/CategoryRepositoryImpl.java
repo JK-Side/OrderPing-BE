@@ -29,8 +29,8 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     }
 
     @Override
-    public List<Category> findByStoreId(Long storeId) {
-        return jpaRepository.findByStoreId(storeId).stream()
+    public List<Category> findAll() {
+        return jpaRepository.findAll().stream()
                 .map(CategoryEntity::toDomain)
                 .toList();
     }

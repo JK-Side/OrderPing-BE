@@ -36,6 +36,9 @@ public class MenuEntity {
     @Column(name = "image_url", length = 256)
     private String imageUrl;
 
+    @Column(name = "initial_stock", nullable = false)
+    private Long initialStock;
+
     @Column(nullable = false)
     private Long stock;
 
@@ -43,7 +46,7 @@ public class MenuEntity {
     private Boolean isSoldOut;
 
     @Builder
-    public MenuEntity(Long id, Long storeId, Long categoryId, String name, Long price, String description, String imageUrl, Long stock, Boolean isSoldOut) {
+    public MenuEntity(Long id, Long storeId, Long categoryId, String name, Long price, String description, String imageUrl, Long initialStock, Long stock, Boolean isSoldOut) {
         this.id = id;
         this.storeId = storeId;
         this.categoryId = categoryId;
@@ -51,12 +54,16 @@ public class MenuEntity {
         this.price = price;
         this.description = description;
         this.imageUrl = imageUrl;
+        this.initialStock = initialStock;
         this.stock = stock;
         this.isSoldOut = isSoldOut;
     }
 
     @PrePersist
     protected void onCreate() {
+        if (this.initialStock == null) {
+            this.initialStock = 0L;
+        }
         if (this.stock == null) {
             this.stock = 0L;
         }
@@ -75,6 +82,7 @@ public class MenuEntity {
                 .price(menu.getPrice())
                 .description(menu.getDescription())
                 .imageUrl(menu.getImageUrl())
+                .initialStock(menu.getInitialStock())
                 .stock(menu.getStock())
                 .isSoldOut(menu.getIsSoldOut())
                 .build();
@@ -90,6 +98,7 @@ public class MenuEntity {
                 .price(this.price)
                 .description(this.description)
                 .imageUrl(this.imageUrl)
+                .initialStock(this.initialStock)
                 .stock(this.stock)
                 .isSoldOut(this.isSoldOut)
                 .build();

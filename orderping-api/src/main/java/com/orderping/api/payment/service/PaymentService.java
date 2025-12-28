@@ -5,6 +5,7 @@ import com.orderping.api.payment.dto.PaymentResponse;
 import com.orderping.domain.enums.PaymentStatus;
 import com.orderping.domain.payment.Payment;
 import com.orderping.domain.payment.repository.PaymentRepository;
+import com.orderping.domain.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,7 @@ public class PaymentService {
 
     public PaymentResponse getPayment(Long id) {
         Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Payment not found: " + id));
+                .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
         return PaymentResponse.from(payment);
     }
 
@@ -46,7 +47,7 @@ public class PaymentService {
     @Transactional
     public PaymentResponse completePayment(Long id) {
         Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Payment not found: " + id));
+                .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
 
         Payment updated = Payment.builder()
                 .id(payment.getId())
@@ -64,7 +65,7 @@ public class PaymentService {
     @Transactional
     public PaymentResponse failPayment(Long id) {
         Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Payment not found: " + id));
+                .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
 
         Payment updated = Payment.builder()
                 .id(payment.getId())

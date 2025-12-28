@@ -1,6 +1,7 @@
 package com.orderping.infra.store.entity;
 
 import com.orderping.domain.store.StoreAccount;
+import com.orderping.infra.crypto.EncryptConverter;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -24,7 +25,11 @@ public class StoreAccountEntity {
     @Column(name = "bank_code", nullable = false, length = 10)
     private String bankCode;
 
+    @Column(name = "account_holder", nullable = false, length = 50)
+    private String accountHolder;
+
     @Column(name = "account_number_enc", nullable = false, length = 256)
+    @Convert(converter = EncryptConverter.class)
     private String accountNumberEnc;
 
     @Column(name = "account_number_mask", nullable = false, length = 50)
@@ -34,10 +39,11 @@ public class StoreAccountEntity {
     private Boolean isActive;
 
     @Builder
-    public StoreAccountEntity(Long id, Long storeId, String bankCode, String accountNumberEnc, String accountNumberMask, Boolean isActive) {
+    public StoreAccountEntity(Long id, Long storeId, String bankCode, String accountHolder, String accountNumberEnc, String accountNumberMask, Boolean isActive) {
         this.id = id;
         this.storeId = storeId;
         this.bankCode = bankCode;
+        this.accountHolder = accountHolder;
         this.accountNumberEnc = accountNumberEnc;
         this.accountNumberMask = accountNumberMask;
         this.isActive = isActive;
@@ -56,6 +62,7 @@ public class StoreAccountEntity {
                 .id(storeAccount.getId())
                 .storeId(storeAccount.getStoreId())
                 .bankCode(storeAccount.getBankCode())
+                .accountHolder(storeAccount.getAccountHolder())
                 .accountNumberEnc(storeAccount.getAccountNumberEnc())
                 .accountNumberMask(storeAccount.getAccountNumberMask())
                 .isActive(storeAccount.getIsActive())
@@ -68,6 +75,7 @@ public class StoreAccountEntity {
                 .id(this.id)
                 .storeId(this.storeId)
                 .bankCode(this.bankCode)
+                .accountHolder(this.accountHolder)
                 .accountNumberEnc(this.accountNumberEnc)
                 .accountNumberMask(this.accountNumberMask)
                 .isActive(this.isActive)

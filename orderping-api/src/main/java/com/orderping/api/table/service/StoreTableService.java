@@ -6,6 +6,7 @@ import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.store.StoreTable;
 import com.orderping.domain.store.repository.StoreTableRepository;
+import com.orderping.domain.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,7 @@ public class StoreTableService {
 
     public StoreTableResponse getStoreTable(Long id) {
         StoreTable storeTable = storeTableRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("StoreTable not found: " + id));
+                .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
         return StoreTableResponse.from(storeTable);
     }
 
@@ -52,7 +53,7 @@ public class StoreTableService {
     @Transactional
     public StoreTableResponse updateStoreTableStatus(Long id, StoreTableStatusUpdateRequest request) {
         StoreTable storeTable = storeTableRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("StoreTable not found: " + id));
+                .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
 
         StoreTable updated = StoreTable.builder()
                 .id(storeTable.getId())
@@ -73,7 +74,7 @@ public class StoreTableService {
     @Transactional
     public StoreTableResponse clearTable(Long id) {
         StoreTable currentTable = storeTableRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("StoreTable not found: " + id));
+                .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
 
         // 기존 테이블 종료 처리
         StoreTable closedTable = StoreTable.builder()

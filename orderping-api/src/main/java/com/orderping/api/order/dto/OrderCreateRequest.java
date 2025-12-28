@@ -7,6 +7,7 @@ public record OrderCreateRequest(
         Long storeId,
         String sessionId,
         String depositorName,
+        Long couponAmount,
         List<OrderMenuRequest> menus
 ) {
     public record OrderMenuRequest(

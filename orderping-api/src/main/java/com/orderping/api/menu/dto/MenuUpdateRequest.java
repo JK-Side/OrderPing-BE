@@ -6,6 +6,7 @@ public record MenuUpdateRequest(
         Long price,
         String description,
         String imageUrl,
+        Long initialStock,
         Long stock,
         Boolean isSoldOut
 ) {

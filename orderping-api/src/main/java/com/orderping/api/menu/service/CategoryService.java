@@ -4,6 +4,7 @@ import com.orderping.api.menu.dto.CategoryCreateRequest;
 import com.orderping.api.menu.dto.CategoryResponse;
 import com.orderping.domain.menu.Category;
 import com.orderping.domain.menu.repository.CategoryRepository;
+import com.orderping.domain.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +21,6 @@ public class CategoryService {
     @Transactional
     public CategoryResponse createCategory(CategoryCreateRequest request) {
         Category category = Category.builder()
-                .storeId(request.storeId())
                 .name(request.name())
                 .build();
 
@@ -30,12 +30,12 @@ public class CategoryService {
 
     public CategoryResponse getCategory(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Category not found: " + id));
+                .orElseThrow(() -> new NotFoundException("카테고리를 찾을 수 없습니다."));
         return CategoryResponse.from(category);
     }
 
-    public List<CategoryResponse> getCategoriesByStoreId(Long storeId) {
-        return categoryRepository.findByStoreId(storeId).stream()
+    public List<CategoryResponse> getAllCategories() {
+        return categoryRepository.findAll().stream()
                 .map(CategoryResponse::from)
                 .toList();
     }

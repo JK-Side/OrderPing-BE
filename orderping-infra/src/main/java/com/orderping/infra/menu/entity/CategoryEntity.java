@@ -18,16 +18,12 @@ public class CategoryEntity {
     @Column(name = "category_id")
     private Long id;
 
-    @Column(name = "store_id", nullable = false)
-    private Long storeId;
-
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, unique = true)
     private String name;
 
     @Builder
-    public CategoryEntity(Long id, Long storeId, String name) {
+    public CategoryEntity(Long id, String name) {
         this.id = id;
-        this.storeId = storeId;
         this.name = name;
     }
 
@@ -35,7 +31,6 @@ public class CategoryEntity {
     public static CategoryEntity from(Category category) {
         return CategoryEntity.builder()
                 .id(category.getId())
-                .storeId(category.getStoreId())
                 .name(category.getName())
                 .build();
     }
@@ -44,7 +39,6 @@ public class CategoryEntity {
     public Category toDomain() {
         return Category.builder()
                 .id(this.id)
-                .storeId(this.storeId)
                 .name(this.name)
                 .build();
     }

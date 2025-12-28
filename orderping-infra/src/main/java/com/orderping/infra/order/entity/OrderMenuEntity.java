@@ -30,13 +30,24 @@ public class OrderMenuEntity {
     @Column(nullable = false)
     private Long price;
 
+    @Column(name = "is_service", nullable = false)
+    private Boolean isService;
+
     @Builder
-    public OrderMenuEntity(Long id, Long orderId, Long menuId, Long quantity, Long price) {
+    public OrderMenuEntity(Long id, Long orderId, Long menuId, Long quantity, Long price, Boolean isService) {
         this.id = id;
         this.orderId = orderId;
         this.menuId = menuId;
         this.quantity = quantity;
         this.price = price;
+        this.isService = isService;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.isService == null) {
+            this.isService = false;
+        }
     }
 
     // Domain -> Entity
@@ -47,6 +58,7 @@ public class OrderMenuEntity {
                 .menuId(orderMenu.getMenuId())
                 .quantity(orderMenu.getQuantity())
                 .price(orderMenu.getPrice())
+                .isService(orderMenu.getIsService())
                 .build();
     }
 
@@ -58,6 +70,7 @@ public class OrderMenuEntity {
                 .menuId(this.menuId)
                 .quantity(this.quantity)
                 .price(this.price)
+                .isService(this.isService)
                 .build();
     }
 }

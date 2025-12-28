@@ -8,6 +8,9 @@ import com.orderping.domain.order.Order;
 import com.orderping.domain.order.OrderMenu;
 import com.orderping.domain.order.repository.OrderMenuRepository;
 import com.orderping.domain.order.repository.OrderRepository;
+import com.orderping.domain.menu.repository.MenuRepository;
+import com.orderping.domain.exception.NotFoundException;
+import com.orderping.domain.exception.OutOfStockException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,14 +24,25 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderMenuRepository orderMenuRepository;
+    private final MenuRepository menuRepository;
 
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest request) {
+        // 재고 차감 (서비스 메뉴 포함 - 서비스도 재고 관리 필요)
+        for (OrderCreateRequest.OrderMenuRequest menuRequest : request.menus()) {
+            int updated = menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
+            if (updated == 0) {
+                throw new OutOfStockException("메뉴 ID " + menuRequest.menuId() + "의 재고가 부족합니다.");
+            }
+        }
+
         // 서비스 메뉴는 가격 계산에서 제외 (0원)
         long totalPrice = request.menus().stream()
                 .filter(m -> !Boolean.TRUE.equals(m.isService()))
                 .mapToLong(m -> m.price() * m.quantity())
                 .sum();
+
+        Long couponAmount = request.couponAmount() != null ? request.couponAmount() : 0L;
 
         Order order = Order.builder()
                 .tableId(request.tableId())
@@ -37,6 +51,7 @@ public class OrderService {
                 .depositorName(request.depositorName())
                 .status(OrderStatus.PENDING)
                 .totalPrice(totalPrice)
+                .couponAmount(couponAmount)
                 .build();
 
         Order savedOrder = orderRepository.save(order);
@@ -58,7 +73,7 @@ public class OrderService {
 
     public OrderResponse getOrder(Long id) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
+                .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
         return OrderResponse.from(order);
     }
 
@@ -83,7 +98,7 @@ public class OrderService {
     @Transactional
     public OrderResponse updateOrderStatus(Long id, OrderStatusUpdateRequest request) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + id));
+                .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
 
         Order updated = Order.builder()
                 .id(order.getId())
@@ -93,6 +108,7 @@ public class OrderService {
                 .depositorName(order.getDepositorName())
                 .status(request.status())
                 .totalPrice(order.getTotalPrice())
+                .couponAmount(order.getCouponAmount())
                 .createdAt(order.getCreatedAt())
                 .build();
 

@@ -53,4 +53,9 @@ public class MenuRepositoryImpl implements MenuRepository {
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
     }
+
+    @Override
+    public int decreaseStock(Long id, Long quantity) {
+        return jpaRepository.decreaseStock(id, quantity);
+    }
 }

@@ -13,6 +13,8 @@ public record OrderResponse(
         String depositorName,
         OrderStatus status,
         Long totalPrice,
+        Long couponAmount,
+        Long cashAmount,
         LocalDateTime createdAt
 ) {
     public static OrderResponse from(Order order) {
@@ -24,6 +26,8 @@ public record OrderResponse(
                 order.getDepositorName(),
                 order.getStatus(),
                 order.getTotalPrice(),
+                order.getCouponAmount(),
+                order.getCashAmount(),
                 order.getCreatedAt()
         );
     }

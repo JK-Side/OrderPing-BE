@@ -13,7 +13,15 @@ public class Order {
     private final Long tableId;
     private final Long storeId;
     private final String sessionId;
+    private final String depositorName;
     private final OrderStatus status;
     private final Long totalPrice;
+    private final Long couponAmount;
     private final LocalDateTime createdAt;
+
+    public Long getCashAmount() {
+        long coupon = couponAmount != null ? couponAmount : 0L;
+        long total = totalPrice != null ? totalPrice : 0L;
+        return total - coupon;
+    }
 }
