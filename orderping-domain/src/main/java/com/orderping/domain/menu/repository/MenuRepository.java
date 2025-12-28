@@ -20,4 +20,6 @@ public interface MenuRepository {
     void deleteById(Long id);
 
     int decreaseStock(Long id, Long quantity);
+
+    Optional<Menu> findByIdWithLock(Long id);
 }

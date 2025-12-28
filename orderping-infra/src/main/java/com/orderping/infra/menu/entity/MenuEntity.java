@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -51,6 +52,9 @@ public class MenuEntity {
 
     @Column(name = "is_sold_out", nullable = false)
     private Boolean isSoldOut;
+
+    @Version
+    private Long version;
 
     @Builder
     public MenuEntity(Long id, Long storeId, Long categoryId, String name, Long price, String description,

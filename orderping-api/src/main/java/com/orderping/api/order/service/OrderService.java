@@ -11,6 +11,7 @@ import com.orderping.api.order.dto.OrderStatusUpdateRequest;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.exception.OutOfStockException;
+import com.orderping.domain.menu.Menu;
 import com.orderping.domain.menu.repository.MenuRepository;
 import com.orderping.domain.order.Order;
 import com.orderping.domain.order.OrderMenu;
@@ -30,12 +31,18 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest request) {
-        // 재고 차감 (서비스 메뉴 포함 - 서비스도 재고 관리 필요)
+        // 비관적 락으로 메뉴 조회 및 재고 검증
         for (OrderCreateRequest.OrderMenuRequest menuRequest : request.menus()) {
-            int updated = menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
-            if (updated == 0) {
-                throw new OutOfStockException("메뉴 ID " + menuRequest.menuId() + "의 재고가 부족합니다.");
+            Menu menu = menuRepository.findByIdWithLock(menuRequest.menuId())
+                .orElseThrow(() -> new NotFoundException("메뉴 ID " + menuRequest.menuId() + "를 찾을 수 없습니다."));
+
+            if (menu.getStock() < menuRequest.quantity()) {
+                throw new OutOfStockException(
+                    String.format("'%s' 메뉴의 재고가 부족합니다. (현재: %d, 요청: %d)",
+                        menu.getName(), menu.getStock(), menuRequest.quantity()));
             }
+
+            menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
         }
 
         // 서비스 메뉴는 가격 계산에서 제외 (0원)
