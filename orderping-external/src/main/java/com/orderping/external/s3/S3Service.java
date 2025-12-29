@@ -1,6 +1,7 @@
 package com.orderping.external.s3;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -19,6 +20,8 @@ public class S3Service {
     private final S3Properties s3Properties;
 
     private static final Duration PRESIGNED_URL_EXPIRATION = Duration.ofMinutes(10);
+    private static final Set<String> ALLOWED_DIRECTORIES = Set.of("menus", "stores");
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp");
 
     /**
      * 이미지 업로드용 Presigned URL 생성
@@ -28,7 +31,12 @@ public class S3Service {
      * @return Presigned URL 정보
      */
     public PresignedUrlResponse generatePresignedUrl(String directory, String originalFileName) {
-        String extension = extractExtension(originalFileName);
+        validateDirectory(directory);
+        validateFileName(originalFileName);
+
+        String extension = extractExtension(originalFileName).toLowerCase();
+        validateExtension(extension);
+
         String key = generateKey(directory, extension);
 
         PutObjectRequest objectRequest = PutObjectRequest.builder()
@@ -65,6 +73,33 @@ public class S3Service {
             return "";
         }
         return fileName.substring(fileName.lastIndexOf("."));
+    }
+
+    private void validateDirectory(String directory) {
+        if (directory == null || directory.isBlank()) {
+            throw new IllegalArgumentException("디렉토리명은 필수입니다.");
+        }
+        if (directory.contains("..") || directory.contains("/") || directory.contains("\\")) {
+            throw new IllegalArgumentException("유효하지 않은 디렉토리명입니다.");
+        }
+        if (!ALLOWED_DIRECTORIES.contains(directory)) {
+            throw new IllegalArgumentException("허용되지 않은 디렉토리입니다. 허용: " + ALLOWED_DIRECTORIES);
+        }
+    }
+
+    private void validateFileName(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            throw new IllegalArgumentException("파일명은 필수입니다.");
+        }
+        if (fileName.contains("..") || fileName.contains("/") || fileName.contains("\\")) {
+            throw new IllegalArgumentException("유효하지 않은 파일명입니다.");
+        }
+    }
+
+    private void validateExtension(String extension) {
+        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            throw new IllegalArgumentException("허용되지 않은 파일 형식입니다. 허용: " + ALLOWED_EXTENSIONS);
+        }
     }
 
     public record PresignedUrlResponse(
