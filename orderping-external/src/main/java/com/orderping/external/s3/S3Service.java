@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.orderping.domain.exception.BadRequestException;
+
 import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -77,28 +79,28 @@ public class S3Service {
 
     private void validateDirectory(String directory) {
         if (directory == null || directory.isBlank()) {
-            throw new IllegalArgumentException("디렉토리명은 필수입니다.");
+            throw new BadRequestException("디렉토리명은 필수입니다.");
         }
         if (directory.contains("..") || directory.contains("/") || directory.contains("\\")) {
-            throw new IllegalArgumentException("유효하지 않은 디렉토리명입니다.");
+            throw new BadRequestException("유효하지 않은 디렉토리명입니다.");
         }
         if (!ALLOWED_DIRECTORIES.contains(directory)) {
-            throw new IllegalArgumentException("허용되지 않은 디렉토리입니다. 허용: " + ALLOWED_DIRECTORIES);
+            throw new BadRequestException("허용되지 않은 디렉토리입니다. 허용: " + ALLOWED_DIRECTORIES);
         }
     }
 
     private void validateFileName(String fileName) {
         if (fileName == null || fileName.isBlank()) {
-            throw new IllegalArgumentException("파일명은 필수입니다.");
+            throw new BadRequestException("파일명은 필수입니다.");
         }
         if (fileName.contains("..") || fileName.contains("/") || fileName.contains("\\")) {
-            throw new IllegalArgumentException("유효하지 않은 파일명입니다.");
+            throw new BadRequestException("유효하지 않은 파일명입니다.");
         }
     }
 
     private void validateExtension(String extension) {
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            throw new IllegalArgumentException("허용되지 않은 파일 형식입니다. 허용: " + ALLOWED_EXTENSIONS);
+            throw new BadRequestException("허용되지 않은 파일 형식입니다. 허용: " + ALLOWED_EXTENSIONS);
         }
     }
 
