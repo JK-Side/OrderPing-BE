@@ -17,12 +17,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "StoreAccount", description = "매장 계좌 관리 API")
 public interface StoreAccountApi {
 
-    @Operation(summary = "계좌 등록", description = "매장에 새로운 계좌를 등록합니다")
+    @Operation(summary = "계좌 등록", description = "매장에 새로운 계좌를 등록합니다 (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "계좌 등록 성공"),
-        @ApiResponse(responseCode = "400", description = "잘못된 요청")
+        @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님")
     })
-    ResponseEntity<StoreAccountResponse> createStoreAccount(StoreAccountCreateRequest request);
+    ResponseEntity<StoreAccountResponse> createStoreAccount(
+        @Parameter(hidden = true) Long userId,
+        StoreAccountCreateRequest request
+    );
 
     @Operation(summary = "계좌 조회", description = "ID로 계좌를 조회합니다")
     @ApiResponses({
@@ -33,28 +38,39 @@ public interface StoreAccountApi {
         @Parameter(description = "계좌 ID", required = true) Long id
     );
 
-    @Operation(summary = "매장별 계좌 목록", description = "매장 ID로 계좌 목록을 조회합니다")
-    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @Operation(summary = "매장별 계좌 목록", description = "매장 ID로 계좌 목록을 조회합니다 (본인 매장만 가능)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님")
+    })
     ResponseEntity<List<StoreAccountResponse>> getStoreAccountsByStoreId(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "매장 ID", required = true) Long storeId
     );
 
-    @Operation(summary = "계좌 수정", description = "계좌 정보를 수정합니다")
+    @Operation(summary = "계좌 수정", description = "계좌 정보를 수정합니다 (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "수정 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
         @ApiResponse(responseCode = "404", description = "계좌를 찾을 수 없음")
     })
     ResponseEntity<StoreAccountResponse> updateStoreAccount(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "계좌 ID", required = true) Long id,
         StoreAccountUpdateRequest request
     );
 
-    @Operation(summary = "계좌 삭제", description = "ID로 계좌를 삭제합니다")
+    @Operation(summary = "계좌 삭제", description = "ID로 계좌를 삭제합니다 (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "삭제 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
         @ApiResponse(responseCode = "404", description = "계좌를 찾을 수 없음")
     })
     ResponseEntity<Void> deleteStoreAccount(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "계좌 ID", required = true) Long id
     );
 }

@@ -8,9 +8,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.orderping.api.store.dto.StoreAccountCreateRequest;
 import com.orderping.api.store.dto.StoreAccountResponse;
 import com.orderping.api.store.dto.StoreAccountUpdateRequest;
+import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
+import com.orderping.domain.store.Store;
 import com.orderping.domain.store.StoreAccount;
 import com.orderping.domain.store.repository.StoreAccountRepository;
+import com.orderping.domain.store.repository.StoreRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,9 +23,11 @@ import lombok.RequiredArgsConstructor;
 public class StoreAccountService {
 
     private final StoreAccountRepository storeAccountRepository;
+    private final StoreRepository storeRepository;
 
     @Transactional
-    public StoreAccountResponse createStoreAccount(StoreAccountCreateRequest request) {
+    public StoreAccountResponse createStoreAccount(Long userId, StoreAccountCreateRequest request) {
+        validateStoreOwner(request.storeId(), userId);
         StoreAccount storeAccount = StoreAccount.builder()
             .storeId(request.storeId())
             .bankCode(request.bankCode())
@@ -42,16 +47,18 @@ public class StoreAccountService {
         return StoreAccountResponse.from(storeAccount);
     }
 
-    public List<StoreAccountResponse> getStoreAccountsByStoreId(Long storeId) {
+    public List<StoreAccountResponse> getStoreAccountsByStoreId(Long userId, Long storeId) {
+        validateStoreOwner(storeId, userId);
         return storeAccountRepository.findByStoreId(storeId).stream()
             .map(StoreAccountResponse::from)
             .toList();
     }
 
     @Transactional
-    public StoreAccountResponse updateStoreAccount(Long id, StoreAccountUpdateRequest request) {
+    public StoreAccountResponse updateStoreAccount(Long userId, Long id, StoreAccountUpdateRequest request) {
         StoreAccount existing = storeAccountRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("계좌 정보를 찾을 수 없습니다."));
+        validateStoreOwner(existing.getStoreId(), userId);
 
         String accountNumber = existing.getAccountNumberEnc(); // 이미 복호화된 값
         String accountNumberMask = existing.getAccountNumberMask();
@@ -76,8 +83,19 @@ public class StoreAccountService {
     }
 
     @Transactional
-    public void deleteStoreAccount(Long id) {
+    public void deleteStoreAccount(Long userId, Long id) {
+        StoreAccount storeAccount = storeAccountRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("계좌 정보를 찾을 수 없습니다."));
+        validateStoreOwner(storeAccount.getStoreId(), userId);
         storeAccountRepository.deleteById(id);
+    }
+
+    private void validateStoreOwner(Long storeId, Long userId) {
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new NotFoundException("매장을 찾을 수 없습니다."));
+        if (!store.getUserId().equals(userId)) {
+            throw new ForbiddenException("본인 매장의 계좌만 관리할 수 있습니다.");
+        }
     }
 
     private String maskAccountNumber(String accountNumber) {

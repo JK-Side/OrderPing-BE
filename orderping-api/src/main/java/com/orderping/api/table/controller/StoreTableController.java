@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
@@ -31,8 +32,11 @@ public class StoreTableController implements StoreTableApi {
 
     @PostMapping
     @Override
-    public ResponseEntity<StoreTableResponse> createStoreTable(@RequestBody StoreTableCreateRequest request) {
-        StoreTableResponse response = storeTableService.createStoreTable(request);
+    public ResponseEntity<StoreTableResponse> createStoreTable(
+        @CurrentUser Long userId,
+        @RequestBody StoreTableCreateRequest request
+    ) {
+        StoreTableResponse response = storeTableService.createStoreTable(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -45,40 +49,47 @@ public class StoreTableController implements StoreTableApi {
 
     @GetMapping(params = "storeId")
     @Override
-    public ResponseEntity<List<StoreTableResponse>> getStoreTablesByStoreId(@RequestParam Long storeId) {
-        List<StoreTableResponse> responses = storeTableService.getStoreTablesByStoreId(storeId);
+    public ResponseEntity<List<StoreTableResponse>> getStoreTablesByStoreId(
+        @CurrentUser Long userId,
+        @RequestParam Long storeId
+    ) {
+        List<StoreTableResponse> responses = storeTableService.getStoreTablesByStoreId(userId, storeId);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping(params = {"storeId", "status"})
     @Override
     public ResponseEntity<List<StoreTableResponse>> getStoreTablesByStoreIdAndStatus(
+        @CurrentUser Long userId,
         @RequestParam Long storeId,
-        @RequestParam TableStatus status) {
-        List<StoreTableResponse> responses = storeTableService.getStoreTablesByStoreIdAndStatus(storeId, status);
+        @RequestParam TableStatus status
+    ) {
+        List<StoreTableResponse> responses = storeTableService.getStoreTablesByStoreIdAndStatus(userId, storeId, status);
         return ResponseEntity.ok(responses);
     }
 
     @PatchMapping("/{id}/status")
     @Override
     public ResponseEntity<StoreTableResponse> updateStoreTableStatus(
+        @CurrentUser Long userId,
         @PathVariable Long id,
-        @RequestBody StoreTableStatusUpdateRequest request) {
-        StoreTableResponse response = storeTableService.updateStoreTableStatus(id, request);
+        @RequestBody StoreTableStatusUpdateRequest request
+    ) {
+        StoreTableResponse response = storeTableService.updateStoreTableStatus(userId, id, request);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     @Override
-    public ResponseEntity<Void> deleteStoreTable(@PathVariable Long id) {
-        storeTableService.deleteStoreTable(id);
+    public ResponseEntity<Void> deleteStoreTable(@CurrentUser Long userId, @PathVariable Long id) {
+        storeTableService.deleteStoreTable(userId, id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/clear")
     @Override
-    public ResponseEntity<StoreTableResponse> clearTable(@PathVariable Long id) {
-        StoreTableResponse response = storeTableService.clearTable(id);
+    public ResponseEntity<StoreTableResponse> clearTable(@CurrentUser Long userId, @PathVariable Long id) {
+        StoreTableResponse response = storeTableService.clearTable(userId, id);
         return ResponseEntity.ok(response);
     }
 }

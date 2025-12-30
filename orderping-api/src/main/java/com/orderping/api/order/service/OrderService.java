@@ -9,6 +9,7 @@ import com.orderping.api.order.dto.OrderCreateRequest;
 import com.orderping.api.order.dto.OrderResponse;
 import com.orderping.api.order.dto.OrderStatusUpdateRequest;
 import com.orderping.domain.enums.OrderStatus;
+import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.exception.OutOfStockException;
 import com.orderping.domain.menu.Menu;
@@ -17,6 +18,8 @@ import com.orderping.domain.order.Order;
 import com.orderping.domain.order.OrderMenu;
 import com.orderping.domain.order.repository.OrderMenuRepository;
 import com.orderping.domain.order.repository.OrderRepository;
+import com.orderping.domain.store.Store;
+import com.orderping.domain.store.repository.StoreRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +31,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderMenuRepository orderMenuRepository;
     private final MenuRepository menuRepository;
+    private final StoreRepository storeRepository;
 
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest request) {
@@ -86,13 +90,15 @@ public class OrderService {
         return OrderResponse.from(order);
     }
 
-    public List<OrderResponse> getOrdersByStoreId(Long storeId) {
+    public List<OrderResponse> getOrdersByStoreId(Long userId, Long storeId) {
+        validateStoreOwner(storeId, userId);
         return orderRepository.findByStoreId(storeId).stream()
             .map(OrderResponse::from)
             .toList();
     }
 
-    public List<OrderResponse> getOrdersByStoreIdAndStatus(Long storeId, OrderStatus status) {
+    public List<OrderResponse> getOrdersByStoreIdAndStatus(Long userId, Long storeId, OrderStatus status) {
+        validateStoreOwner(storeId, userId);
         return orderRepository.findByStoreIdAndStatus(storeId, status).stream()
             .map(OrderResponse::from)
             .toList();
@@ -105,9 +111,10 @@ public class OrderService {
     }
 
     @Transactional
-    public OrderResponse updateOrderStatus(Long id, OrderStatusUpdateRequest request) {
+    public OrderResponse updateOrderStatus(Long userId, Long id, OrderStatusUpdateRequest request) {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
+        validateStoreOwner(order.getStoreId(), userId);
 
         Order updated = Order.builder()
             .id(order.getId())
@@ -126,7 +133,18 @@ public class OrderService {
     }
 
     @Transactional
-    public void deleteOrder(Long id) {
+    public void deleteOrder(Long userId, Long id) {
+        Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
+        validateStoreOwner(order.getStoreId(), userId);
         orderRepository.deleteById(id);
+    }
+
+    private void validateStoreOwner(Long storeId, Long userId) {
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new NotFoundException("매장을 찾을 수 없습니다."));
+        if (!store.getUserId().equals(userId)) {
+            throw new ForbiddenException("본인 매장의 주문만 관리할 수 있습니다.");
+        }
     }
 }

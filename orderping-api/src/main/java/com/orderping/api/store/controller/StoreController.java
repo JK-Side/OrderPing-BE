@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.store.dto.StoreCreateRequest;
 import com.orderping.api.store.dto.StoreDetailResponse;
 import com.orderping.api.store.dto.StoreResponse;
@@ -31,8 +31,11 @@ public class StoreController implements StoreApi {
 
     @PostMapping
     @Override
-    public ResponseEntity<StoreResponse> createStore(@RequestBody StoreCreateRequest request) {
-        StoreResponse response = storeService.createStore(request);
+    public ResponseEntity<StoreResponse> createStore(
+        @CurrentUser Long userId,
+        @RequestBody StoreCreateRequest request
+    ) {
+        StoreResponse response = storeService.createStore(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -45,28 +48,35 @@ public class StoreController implements StoreApi {
 
     @GetMapping
     @Override
-    public ResponseEntity<List<StoreResponse>> getStoresByUserId(@RequestParam Long userId) {
+    public ResponseEntity<List<StoreResponse>> getStoresByUserId(@CurrentUser Long userId) {
         List<StoreResponse> responses = storeService.getStoresByUserId(userId);
         return ResponseEntity.ok(responses);
     }
 
     @DeleteMapping("/{id}")
     @Override
-    public ResponseEntity<Void> deleteStore(@PathVariable Long id) {
-        storeService.deleteStore(id);
+    public ResponseEntity<Void> deleteStore(@CurrentUser Long userId, @PathVariable Long id) {
+        storeService.deleteStore(id, userId);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}")
     @Override
-    public ResponseEntity<StoreResponse> updateStore(@PathVariable Long id, @RequestBody StoreUpdateRequest request) {
-        StoreResponse response = storeService.updateStore(id, request);
+    public ResponseEntity<StoreResponse> updateStore(
+        @CurrentUser Long userId,
+        @PathVariable Long id,
+        @RequestBody StoreUpdateRequest request
+    ) {
+        StoreResponse response = storeService.updateStore(id, userId, request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}/manage")
     @Override
-    public ResponseEntity<StoreDetailResponse> getStoreForManage(@PathVariable Long id, @RequestParam Long userId) {
+    public ResponseEntity<StoreDetailResponse> getStoreForManage(
+        @CurrentUser Long userId,
+        @PathVariable Long id
+    ) {
         StoreDetailResponse response = storeService.getStoreForManage(id, userId);
         return ResponseEntity.ok(response);
     }

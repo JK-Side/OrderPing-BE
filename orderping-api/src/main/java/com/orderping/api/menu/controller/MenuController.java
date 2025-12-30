@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.menu.dto.MenuCreateRequest;
 import com.orderping.api.menu.dto.MenuResponse;
 import com.orderping.api.menu.dto.MenuUpdateRequest;
@@ -30,8 +31,11 @@ public class MenuController implements MenuApi {
 
     @PostMapping
     @Override
-    public ResponseEntity<MenuResponse> createMenu(@RequestBody MenuCreateRequest request) {
-        MenuResponse response = menuService.createMenu(request);
+    public ResponseEntity<MenuResponse> createMenu(
+        @CurrentUser Long userId,
+        @RequestBody MenuCreateRequest request
+    ) {
+        MenuResponse response = menuService.createMenu(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -65,15 +69,19 @@ public class MenuController implements MenuApi {
 
     @DeleteMapping("/{id}")
     @Override
-    public ResponseEntity<Void> deleteMenu(@PathVariable Long id) {
-        menuService.deleteMenu(id);
+    public ResponseEntity<Void> deleteMenu(@CurrentUser Long userId, @PathVariable Long id) {
+        menuService.deleteMenu(userId, id);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}")
     @Override
-    public ResponseEntity<MenuResponse> updateMenu(@PathVariable Long id, @RequestBody MenuUpdateRequest request) {
-        MenuResponse response = menuService.updateMenu(id, request);
+    public ResponseEntity<MenuResponse> updateMenu(
+        @CurrentUser Long userId,
+        @PathVariable Long id,
+        @RequestBody MenuUpdateRequest request
+    ) {
+        MenuResponse response = menuService.updateMenu(userId, id, request);
         return ResponseEntity.ok(response);
     }
 }

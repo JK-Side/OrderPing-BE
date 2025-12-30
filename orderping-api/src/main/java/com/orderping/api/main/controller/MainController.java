@@ -3,9 +3,9 @@ package com.orderping.api.main.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.main.dto.MainResponse;
 import com.orderping.api.main.service.MainService;
 
@@ -20,7 +20,7 @@ public class MainController implements MainApi {
 
     @GetMapping
     @Override
-    public ResponseEntity<MainResponse> getMainInfo(@RequestParam Long userId) {
+    public ResponseEntity<MainResponse> getMainInfo(@CurrentUser Long userId) {
         MainResponse response = mainService.getMainInfo(userId);
         return ResponseEntity.ok(response);
     }
