@@ -30,7 +30,8 @@ public class ImageController implements ImageApi {
         PresignedUrlResponse response = new PresignedUrlResponse(
             s3Response.presignedUrl(),
             s3Response.imageUrl(),
-            s3Response.key()
+            s3Response.key(),
+            s3Response.maxFileSize()
         );
 
         return ResponseEntity.ok(response);
