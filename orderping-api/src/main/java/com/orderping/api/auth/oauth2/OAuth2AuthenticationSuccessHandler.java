@@ -34,7 +34,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         HttpServletResponse response,
         Authentication authentication
     ) throws IOException {
-        OAuth2UserPrincipal principal = (OAuth2UserPrincipal) authentication.getPrincipal();
+        OAuth2UserPrincipal principal = (OAuth2UserPrincipal)authentication.getPrincipal();
         User user = principal.getUser();
 
         String token = jwtTokenProvider.createToken(user.getId(), user.getNickname());

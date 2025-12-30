@@ -64,7 +64,8 @@ public class StoreTableController implements StoreTableApi {
         @RequestParam Long storeId,
         @RequestParam TableStatus status
     ) {
-        List<StoreTableResponse> responses = storeTableService.getStoreTablesByStoreIdAndStatus(userId, storeId, status);
+        List<StoreTableResponse> responses = storeTableService.getStoreTablesByStoreIdAndStatus(userId, storeId,
+            status);
         return ResponseEntity.ok(responses);
     }
 

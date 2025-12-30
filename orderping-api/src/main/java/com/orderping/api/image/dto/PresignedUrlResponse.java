@@ -12,4 +12,5 @@ public record PresignedUrlResponse(
 
     @Schema(description = "S3 객체 키")
     String key
-) {}
+) {
+}
