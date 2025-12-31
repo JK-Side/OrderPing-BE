@@ -46,8 +46,17 @@ public class JwtTokenProvider {
             .compact();
     }
 
-    public String createRefreshToken() {
-        return UUID.randomUUID().toString();
+    public String createRefreshToken(Long userId) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + refreshTokenExpiration);
+
+        return Jwts.builder()
+            .subject(String.valueOf(userId))
+            .claim("type", "refresh")
+            .issuedAt(now)
+            .expiration(expiryDate)
+            .signWith(secretKey)
+            .compact();
     }
 
     public LocalDateTime getRefreshTokenExpiryDate() {
@@ -76,6 +85,27 @@ public class JwtTokenProvider {
             return false;
         } catch (JwtException e) {
             return false;
+        }
+    }
+
+    public boolean validateRefreshToken(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            String type = claims.get("type", String.class);
+            return "refresh".equals(type);
+        } catch (ExpiredJwtException e) {
+            return false;
+        } catch (JwtException e) {
+            return false;
+        }
+    }
+
+    public Long getUserIdFromRefreshToken(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            return Long.parseLong(claims.getSubject());
+        } catch (ExpiredJwtException e) {
+            throw e;
         }
     }
 

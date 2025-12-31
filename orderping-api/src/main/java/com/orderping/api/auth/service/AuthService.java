@@ -13,6 +13,7 @@ import com.orderping.domain.user.User;
 import com.orderping.domain.user.repository.RefreshTokenRepository;
 import com.orderping.domain.user.repository.UserRepository;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -26,14 +27,11 @@ public class AuthService {
 
     @Transactional
     public TokenResponse createTokens(Long userId, String nickname) {
-        // 기존 refresh token 삭제
         refreshTokenRepository.deleteByUserId(userId);
 
-        // 새 토큰 생성
         String accessToken = jwtTokenProvider.createAccessToken(userId, nickname);
-        String refreshTokenValue = jwtTokenProvider.createRefreshToken();
+        String refreshTokenValue = jwtTokenProvider.createRefreshToken(userId);
 
-        // Refresh Token 저장
         RefreshToken refreshToken = RefreshToken.builder()
             .userId(userId)
             .token(refreshTokenValue)
@@ -47,21 +45,29 @@ public class AuthService {
 
     @Transactional
     public TokenResponse refreshTokens(TokenRefreshRequest request) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(request.refreshToken())
-            .orElseThrow(() -> new UnauthorizedException("유효하지 않은 Refresh Token입니다."));
+        String refreshTokenValue = request.refreshToken();
 
-        if (refreshToken.isExpired()) {
-            refreshTokenRepository.deleteByToken(request.refreshToken());
+        if (!jwtTokenProvider.validateRefreshToken(refreshTokenValue)) {
+            throw new UnauthorizedException("만료되었거나 유효하지 않은 Refresh Token입니다.");
+        }
+
+        refreshTokenRepository.findByToken(refreshTokenValue)
+            .orElseThrow(() -> new UnauthorizedException("로그아웃된 Refresh Token입니다."));
+
+        Long userId;
+        try {
+            userId = jwtTokenProvider.getUserIdFromRefreshToken(refreshTokenValue);
+        } catch (ExpiredJwtException e) {
+            refreshTokenRepository.deleteByToken(refreshTokenValue);
             throw new UnauthorizedException("만료된 Refresh Token입니다. 다시 로그인해주세요.");
         }
 
-        User user = userRepository.findById(refreshToken.getUserId())
+        User user = userRepository.findById(userId)
             .orElseThrow(() -> new NotFoundException("사용자를 찾을 수 없습니다."));
 
-        // 새 Access Token만 발급 (Refresh Token은 유지)
         String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getNickname());
 
-        return new TokenResponse(newAccessToken, request.refreshToken());
+        return new TokenResponse(newAccessToken, refreshTokenValue);
     }
 
     @Transactional
