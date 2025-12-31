@@ -40,6 +40,7 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/v3/api-docs/**",
                     "/api/images/**",
+                    "/api/auth/**",
                     // 고객용 공개 API
                     "/api/banks",
                     "/api/stores/*/order",

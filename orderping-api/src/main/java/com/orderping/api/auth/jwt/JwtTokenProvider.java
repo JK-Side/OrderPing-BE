@@ -1,6 +1,8 @@
 package com.orderping.api.auth.jwt;
 
+import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -17,27 +19,48 @@ import io.jsonwebtoken.security.Keys;
 public class JwtTokenProvider {
 
     private final SecretKey secretKey;
-    private final long expiration;
+    private final long accessTokenExpiration;
+    private final long refreshTokenExpiration;
 
     public JwtTokenProvider(
         @Value("${jwt.secret}") String secret,
-        @Value("${jwt.expiration}") long expiration
+        @Value("${jwt.expiration}") long accessTokenExpiration,
+        @Value("${jwt.refresh-expiration}") long refreshTokenExpiration
     ) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
-        this.expiration = expiration;
+        this.accessTokenExpiration = accessTokenExpiration;
+        this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
-    public String createToken(Long userId, String nickname) {
+    public String createAccessToken(Long userId, String nickname) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + expiration);
+        Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
 
         return Jwts.builder()
             .subject(String.valueOf(userId))
             .claim("nickname", nickname)
+            .claim("type", "access")
             .issuedAt(now)
             .expiration(expiryDate)
             .signWith(secretKey)
             .compact();
+    }
+
+    public String createRefreshToken() {
+        return UUID.randomUUID().toString();
+    }
+
+    public LocalDateTime getRefreshTokenExpiryDate() {
+        return LocalDateTime.now().plusSeconds(refreshTokenExpiration / 1000);
+    }
+
+    public long getRefreshTokenExpirationMs() {
+        return refreshTokenExpiration;
+    }
+
+    @Deprecated
+    public String createToken(Long userId, String nickname) {
+        return createAccessToken(userId, nickname);
     }
 
     public Long getUserIdFromToken(String token) {

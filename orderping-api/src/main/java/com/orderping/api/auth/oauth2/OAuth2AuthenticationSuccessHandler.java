@@ -8,7 +8,8 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.orderping.api.auth.jwt.JwtTokenProvider;
+import com.orderping.api.auth.dto.TokenResponse;
+import com.orderping.api.auth.service.AuthService;
 import com.orderping.domain.user.User;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,14 +18,14 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private final JwtTokenProvider jwtTokenProvider;
+    private final AuthService authService;
     private final String frontendUrl;
 
     public OAuth2AuthenticationSuccessHandler(
-        JwtTokenProvider jwtTokenProvider,
+        AuthService authService,
         @Value("${oauth2.frontend-url:http://localhost:3000}") String frontendUrl
     ) {
-        this.jwtTokenProvider = jwtTokenProvider;
+        this.authService = authService;
         this.frontendUrl = frontendUrl;
     }
 
@@ -37,10 +38,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         OAuth2UserPrincipal principal = (OAuth2UserPrincipal)authentication.getPrincipal();
         User user = principal.getUser();
 
-        String token = jwtTokenProvider.createToken(user.getId(), user.getNickname());
+        TokenResponse tokenResponse = authService.createTokens(user.getId(), user.getNickname());
 
         String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth/callback")
-            .queryParam("token", token)
+            .queryParam("accessToken", tokenResponse.accessToken())
+            .queryParam("refreshToken", tokenResponse.refreshToken())
             .build()
             .toUriString();
 
