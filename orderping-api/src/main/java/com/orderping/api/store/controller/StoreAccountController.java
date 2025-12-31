@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.store.dto.StoreAccountCreateRequest;
 import com.orderping.api.store.dto.StoreAccountResponse;
 import com.orderping.api.store.dto.StoreAccountUpdateRequest;
@@ -30,8 +31,11 @@ public class StoreAccountController implements StoreAccountApi {
 
     @PostMapping
     @Override
-    public ResponseEntity<StoreAccountResponse> createStoreAccount(@RequestBody StoreAccountCreateRequest request) {
-        StoreAccountResponse response = storeAccountService.createStoreAccount(request);
+    public ResponseEntity<StoreAccountResponse> createStoreAccount(
+        @CurrentUser Long userId,
+        @RequestBody StoreAccountCreateRequest request
+    ) {
+        StoreAccountResponse response = storeAccountService.createStoreAccount(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -44,23 +48,29 @@ public class StoreAccountController implements StoreAccountApi {
 
     @GetMapping(params = "storeId")
     @Override
-    public ResponseEntity<List<StoreAccountResponse>> getStoreAccountsByStoreId(@RequestParam Long storeId) {
-        List<StoreAccountResponse> responses = storeAccountService.getStoreAccountsByStoreId(storeId);
+    public ResponseEntity<List<StoreAccountResponse>> getStoreAccountsByStoreId(
+        @CurrentUser Long userId,
+        @RequestParam Long storeId
+    ) {
+        List<StoreAccountResponse> responses = storeAccountService.getStoreAccountsByStoreId(userId, storeId);
         return ResponseEntity.ok(responses);
     }
 
     @PutMapping("/{id}")
     @Override
-    public ResponseEntity<StoreAccountResponse> updateStoreAccount(@PathVariable Long id,
-        @RequestBody StoreAccountUpdateRequest request) {
-        StoreAccountResponse response = storeAccountService.updateStoreAccount(id, request);
+    public ResponseEntity<StoreAccountResponse> updateStoreAccount(
+        @CurrentUser Long userId,
+        @PathVariable Long id,
+        @RequestBody StoreAccountUpdateRequest request
+    ) {
+        StoreAccountResponse response = storeAccountService.updateStoreAccount(userId, id, request);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     @Override
-    public ResponseEntity<Void> deleteStoreAccount(@PathVariable Long id) {
-        storeAccountService.deleteStoreAccount(id);
+    public ResponseEntity<Void> deleteStoreAccount(@CurrentUser Long userId, @PathVariable Long id) {
+        storeAccountService.deleteStoreAccount(userId, id);
         return ResponseEntity.noContent().build();
     }
 }

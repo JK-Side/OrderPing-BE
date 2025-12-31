@@ -34,15 +34,25 @@ public interface OrderApi {
         @Parameter(description = "주문 ID", required = true) Long id
     );
 
-    @Operation(summary = "매장별 주문 목록", description = "매장 ID로 주문 목록을 조회합니다")
-    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @Operation(summary = "매장별 주문 목록", description = "매장 ID로 주문 목록을 조회합니다 (본인 매장만 가능)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님")
+    })
     ResponseEntity<List<OrderResponse>> getOrdersByStoreId(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "매장 ID", required = true) Long storeId
     );
 
-    @Operation(summary = "매장별 상태별 주문 목록", description = "매장 ID와 주문 상태로 주문 목록을 조회합니다")
-    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @Operation(summary = "매장별 상태별 주문 목록", description = "매장 ID와 주문 상태로 주문 목록을 조회합니다 (본인 매장만 가능)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님")
+    })
     ResponseEntity<List<OrderResponse>> getOrdersByStoreIdAndStatus(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "매장 ID", required = true) Long storeId,
         @Parameter(description = "주문 상태", required = true) OrderStatus status
     );
@@ -53,22 +63,28 @@ public interface OrderApi {
         @Parameter(description = "테이블 ID", required = true) Long tableId
     );
 
-    @Operation(summary = "주문 상태 변경", description = "주문 상태를 변경합니다")
+    @Operation(summary = "주문 상태 변경", description = "주문 상태를 변경합니다 (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "상태 변경 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
         @ApiResponse(responseCode = "404", description = "주문을 찾을 수 없음")
     })
     ResponseEntity<OrderResponse> updateOrderStatus(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "주문 ID", required = true) Long id,
         OrderStatusUpdateRequest request
     );
 
-    @Operation(summary = "주문 삭제", description = "ID로 주문을 삭제합니다")
+    @Operation(summary = "주문 삭제", description = "ID로 주문을 삭제합니다 (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "삭제 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
         @ApiResponse(responseCode = "404", description = "주문을 찾을 수 없음")
     })
     ResponseEntity<Void> deleteOrder(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "주문 ID", required = true) Long id
     );
 }

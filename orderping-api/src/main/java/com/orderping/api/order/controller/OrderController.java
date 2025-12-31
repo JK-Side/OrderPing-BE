@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.order.dto.OrderCreateRequest;
 import com.orderping.api.order.dto.OrderResponse;
 import com.orderping.api.order.dto.OrderStatusUpdateRequest;
@@ -45,17 +46,22 @@ public class OrderController implements OrderApi {
 
     @GetMapping(params = "storeId")
     @Override
-    public ResponseEntity<List<OrderResponse>> getOrdersByStoreId(@RequestParam Long storeId) {
-        List<OrderResponse> responses = orderService.getOrdersByStoreId(storeId);
+    public ResponseEntity<List<OrderResponse>> getOrdersByStoreId(
+        @CurrentUser Long userId,
+        @RequestParam Long storeId
+    ) {
+        List<OrderResponse> responses = orderService.getOrdersByStoreId(userId, storeId);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping(params = {"storeId", "status"})
     @Override
     public ResponseEntity<List<OrderResponse>> getOrdersByStoreIdAndStatus(
+        @CurrentUser Long userId,
         @RequestParam Long storeId,
-        @RequestParam OrderStatus status) {
-        List<OrderResponse> responses = orderService.getOrdersByStoreIdAndStatus(storeId, status);
+        @RequestParam OrderStatus status
+    ) {
+        List<OrderResponse> responses = orderService.getOrdersByStoreIdAndStatus(userId, storeId, status);
         return ResponseEntity.ok(responses);
     }
 
@@ -69,16 +75,18 @@ public class OrderController implements OrderApi {
     @PatchMapping("/{id}/status")
     @Override
     public ResponseEntity<OrderResponse> updateOrderStatus(
+        @CurrentUser Long userId,
         @PathVariable Long id,
-        @RequestBody OrderStatusUpdateRequest request) {
-        OrderResponse response = orderService.updateOrderStatus(id, request);
+        @RequestBody OrderStatusUpdateRequest request
+    ) {
+        OrderResponse response = orderService.updateOrderStatus(userId, id, request);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     @Override
-    public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
-        orderService.deleteOrder(id);
+    public ResponseEntity<Void> deleteOrder(@CurrentUser Long userId, @PathVariable Long id) {
+        orderService.deleteOrder(userId, id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -11,5 +11,9 @@ public record PresignedUrlResponse(
     String imageUrl,
 
     @Schema(description = "S3 객체 키")
-    String key
-) {}
+    String key,
+
+    @Schema(description = "최대 파일 크기 (bytes)", example = "10485760")
+    long maxFileSize
+) {
+}

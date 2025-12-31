@@ -8,9 +8,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.orderping.api.menu.dto.MenuCreateRequest;
 import com.orderping.api.menu.dto.MenuResponse;
 import com.orderping.api.menu.dto.MenuUpdateRequest;
+import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.menu.Menu;
 import com.orderping.domain.menu.repository.MenuRepository;
+import com.orderping.domain.store.Store;
+import com.orderping.domain.store.repository.StoreRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,9 +23,11 @@ import lombok.RequiredArgsConstructor;
 public class MenuService {
 
     private final MenuRepository menuRepository;
+    private final StoreRepository storeRepository;
 
     @Transactional
-    public MenuResponse createMenu(MenuCreateRequest request) {
+    public MenuResponse createMenu(Long userId, MenuCreateRequest request) {
+        validateStoreOwner(request.storeId(), userId);
         Long stockValue = request.stock() != null ? request.stock() : 0L;
 
         Menu menu = Menu.builder()
@@ -66,14 +71,18 @@ public class MenuService {
     }
 
     @Transactional
-    public void deleteMenu(Long id) {
+    public void deleteMenu(Long userId, Long id) {
+        Menu menu = menuRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("메뉴를 찾을 수 없습니다."));
+        validateStoreOwner(menu.getStoreId(), userId);
         menuRepository.deleteById(id);
     }
 
     @Transactional
-    public MenuResponse updateMenu(Long id, MenuUpdateRequest request) {
+    public MenuResponse updateMenu(Long userId, Long id, MenuUpdateRequest request) {
         Menu existing = menuRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("메뉴를 찾을 수 없습니다."));
+        validateStoreOwner(existing.getStoreId(), userId);
 
         Menu updated = Menu.builder()
             .id(existing.getId())
@@ -90,5 +99,13 @@ public class MenuService {
 
         Menu saved = menuRepository.save(updated);
         return MenuResponse.from(saved);
+    }
+
+    private void validateStoreOwner(Long storeId, Long userId) {
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new NotFoundException("매장을 찾을 수 없습니다."));
+        if (!store.getUserId().equals(userId)) {
+            throw new ForbiddenException("본인 매장의 메뉴만 관리할 수 있습니다.");
+        }
     }
 }

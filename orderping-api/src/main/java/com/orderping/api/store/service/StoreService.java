@@ -33,9 +33,9 @@ public class StoreService {
     private final MenuRepository menuRepository;
 
     @Transactional
-    public StoreResponse createStore(StoreCreateRequest request) {
+    public StoreResponse createStore(Long userId, StoreCreateRequest request) {
         Store store = Store.builder()
-            .userId(request.userId())
+            .userId(userId)
             .name(request.name())
             .description(request.description())
             .imageUrl(request.imageUrl())
@@ -86,14 +86,18 @@ public class StoreService {
     }
 
     @Transactional
-    public void deleteStore(Long id) {
+    public void deleteStore(Long id, Long userId) {
+        Store store = storeRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("주점을 찾을 수 없습니다."));
+        validateOwner(store, userId);
         storeRepository.deleteById(id);
     }
 
     @Transactional
-    public StoreResponse updateStore(Long id, StoreUpdateRequest request) {
+    public StoreResponse updateStore(Long id, Long userId, StoreUpdateRequest request) {
         Store existing = storeRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("주점을 찾을 수 없습니다."));
+        validateOwner(existing, userId);
 
         Store updated = Store.builder()
             .id(existing.getId())
@@ -131,5 +135,11 @@ public class StoreService {
         List<Menu> menus = menuRepository.findByStoreId(storeId);
 
         return StoreDetailResponse.forOrder(store, categories, menus);
+    }
+
+    private void validateOwner(Store store, Long userId) {
+        if (!store.getUserId().equals(userId)) {
+            throw new ForbiddenException("본인 가게만 접근할 수 있습니다.");
+        }
     }
 }

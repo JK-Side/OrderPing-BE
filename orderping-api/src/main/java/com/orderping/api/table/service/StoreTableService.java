@@ -9,8 +9,11 @@ import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.domain.enums.TableStatus;
+import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
+import com.orderping.domain.store.Store;
 import com.orderping.domain.store.StoreTable;
+import com.orderping.domain.store.repository.StoreRepository;
 import com.orderping.domain.store.repository.StoreTableRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -21,9 +24,11 @@ import lombok.RequiredArgsConstructor;
 public class StoreTableService {
 
     private final StoreTableRepository storeTableRepository;
+    private final StoreRepository storeRepository;
 
     @Transactional
-    public StoreTableResponse createStoreTable(StoreTableCreateRequest request) {
+    public StoreTableResponse createStoreTable(Long userId, StoreTableCreateRequest request) {
+        validateStoreOwner(request.storeId(), userId);
         StoreTable storeTable = StoreTable.builder()
             .storeId(request.storeId())
             .tableNum(request.tableNum())
@@ -40,22 +45,25 @@ public class StoreTableService {
         return StoreTableResponse.from(storeTable);
     }
 
-    public List<StoreTableResponse> getStoreTablesByStoreId(Long storeId) {
+    public List<StoreTableResponse> getStoreTablesByStoreId(Long userId, Long storeId) {
+        validateStoreOwner(storeId, userId);
         return storeTableRepository.findByStoreId(storeId).stream()
             .map(StoreTableResponse::from)
             .toList();
     }
 
-    public List<StoreTableResponse> getStoreTablesByStoreIdAndStatus(Long storeId, TableStatus status) {
+    public List<StoreTableResponse> getStoreTablesByStoreIdAndStatus(Long userId, Long storeId, TableStatus status) {
+        validateStoreOwner(storeId, userId);
         return storeTableRepository.findByStoreIdAndStatus(storeId, status).stream()
             .map(StoreTableResponse::from)
             .toList();
     }
 
     @Transactional
-    public StoreTableResponse updateStoreTableStatus(Long id, StoreTableStatusUpdateRequest request) {
+    public StoreTableResponse updateStoreTableStatus(Long userId, Long id, StoreTableStatusUpdateRequest request) {
         StoreTable storeTable = storeTableRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
+        validateStoreOwner(storeTable.getStoreId(), userId);
 
         StoreTable updated = StoreTable.builder()
             .id(storeTable.getId())
@@ -69,14 +77,18 @@ public class StoreTableService {
     }
 
     @Transactional
-    public void deleteStoreTable(Long id) {
+    public void deleteStoreTable(Long userId, Long id) {
+        StoreTable storeTable = storeTableRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
+        validateStoreOwner(storeTable.getStoreId(), userId);
         storeTableRepository.deleteById(id);
     }
 
     @Transactional
-    public StoreTableResponse clearTable(Long id) {
+    public StoreTableResponse clearTable(Long userId, Long id) {
         StoreTable currentTable = storeTableRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
+        validateStoreOwner(currentTable.getStoreId(), userId);
 
         // 기존 테이블 종료 처리
         StoreTable closedTable = StoreTable.builder()
@@ -96,5 +108,13 @@ public class StoreTableService {
         StoreTable saved = storeTableRepository.save(newTable);
 
         return StoreTableResponse.from(saved);
+    }
+
+    private void validateStoreOwner(Long storeId, Long userId) {
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new NotFoundException("매장을 찾을 수 없습니다."));
+        if (!store.getUserId().equals(userId)) {
+            throw new ForbiddenException("본인 매장의 테이블만 관리할 수 있습니다.");
+        }
     }
 }

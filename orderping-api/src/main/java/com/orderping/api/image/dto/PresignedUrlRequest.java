@@ -9,4 +9,5 @@ public record PresignedUrlRequest(
 
     @Schema(description = "원본 파일명", example = "chicken.jpg")
     String fileName
-) {}
+) {
+}

@@ -42,6 +42,8 @@ services:
       AWS_SECRET_KEY: ${AWS_SECRET_KEY}
       AWS_REGION: ${AWS_REGION}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+      OAUTH2_FRONTEND_URL: ${OAUTH2_FRONTEND_URL:-http://localhost:3000}
 
 volumes:
   orderping-mysql-data:
