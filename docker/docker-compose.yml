@@ -12,7 +12,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: Asia/Seoul
     ports:
-      - "3308:3306"
+      - "3310:3306"
     volumes:
       - orderping-mysql-data:/var/lib/mysql
     command: >
@@ -28,7 +28,7 @@ services:
     depends_on:
       - mysql
     ports:
-      - "8080:8080"
+      - "8085:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
