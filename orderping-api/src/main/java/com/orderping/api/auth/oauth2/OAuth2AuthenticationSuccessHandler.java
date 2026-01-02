@@ -23,7 +23,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     public OAuth2AuthenticationSuccessHandler(
         AuthService authService,
-        @Value("${oauth2.frontend-url:http://localhost:3000}") String frontendUrl
+        @Value("${oauth2.frontend-url:http://localhost:5173}") String frontendUrl
     ) {
         this.authService = authService;
         this.frontendUrl = frontendUrl;
@@ -40,7 +40,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         TokenResponse tokenResponse = authService.createTokens(user.getId(), user.getNickname());
 
-        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth/callback")
+        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/callback")
             .queryParam("accessToken", tokenResponse.accessToken())
             .queryParam("refreshToken", tokenResponse.refreshToken())
             .build()

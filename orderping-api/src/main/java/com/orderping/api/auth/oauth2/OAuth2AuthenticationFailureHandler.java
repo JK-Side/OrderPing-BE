@@ -19,7 +19,7 @@ public class OAuth2AuthenticationFailureHandler implements AuthenticationFailure
     private final String frontendUrl;
 
     public OAuth2AuthenticationFailureHandler(
-        @Value("${oauth2.frontend-url:http://localhost:3000}") String frontendUrl
+        @Value("${oauth2.frontend-url:http://localhost:5173}") String frontendUrl
     ) {
         this.frontendUrl = frontendUrl;
     }
@@ -32,7 +32,7 @@ public class OAuth2AuthenticationFailureHandler implements AuthenticationFailure
     ) throws IOException {
         log.error("OAuth2 authentication failed: {}", exception.getMessage(), exception);
 
-        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/oauth/callback")
+        String targetUrl = UriComponentsBuilder.fromUriString(frontendUrl + "/callback")
             .queryParam("error", "oauth2_failed")
             .queryParam("message", exception.getMessage())
             .build()
