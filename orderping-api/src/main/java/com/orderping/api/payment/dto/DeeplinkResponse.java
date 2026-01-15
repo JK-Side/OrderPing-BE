@@ -10,5 +10,6 @@ public record DeeplinkResponse(
         String bankName,
         String accountHolder,
         String accountNumber
-    ) {}
+    ) {
+    }
 }

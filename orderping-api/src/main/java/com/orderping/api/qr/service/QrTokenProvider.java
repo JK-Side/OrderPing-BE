@@ -70,5 +70,6 @@ public class QrTokenProvider {
             .getPayload();
     }
 
-    public record TableQrClaims(Long storeId, Long tableId, Integer tableNum) {}
+    public record TableQrClaims(Long storeId, Long tableId, Integer tableNum) {
+    }
 }

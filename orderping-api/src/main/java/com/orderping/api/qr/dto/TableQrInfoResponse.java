@@ -20,5 +20,6 @@ public record TableQrInfoResponse(
         String bankName,
         String accountHolder,
         String accountNumberMask
-    ) {}
+    ) {
+    }
 }
