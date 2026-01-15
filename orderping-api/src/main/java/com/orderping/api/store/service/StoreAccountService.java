@@ -28,6 +28,12 @@ public class StoreAccountService {
     @Transactional
     public StoreAccountResponse createStoreAccount(Long userId, StoreAccountCreateRequest request) {
         validateStoreOwner(request.storeId(), userId);
+
+        // 이미 등록된 계좌가 있는지 확인
+        if (!storeAccountRepository.findByStoreId(request.storeId()).isEmpty()) {
+            throw new IllegalStateException("이미 등록된 계좌가 있습니다. 기존 계좌를 수정하거나 삭제 후 등록해주세요.");
+        }
+
         StoreAccount storeAccount = StoreAccount.builder()
             .storeId(request.storeId())
             .bankCode(request.bankCode())
