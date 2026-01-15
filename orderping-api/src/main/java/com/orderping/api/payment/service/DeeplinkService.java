@@ -43,9 +43,9 @@ public class DeeplinkService {
             .map(Bank::getName)
             .orElse(account.getBankCode());
 
-        // 토스 딥링크 생성
+        // 토스 딥링크 생성 (은행 이름 사용)
         String tossDeeplink = buildTossDeeplink(
-            account.getBankCode(),
+            bankName,
             decryptedAccountNumber,
             amount
         );
@@ -63,11 +63,11 @@ public class DeeplinkService {
         return new DeeplinkResponse(amount, tossDeeplink, accountInfo);
     }
 
-    private String buildTossDeeplink(String bankCode, String accountNumber, Long amount) {
+    private String buildTossDeeplink(String bankName, String accountNumber, Long amount) {
         return UriComponentsBuilder.newInstance()
             .scheme("supertoss")
             .host("send")
-            .queryParam("bank", bankCode)
+            .queryParam("bank", bankName)
             .queryParam("accountNo", accountNumber)
             .queryParam("amount", amount)
             .build()
