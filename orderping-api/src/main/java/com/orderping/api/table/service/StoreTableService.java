@@ -5,9 +5,11 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.orderping.api.qr.service.QrTokenProvider;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
+import com.orderping.api.table.dto.StoreTableUpdateRequest;
 import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
@@ -25,6 +27,7 @@ public class StoreTableService {
 
     private final StoreTableRepository storeTableRepository;
     private final StoreRepository storeRepository;
+    private final QrTokenProvider qrTokenProvider;
 
     @Transactional
     public StoreTableResponse createStoreTable(Long userId, StoreTableCreateRequest request) {
@@ -36,7 +39,16 @@ public class StoreTableService {
             .build();
 
         StoreTable saved = storeTableRepository.save(storeTable);
-        return StoreTableResponse.from(saved);
+
+        // QR 토큰 생성
+        String qrToken = qrTokenProvider.createTableToken(
+            saved.getStoreId(),
+            saved.getId(),
+            saved.getTableNum()
+        );
+        String qrUrl = qrTokenProvider.buildTableQrUrl(qrToken);
+
+        return StoreTableResponse.from(saved, qrToken, qrUrl);
     }
 
     public StoreTableResponse getStoreTable(Long id) {
@@ -82,6 +94,24 @@ public class StoreTableService {
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
         validateStoreOwner(storeTable.getStoreId(), userId);
         storeTableRepository.deleteById(id);
+    }
+
+    @Transactional
+    public StoreTableResponse updateStoreTable(Long userId, Long id, StoreTableUpdateRequest request) {
+        StoreTable storeTable = storeTableRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
+        validateStoreOwner(storeTable.getStoreId(), userId);
+
+        StoreTable updated = StoreTable.builder()
+            .id(storeTable.getId())
+            .storeId(storeTable.getStoreId())
+            .tableNum(storeTable.getTableNum())
+            .status(storeTable.getStatus())
+            .qrImageUrl(request.qrImageUrl())
+            .build();
+
+        StoreTable saved = storeTableRepository.save(updated);
+        return StoreTableResponse.from(saved);
     }
 
     @Transactional

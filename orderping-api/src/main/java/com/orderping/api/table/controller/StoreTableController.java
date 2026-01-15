@@ -18,6 +18,7 @@ import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
+import com.orderping.api.table.dto.StoreTableUpdateRequest;
 import com.orderping.api.table.service.StoreTableService;
 import com.orderping.domain.enums.TableStatus;
 
@@ -85,6 +86,17 @@ public class StoreTableController implements StoreTableApi {
     public ResponseEntity<Void> deleteStoreTable(@CurrentUser Long userId, @PathVariable Long id) {
         storeTableService.deleteStoreTable(userId, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}")
+    @Override
+    public ResponseEntity<StoreTableResponse> updateStoreTable(
+        @CurrentUser Long userId,
+        @PathVariable Long id,
+        @RequestBody StoreTableUpdateRequest request
+    ) {
+        StoreTableResponse response = storeTableService.updateStoreTable(userId, id, request);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{id}/clear")

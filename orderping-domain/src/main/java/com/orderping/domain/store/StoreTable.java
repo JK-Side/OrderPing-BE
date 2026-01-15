@@ -12,4 +12,5 @@ public class StoreTable {
     private final Long storeId;
     private final Integer tableNum;
     private final TableStatus status;
+    private final String qrImageUrl;
 }

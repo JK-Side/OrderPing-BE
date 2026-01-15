@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
+import com.orderping.api.table.dto.StoreTableUpdateRequest;
 import com.orderping.domain.enums.TableStatus;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -85,6 +86,19 @@ public interface StoreTableApi {
     ResponseEntity<Void> deleteStoreTable(
         @Parameter(hidden = true) Long userId,
         @Parameter(description = "테이블 ID", required = true) Long id
+    );
+
+    @Operation(summary = "테이블 수정", description = "테이블 정보를 수정합니다 (QR 이미지 URL 등)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "수정 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
+        @ApiResponse(responseCode = "404", description = "테이블을 찾을 수 없음")
+    })
+    ResponseEntity<StoreTableResponse> updateStoreTable(
+        @Parameter(hidden = true) Long userId,
+        @Parameter(description = "테이블 ID", required = true) Long id,
+        StoreTableUpdateRequest request
     );
 
     @Operation(summary = "테이블 비우기", description = "현재 테이블을 종료하고 같은 번호의 새 테이블을 생성합니다 (본인 매장만 가능)")

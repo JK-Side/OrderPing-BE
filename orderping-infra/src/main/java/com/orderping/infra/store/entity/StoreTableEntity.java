@@ -38,12 +38,16 @@ public class StoreTableEntity {
     @Column(nullable = false, length = 20)
     private TableStatus status;
 
+    @Column(name = "qr_image_url", length = 512)
+    private String qrImageUrl;
+
     @Builder
-    public StoreTableEntity(Long id, Long storeId, Integer tableNum, TableStatus status) {
+    public StoreTableEntity(Long id, Long storeId, Integer tableNum, TableStatus status, String qrImageUrl) {
         this.id = id;
         this.storeId = storeId;
         this.tableNum = tableNum;
         this.status = status;
+        this.qrImageUrl = qrImageUrl;
     }
 
     // Domain -> Entity
@@ -53,6 +57,7 @@ public class StoreTableEntity {
             .storeId(storeTable.getStoreId())
             .tableNum(storeTable.getTableNum())
             .status(storeTable.getStatus())
+            .qrImageUrl(storeTable.getQrImageUrl())
             .build();
     }
 
@@ -70,6 +75,7 @@ public class StoreTableEntity {
             .storeId(this.storeId)
             .tableNum(this.tableNum)
             .status(this.status)
+            .qrImageUrl(this.qrImageUrl)
             .build();
     }
 }
