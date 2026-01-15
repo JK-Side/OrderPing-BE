@@ -82,6 +82,7 @@ public class StoreTableService {
             .storeId(storeTable.getStoreId())
             .tableNum(storeTable.getTableNum())
             .status(request.status())
+            .qrImageUrl(storeTable.getQrImageUrl())
             .build();
 
         StoreTable saved = storeTableRepository.save(updated);
@@ -126,6 +127,7 @@ public class StoreTableService {
             .storeId(currentTable.getStoreId())
             .tableNum(currentTable.getTableNum())
             .status(TableStatus.CLOSED)
+            .qrImageUrl(currentTable.getQrImageUrl())
             .build();
         storeTableRepository.save(closedTable);
 
