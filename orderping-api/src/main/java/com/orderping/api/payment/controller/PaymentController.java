@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.orderping.api.payment.dto.DeeplinkResponse;
 import com.orderping.api.payment.dto.PaymentCreateRequest;
 import com.orderping.api.payment.dto.PaymentResponse;
+import com.orderping.api.payment.service.DeeplinkService;
 import com.orderping.api.payment.service.PaymentService;
 
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 public class PaymentController implements PaymentApi {
 
     private final PaymentService paymentService;
+    private final DeeplinkService deeplinkService;
 
     @PostMapping
     @Override
@@ -66,5 +69,15 @@ public class PaymentController implements PaymentApi {
     public ResponseEntity<Void> deletePayment(@PathVariable Long id) {
         paymentService.deletePayment(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/deeplink")
+    @Override
+    public ResponseEntity<DeeplinkResponse> getDeeplink(
+        @RequestParam Long storeId,
+        @RequestParam Long amount
+    ) {
+        DeeplinkResponse response = deeplinkService.getDeeplink(storeId, amount);
+        return ResponseEntity.ok(response);
     }
 }

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 
+import com.orderping.api.payment.dto.DeeplinkResponse;
 import com.orderping.api.payment.dto.PaymentCreateRequest;
 import com.orderping.api.payment.dto.PaymentResponse;
 
@@ -63,5 +64,15 @@ public interface PaymentApi {
     })
     ResponseEntity<Void> deletePayment(
         @Parameter(description = "결제 ID", required = true) Long id
+    );
+
+    @Operation(summary = "토스 송금 딥링크 조회", description = "토스 송금용 딥링크와 계좌 정보를 조회합니다 (인증 불필요)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "404", description = "계좌를 찾을 수 없음")
+    })
+    ResponseEntity<DeeplinkResponse> getDeeplink(
+        @Parameter(description = "주점 ID", required = true) Long storeId,
+        @Parameter(description = "송금 금액", required = true) Long amount
     );
 }
