@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.orderping.api.store.dto.StoreAccountCreateRequest;
 import com.orderping.api.store.dto.StoreAccountResponse;
 import com.orderping.api.store.dto.StoreAccountUpdateRequest;
+import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.store.Store;
@@ -31,7 +32,7 @@ public class StoreAccountService {
 
         // 이미 등록된 계좌가 있는지 확인
         if (!storeAccountRepository.findByStoreId(request.storeId()).isEmpty()) {
-            throw new IllegalStateException("이미 등록된 계좌가 있습니다. 기존 계좌를 수정하거나 삭제 후 등록해주세요.");
+            throw new BadRequestException("이미 등록된 계좌가 있습니다. 기존 계좌를 수정하거나 삭제 후 등록해주세요.");
         }
 
         StoreAccount storeAccount = StoreAccount.builder()
