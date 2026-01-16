@@ -46,17 +46,13 @@ public class MenuController implements MenuApi {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping(params = "storeId")
+    @GetMapping
     @Override
-    public ResponseEntity<List<MenuResponse>> getMenusByStoreId(@RequestParam Long storeId) {
-        List<MenuResponse> responses = menuService.getMenusByStoreId(storeId);
-        return ResponseEntity.ok(responses);
-    }
-
-    @GetMapping(params = "categoryId")
-    @Override
-    public ResponseEntity<List<MenuResponse>> getMenusByCategoryId(@RequestParam Long categoryId) {
-        List<MenuResponse> responses = menuService.getMenusByCategoryId(categoryId);
+    public ResponseEntity<List<MenuResponse>> getMenus(
+        @RequestParam(required = false) Long storeId,
+        @RequestParam(required = false) Long categoryId
+    ) {
+        List<MenuResponse> responses = menuService.getMenus(storeId, categoryId);
         return ResponseEntity.ok(responses);
     }
 

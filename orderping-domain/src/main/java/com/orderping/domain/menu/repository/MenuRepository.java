@@ -15,6 +15,8 @@ public interface MenuRepository {
 
     List<Menu> findByCategoryId(Long categoryId);
 
+    List<Menu> findByStoreIdAndCategoryId(Long storeId, Long categoryId);
+
     List<Menu> findAvailableByStoreId(Long storeId);
 
     void deleteById(Long id);

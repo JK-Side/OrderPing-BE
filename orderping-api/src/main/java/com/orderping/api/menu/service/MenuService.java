@@ -64,6 +64,19 @@ public class MenuService {
             .toList();
     }
 
+    public List<MenuResponse> getMenus(Long storeId, Long categoryId) {
+        if (storeId != null && categoryId != null) {
+            return menuRepository.findByStoreIdAndCategoryId(storeId, categoryId).stream()
+                .map(MenuResponse::from)
+                .toList();
+        } else if (storeId != null) {
+            return getMenusByStoreId(storeId);
+        } else if (categoryId != null) {
+            return getMenusByCategoryId(categoryId);
+        }
+        return List.of();
+    }
+
     public List<MenuResponse> getAvailableMenusByStoreId(Long storeId) {
         return menuRepository.findAvailableByStoreId(storeId).stream()
             .map(MenuResponse::from)

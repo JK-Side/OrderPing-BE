@@ -19,6 +19,8 @@ public interface MenuJpaRepository extends JpaRepository<MenuEntity, Long> {
 
     List<MenuEntity> findByCategoryId(Long categoryId);
 
+    List<MenuEntity> findByStoreIdAndCategoryId(Long storeId, Long categoryId);
+
     List<MenuEntity> findByStoreIdAndIsSoldOutFalse(Long storeId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
