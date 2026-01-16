@@ -44,11 +44,11 @@ public interface MenuApi {
         @ApiResponse(responseCode = "400", description = "storeId 또는 categoryId 중 하나는 필수")
     })
     ResponseEntity<List<MenuResponse>> getMenus(
-        @Parameter(description = "매장 ID") Long storeId,
-        @Parameter(description = "카테고리 ID") Long categoryId
+        @Parameter(description = "매장 ID (categoryId와 함께 사용 가능)") Long storeId,
+        @Parameter(description = "카테고리 ID (storeId와 함께 사용 가능)") Long categoryId
     );
 
-    @Operation(summary = "판매 가능한 메뉴 목록", description = "매장의 판매 가능한 메뉴 목록을 조회합니다")
+    @Operation(summary = "판매 가능한 메뉴 목록", description = "매장의 판매 가능한 메뉴 목록을 조회합니다 (GET /api/menus/available/{storeId})")
     @ApiResponse(responseCode = "200", description = "조회 성공")
     ResponseEntity<List<MenuResponse>> getAvailableMenusByStoreId(
         @Parameter(description = "매장 ID", required = true) Long storeId
