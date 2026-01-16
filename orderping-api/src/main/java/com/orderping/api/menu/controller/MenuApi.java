@@ -38,16 +38,14 @@ public interface MenuApi {
         @Parameter(description = "메뉴 ID", required = true) Long id
     );
 
-    @Operation(summary = "매장별 메뉴 목록", description = "매장 ID로 메뉴 목록을 조회합니다")
-    @ApiResponse(responseCode = "200", description = "조회 성공")
-    ResponseEntity<List<MenuResponse>> getMenusByStoreId(
-        @Parameter(description = "매장 ID", required = true) Long storeId
-    );
-
-    @Operation(summary = "카테고리별 메뉴 목록", description = "카테고리 ID로 메뉴 목록을 조회합니다")
-    @ApiResponse(responseCode = "200", description = "조회 성공")
-    ResponseEntity<List<MenuResponse>> getMenusByCategoryId(
-        @Parameter(description = "카테고리 ID", required = true) Long categoryId
+    @Operation(summary = "메뉴 목록 조회", description = "storeId, categoryId로 메뉴 목록을 조회합니다. 둘 중 하나는 필수이며, 둘 다 입력하면 해당 매장의 해당 카테고리 메뉴만 조회됩니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "400", description = "storeId 또는 categoryId 중 하나는 필수")
+    })
+    ResponseEntity<List<MenuResponse>> getMenus(
+        @Parameter(description = "매장 ID") Long storeId,
+        @Parameter(description = "카테고리 ID") Long categoryId
     );
 
     @Operation(summary = "판매 가능한 메뉴 목록", description = "매장의 판매 가능한 메뉴 목록을 조회합니다")

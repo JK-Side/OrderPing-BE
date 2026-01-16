@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.orderping.api.menu.dto.MenuCreateRequest;
 import com.orderping.api.menu.dto.MenuResponse;
 import com.orderping.api.menu.dto.MenuUpdateRequest;
+import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.menu.Menu;
@@ -62,6 +63,21 @@ public class MenuService {
         return menuRepository.findByCategoryId(categoryId).stream()
             .map(MenuResponse::from)
             .toList();
+    }
+
+    public List<MenuResponse> getMenus(Long storeId, Long categoryId) {
+        if (storeId == null && categoryId == null) {
+            throw new BadRequestException("storeId 또는 categoryId 중 하나는 필수입니다.");
+        }
+        if (storeId != null && categoryId != null) {
+            return menuRepository.findByStoreIdAndCategoryId(storeId, categoryId).stream()
+                .map(MenuResponse::from)
+                .toList();
+        } else if (storeId != null) {
+            return getMenusByStoreId(storeId);
+        } else {
+            return getMenusByCategoryId(categoryId);
+        }
     }
 
     public List<MenuResponse> getAvailableMenusByStoreId(Long storeId) {

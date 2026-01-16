@@ -48,25 +48,14 @@ public class StoreTableController implements StoreTableApi {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping(params = "storeId")
+    @GetMapping
     @Override
-    public ResponseEntity<List<StoreTableResponse>> getStoreTablesByStoreId(
-        @CurrentUser Long userId,
-        @RequestParam Long storeId
-    ) {
-        List<StoreTableResponse> responses = storeTableService.getStoreTablesByStoreId(userId, storeId);
-        return ResponseEntity.ok(responses);
-    }
-
-    @GetMapping(params = {"storeId", "status"})
-    @Override
-    public ResponseEntity<List<StoreTableResponse>> getStoreTablesByStoreIdAndStatus(
+    public ResponseEntity<List<StoreTableResponse>> getStoreTables(
         @CurrentUser Long userId,
         @RequestParam Long storeId,
-        @RequestParam TableStatus status
+        @RequestParam(required = false) TableStatus status
     ) {
-        List<StoreTableResponse> responses = storeTableService.getStoreTablesByStoreIdAndStatus(userId, storeId,
-            status);
+        List<StoreTableResponse> responses = storeTableService.getStoreTables(userId, storeId, status);
         return ResponseEntity.ok(responses);
     }
 

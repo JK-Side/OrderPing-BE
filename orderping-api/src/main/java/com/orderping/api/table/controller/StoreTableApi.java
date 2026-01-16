@@ -40,27 +40,16 @@ public interface StoreTableApi {
         @Parameter(description = "테이블 ID", required = true) Long id
     );
 
-    @Operation(summary = "매장별 테이블 목록", description = "매장 ID로 테이블 목록을 조회합니다 (본인 매장만 가능)")
+    @Operation(summary = "매장별 테이블 목록", description = "매장 ID로 테이블 목록을 조회합니다. status를 지정하면 해당 상태의 테이블만 조회합니다. (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "조회 성공"),
         @ApiResponse(responseCode = "401", description = "인증 필요"),
         @ApiResponse(responseCode = "403", description = "본인 매장이 아님")
     })
-    ResponseEntity<List<StoreTableResponse>> getStoreTablesByStoreId(
-        @Parameter(hidden = true) Long userId,
-        @Parameter(description = "매장 ID", required = true) Long storeId
-    );
-
-    @Operation(summary = "매장별 상태별 테이블 목록", description = "매장 ID와 상태로 테이블 목록을 조회합니다 (본인 매장만 가능)")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "403", description = "본인 매장이 아님")
-    })
-    ResponseEntity<List<StoreTableResponse>> getStoreTablesByStoreIdAndStatus(
+    ResponseEntity<List<StoreTableResponse>> getStoreTables(
         @Parameter(hidden = true) Long userId,
         @Parameter(description = "매장 ID", required = true) Long storeId,
-        @Parameter(description = "테이블 상태", required = true) TableStatus status
+        @Parameter(description = "테이블 상태 (선택)") TableStatus status
     );
 
     @Operation(summary = "테이블 상태 변경", description = "테이블 상태를 변경합니다 (본인 매장만 가능)")

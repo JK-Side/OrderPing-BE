@@ -3,7 +3,6 @@ package com.orderping.api.auth.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.orderping.api.auth.dto.TokenRefreshRequest;
 import com.orderping.api.auth.dto.TokenResponse;
 import com.orderping.api.auth.jwt.JwtTokenProvider;
 import com.orderping.domain.exception.NotFoundException;
@@ -44,9 +43,7 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenResponse refreshTokens(TokenRefreshRequest request) {
-        String refreshTokenValue = request.refreshToken();
-
+    public TokenResponse refreshTokens(String refreshTokenValue) {
         if (!jwtTokenProvider.validateRefreshToken(refreshTokenValue)) {
             throw new UnauthorizedException("만료되었거나 유효하지 않은 Refresh Token입니다.");
         }
