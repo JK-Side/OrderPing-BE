@@ -71,6 +71,13 @@ public class StoreTableService {
             .toList();
     }
 
+    public List<StoreTableResponse> getStoreTables(Long userId, Long storeId, TableStatus status) {
+        if (status != null) {
+            return getStoreTablesByStoreIdAndStatus(userId, storeId, status);
+        }
+        return getStoreTablesByStoreId(userId, storeId);
+    }
+
     @Transactional
     public StoreTableResponse updateStoreTableStatus(Long userId, Long id, StoreTableStatusUpdateRequest request) {
         StoreTable storeTable = storeTableRepository.findById(id)

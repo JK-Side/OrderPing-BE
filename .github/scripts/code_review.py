@@ -5,10 +5,15 @@ import re
 from github import Github
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from github import GithubException
+from github.Auth import Token
 
 def get_changed_files(pr):
     changed_files = []
     for file in pr.get_files():
+        if file.status == "removed":
+            continue  # 삭제된 파일은 head.sha에서 못 읽음
+
         if file.filename.endswith(('.java', '.yml', '.yaml', '.gradle')):
             if file.patch is None:
                 continue  # diff 없는 파일은 제외
@@ -20,11 +25,24 @@ def get_changed_files(pr):
     return changed_files
 
 def get_file_content(repo, file_path, ref):
-    return repo.get_contents(file_path, ref=ref).decoded_content.decode('utf-8')
+    try:
+        data = repo.get_contents(file_path, ref=ref).decoded_content
+        return data.decode('utf-8')
+    except GithubException as e:
+        # 삭제/경로 변화/접근 불가 등 대부분 여기로 옴
+        if e.status == 404:
+            return None
+        raise
+    except UnicodeDecodeError:
+        # 바이너리 파일이면 스킵
+        return None
 
 def search_file(repo, file, changed_files, ref):
     if file.type == 'file' and file.name.endswith(('.ts', '.js')):
         content = get_file_content(repo, file.path, ref)
+        if content is None:
+            return None, set()
+
         related = set()
         for changed_file in changed_files:
             changed_name = os.path.splitext(os.path.basename(changed_file['filename']))[0]
@@ -46,8 +64,13 @@ def find_related_files(repo, changed_files, ref):
             dirs_to_process.extend([file for file in dir_files if file.type == 'dir'])
             future_to_file.update({executor.submit(search_file, repo, file, changed_files, ref): file for file in dir_files if file.type == 'file'})
 
+
         for future in as_completed(future_to_file):
-            file_path, related = future.result()
+            try:
+                file_path, related = future.result()
+            except Exception as e:
+                print(f"[WARN] related scan failed: {e}")
+                continue
             if related:
                 for changed_file in related:
                     related_files[changed_file].add(file_path)
@@ -128,7 +151,7 @@ def call_claude_api(changes, related_files):
         return f"Error: API returned status code {response.status_code}"
 
 def main():
-    g = Github(os.environ['GITHUB_TOKEN'])
+    g = Github(auth=Token(os.environ['GITHUB_TOKEN']))
     repo = g.get_repo(os.environ['GITHUB_REPOSITORY'])
     pr_number = int(os.environ['PR_NUMBER'])
     pr = repo.get_pull(pr_number)
@@ -138,6 +161,8 @@ def main():
 
     for file_info in changed_files:
         full_content = get_file_content(repo, file_info['filename'], pr.head.sha)
+        if full_content is None:
+            continue
         file_info['full_content'] = full_content
         changes.append(file_info)
 

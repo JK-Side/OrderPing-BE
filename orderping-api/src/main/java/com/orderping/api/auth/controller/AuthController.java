@@ -1,13 +1,13 @@
 package com.orderping.api.auth.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.orderping.api.auth.dto.LogoutRequest;
-import com.orderping.api.auth.dto.TokenRefreshRequest;
 import com.orderping.api.auth.dto.TokenResponse;
 import com.orderping.api.auth.service.AuthService;
 
@@ -21,12 +21,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
+
     private final AuthService authService;
 
-    @Operation(summary = "토큰 재발급", description = "Refresh Token으로 새로운 Access Token을 발급받습니다.")
+    @Operation(summary = "토큰 재발급", description = "쿠키의 Refresh Token으로 새로운 Access Token을 발급받습니다.")
     @PostMapping("/refresh")
-    public ResponseEntity<TokenResponse> refresh(@RequestBody TokenRefreshRequest request) {
-        TokenResponse response = authService.refreshTokens(request);
+    public ResponseEntity<TokenResponse> refresh(
+        @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME) String refreshToken
+    ) {
+        TokenResponse response = authService.refreshTokens(refreshToken);
         return ResponseEntity.ok(response);
     }
 
