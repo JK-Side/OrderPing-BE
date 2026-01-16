@@ -1,9 +1,5 @@
 package com.orderping.api.auth.security;
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -67,7 +63,10 @@ public class SecurityConfig {
                     // 고객용 공개 API
                     "/api/banks",
                     "/api/stores/*/order",
-                    "/api/menus/available"
+                    "/api/menus/available",
+                    // QR 및 딥링크 API
+                    "/api/qr/**",
+                    "/api/payments/deeplink"
                 ).permitAll()
                 // 고객 주문 관련 API (GET with tableId, POST)
                 .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
