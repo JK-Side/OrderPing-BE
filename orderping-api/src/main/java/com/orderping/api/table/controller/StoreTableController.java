@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
+import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.api.table.dto.StoreTableUpdateRequest;
@@ -51,12 +52,12 @@ public class StoreTableController implements StoreTableApi {
 
     @GetMapping
     @Override
-    public ResponseEntity<List<StoreTableResponse>> getStoreTables(
+    public ResponseEntity<List<StoreTableDetailResponse>> getStoreTables(
         @CurrentUser Long userId,
         @RequestParam Long storeId,
         @RequestParam(required = false) TableStatus status
     ) {
-        List<StoreTableResponse> responses = storeTableService.getStoreTables(userId, storeId, status);
+        List<StoreTableDetailResponse> responses = storeTableService.getStoreTables(userId, storeId, status);
         return ResponseEntity.ok(responses);
     }
 

@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
+import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.api.table.dto.StoreTableUpdateRequest;
@@ -41,13 +42,13 @@ public interface StoreTableApi {
         @Parameter(description = "테이블 ID", required = true) Long id
     );
 
-    @Operation(summary = "매장별 테이블 목록", description = "매장 ID로 테이블 목록을 조회합니다. status를 지정하면 해당 상태의 테이블만 조회합니다. (본인 매장만 가능)")
+    @Operation(summary = "매장별 테이블 목록", description = "매장 ID로 테이블 목록을 조회합니다. 각 테이블의 주문 메뉴와 총 주문 금액도 함께 반환합니다. status를 지정하면 해당 상태의 테이블만 조회합니다. (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "조회 성공"),
         @ApiResponse(responseCode = "401", description = "인증 필요"),
         @ApiResponse(responseCode = "403", description = "본인 매장이 아님")
     })
-    ResponseEntity<List<StoreTableResponse>> getStoreTables(
+    ResponseEntity<List<StoreTableDetailResponse>> getStoreTables(
         @Parameter(hidden = true) Long userId,
         @Parameter(description = "매장 ID", required = true) Long storeId,
         @Parameter(description = "테이블 상태 (선택)") TableStatus status

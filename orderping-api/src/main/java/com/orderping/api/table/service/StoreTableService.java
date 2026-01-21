@@ -7,14 +7,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.orderping.api.qr.service.QrTokenProvider;
+import com.orderping.api.table.dto.OrderMenuSummary;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
+import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.api.table.dto.StoreTableUpdateRequest;
+import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
+import com.orderping.domain.menu.Menu;
+import com.orderping.domain.menu.repository.MenuRepository;
+import com.orderping.domain.order.Order;
+import com.orderping.domain.order.OrderMenu;
+import com.orderping.domain.order.repository.OrderMenuRepository;
+import com.orderping.domain.order.repository.OrderRepository;
 import com.orderping.domain.store.Store;
 import com.orderping.domain.store.StoreTable;
 import com.orderping.domain.store.repository.StoreRepository;
@@ -29,6 +38,9 @@ public class StoreTableService {
 
     private final StoreTableRepository storeTableRepository;
     private final StoreRepository storeRepository;
+    private final OrderRepository orderRepository;
+    private final OrderMenuRepository orderMenuRepository;
+    private final MenuRepository menuRepository;
     private final QrTokenProvider qrTokenProvider;
 
     @Transactional
@@ -59,25 +71,62 @@ public class StoreTableService {
         return StoreTableResponse.from(storeTable);
     }
 
-    public List<StoreTableResponse> getStoreTablesByStoreId(Long userId, Long storeId) {
+    public List<StoreTableDetailResponse> getStoreTablesByStoreId(Long userId, Long storeId) {
         validateStoreOwner(storeId, userId);
         return storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED).stream()
-            .map(StoreTableResponse::from)
+            .map(this::toDetailResponse)
             .toList();
     }
 
-    public List<StoreTableResponse> getStoreTablesByStoreIdAndStatus(Long userId, Long storeId, TableStatus status) {
+    public List<StoreTableDetailResponse> getStoreTablesByStoreIdAndStatus(Long userId, Long storeId, TableStatus status) {
         validateStoreOwner(storeId, userId);
         return storeTableRepository.findByStoreIdAndStatus(storeId, status).stream()
-            .map(StoreTableResponse::from)
+            .map(this::toDetailResponse)
             .toList();
     }
 
-    public List<StoreTableResponse> getStoreTables(Long userId, Long storeId, TableStatus status) {
+    public List<StoreTableDetailResponse> getStoreTables(Long userId, Long storeId, TableStatus status) {
         if (status != null) {
             return getStoreTablesByStoreIdAndStatus(userId, storeId, status);
         }
         return getStoreTablesByStoreId(userId, storeId);
+    }
+
+    private StoreTableDetailResponse toDetailResponse(StoreTable storeTable) {
+        List<Order> orders = orderRepository.findByTableId(storeTable.getId());
+
+        List<OrderMenuSummary> orderMenus = new ArrayList<>();
+        long totalAmount = 0L;
+        OrderStatus highestPriorityStatus = null;
+
+        for (Order order : orders) {
+            // 우선순위: PENDING > COOKING > COMPLETE
+            if (highestPriorityStatus == null) {
+                highestPriorityStatus = order.getStatus();
+            } else if (order.getStatus() == OrderStatus.PENDING) {
+                highestPriorityStatus = OrderStatus.PENDING;
+            } else if (order.getStatus() == OrderStatus.COOKING && highestPriorityStatus == OrderStatus.COMPLETE) {
+                highestPriorityStatus = OrderStatus.COOKING;
+            }
+
+            List<OrderMenu> menus = orderMenuRepository.findByOrderId(order.getId());
+            for (OrderMenu orderMenu : menus) {
+                String menuName = menuRepository.findById(orderMenu.getMenuId())
+                    .map(Menu::getName)
+                    .orElse("삭제된 메뉴");
+
+                orderMenus.add(new OrderMenuSummary(
+                    orderMenu.getMenuId(),
+                    menuName,
+                    orderMenu.getQuantity(),
+                    orderMenu.getPrice()
+                ));
+
+                totalAmount += orderMenu.getPrice() * orderMenu.getQuantity();
+            }
+        }
+
+        return StoreTableDetailResponse.from(storeTable, orderMenus, totalAmount, highestPriorityStatus);
     }
 
     @Transactional
