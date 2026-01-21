@@ -111,6 +111,7 @@ public class MenuService {
             .initialStock(request.initialStock() != null ? request.initialStock() : existing.getInitialStock())
             .stock(request.stock() != null ? request.stock() : existing.getStock())
             .isSoldOut(request.isSoldOut() != null ? request.isSoldOut() : existing.getIsSoldOut())
+            .version(existing.getVersion())
             .build();
 
         Menu saved = menuRepository.save(updated);

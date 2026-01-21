@@ -16,6 +16,7 @@ public class Menu {
     private final Long initialStock;
     private final Long stock;
     private final Boolean isSoldOut;
+    private final Long version;
 
     public Long getSoldCount() {
         long initial = initialStock != null ? initialStock : 0L;
