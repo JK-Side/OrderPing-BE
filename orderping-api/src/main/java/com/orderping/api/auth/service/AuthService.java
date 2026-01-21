@@ -24,8 +24,11 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
+    // 내부용 - OAuth2 로그인 시 사용 (refreshToken도 필요)
+    public record TokenPair(String accessToken, String refreshToken) {}
+
     @Transactional
-    public TokenResponse createTokens(Long userId, String nickname) {
+    public TokenPair createTokens(Long userId, String nickname) {
         refreshTokenRepository.deleteByUserId(userId);
 
         String accessToken = jwtTokenProvider.createAccessToken(userId, nickname);
@@ -39,7 +42,7 @@ public class AuthService {
 
         refreshTokenRepository.save(refreshToken);
 
-        return new TokenResponse(accessToken, refreshTokenValue);
+        return new TokenPair(accessToken, refreshTokenValue);
     }
 
     @Transactional
@@ -64,7 +67,7 @@ public class AuthService {
 
         String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getNickname());
 
-        return new TokenResponse(newAccessToken, refreshTokenValue);
+        return new TokenResponse(newAccessToken);
     }
 
     @Transactional

@@ -58,7 +58,7 @@ public class MenuEntity {
 
     @Builder
     public MenuEntity(Long id, Long storeId, Long categoryId, String name, Long price, String description,
-        String imageUrl, Long initialStock, Long stock, Boolean isSoldOut) {
+        String imageUrl, Long initialStock, Long stock, Boolean isSoldOut, Long version) {
         this.id = id;
         this.storeId = storeId;
         this.categoryId = categoryId;
@@ -69,6 +69,7 @@ public class MenuEntity {
         this.initialStock = initialStock;
         this.stock = stock;
         this.isSoldOut = isSoldOut;
+        this.version = version;
     }
 
     // Domain -> Entity
@@ -84,6 +85,7 @@ public class MenuEntity {
             .initialStock(menu.getInitialStock())
             .stock(menu.getStock())
             .isSoldOut(menu.getIsSoldOut())
+            .version(menu.getVersion())
             .build();
     }
 
@@ -113,6 +115,7 @@ public class MenuEntity {
             .initialStock(this.initialStock)
             .stock(this.stock)
             .isSoldOut(this.isSoldOut)
+            .version(this.version)
             .build();
     }
 }
