@@ -1,11 +1,13 @@
 package com.orderping.api.table.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.orderping.api.qr.service.QrTokenProvider;
+import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
@@ -59,7 +61,7 @@ public class StoreTableService {
 
     public List<StoreTableResponse> getStoreTablesByStoreId(Long userId, Long storeId) {
         validateStoreOwner(storeId, userId);
-        return storeTableRepository.findByStoreId(storeId).stream()
+        return storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED).stream()
             .map(StoreTableResponse::from)
             .toList();
     }
@@ -147,6 +149,26 @@ public class StoreTableService {
         StoreTable saved = storeTableRepository.save(newTable);
 
         return StoreTableResponse.from(saved);
+    }
+
+    @Transactional
+    public List<StoreTableResponse> createStoreTablesBulk(Long userId, StoreTableBulkCreateRequest request) {
+        validateStoreOwner(request.storeId(), userId);
+
+        List<StoreTableResponse> responses = new ArrayList<>();
+
+        for (int i = 1; i <= request.count(); i++) {
+            StoreTable storeTable = StoreTable.builder()
+                .storeId(request.storeId())
+                .tableNum(i)
+                .status(TableStatus.EMPTY)
+                .build();
+
+            StoreTable saved = storeTableRepository.save(storeTable);
+            responses.add(StoreTableResponse.from(saved));
+        }
+
+        return responses;
     }
 
     private void validateStoreOwner(Long storeId, Long userId) {

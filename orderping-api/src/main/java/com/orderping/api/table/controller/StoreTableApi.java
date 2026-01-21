@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 
+import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
@@ -100,5 +101,17 @@ public interface StoreTableApi {
     ResponseEntity<StoreTableResponse> clearTable(
         @Parameter(hidden = true) Long userId,
         @Parameter(description = "테이블 ID", required = true) Long id
+    );
+
+    @Operation(summary = "테이블 일괄 생성", description = "1번부터 지정한 개수만큼 테이블을 일괄 생성합니다 (본인 매장만 가능)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "테이블 일괄 생성 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청")
+    })
+    ResponseEntity<List<StoreTableResponse>> createStoreTablesBulk(
+        @Parameter(hidden = true) Long userId,
+        StoreTableBulkCreateRequest request
     );
 }

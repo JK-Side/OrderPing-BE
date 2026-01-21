@@ -16,6 +16,8 @@ public interface StoreTableRepository {
 
     List<StoreTable> findByStoreIdAndStatus(Long storeId, TableStatus status);
 
+    List<StoreTable> findByStoreIdAndStatusNot(Long storeId, TableStatus status);
+
     Optional<StoreTable> findByStoreIdAndTableNum(Long storeId, Integer tableNum);
 
     void deleteById(Long id);

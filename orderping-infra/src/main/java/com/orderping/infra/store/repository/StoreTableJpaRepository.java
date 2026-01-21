@@ -14,5 +14,7 @@ public interface StoreTableJpaRepository extends JpaRepository<StoreTableEntity,
 
     List<StoreTableEntity> findByStoreIdAndStatus(Long storeId, TableStatus status);
 
+    List<StoreTableEntity> findByStoreIdAndStatusNot(Long storeId, TableStatus status);
+
     Optional<StoreTableEntity> findByStoreIdAndTableNum(Long storeId, Integer tableNum);
 }

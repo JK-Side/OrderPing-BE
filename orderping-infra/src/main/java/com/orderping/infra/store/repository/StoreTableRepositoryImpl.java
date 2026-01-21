@@ -46,6 +46,13 @@ public class StoreTableRepositoryImpl implements StoreTableRepository {
     }
 
     @Override
+    public List<StoreTable> findByStoreIdAndStatusNot(Long storeId, TableStatus status) {
+        return jpaRepository.findByStoreIdAndStatusNot(storeId, status).stream()
+            .map(StoreTableEntity::toDomain)
+            .toList();
+    }
+
+    @Override
     public Optional<StoreTable> findByStoreIdAndTableNum(Long storeId, Integer tableNum) {
         return jpaRepository.findByStoreIdAndTableNum(storeId, tableNum)
             .map(StoreTableEntity::toDomain);
