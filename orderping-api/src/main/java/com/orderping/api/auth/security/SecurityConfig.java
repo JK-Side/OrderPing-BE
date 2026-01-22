@@ -66,7 +66,9 @@ public class SecurityConfig {
                     "/api/menus/available",
                     // QR 및 딥링크 API
                     "/api/qr/**",
-                    "/api/payments/deeplink"
+                    "/api/payments/deeplink",
+                    // Actuator (Prometheus 메트릭)
+                    "/actuator/**"
                 ).permitAll()
                 // 고객 주문 관련 API (GET with tableId, POST)
                 .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
