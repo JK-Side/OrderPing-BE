@@ -57,7 +57,7 @@ services:
     container_name: orderping-prometheus
     restart: always
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"  # localhost만 접근 허용
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
@@ -73,7 +73,7 @@ services:
     container_name: orderping-loki
     restart: always
     ports:
-      - "3100:3100"
+      - "127.0.0.1:3100:3100"  # localhost만 접근 허용
     volumes:
       - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
       - loki-data:/loki
@@ -87,8 +87,7 @@ services:
     restart: always
     volumes:
       - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
-      - orderping-logs:/var/log/orderping:ro
-      - /var/log:/var/log/host:ro
+      - orderping-logs:/var/log/orderping:ro  # 애플리케이션 로그만 수집
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
