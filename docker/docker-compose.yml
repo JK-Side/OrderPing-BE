@@ -18,6 +18,8 @@ services:
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
+    networks:
+      - orderping-network
 
   api:
     build:
@@ -44,6 +46,80 @@ services:
       AWS_S3_BUCKET: ${AWS_S3_BUCKET}
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       OAUTH2_FRONTEND_URL: ${OAUTH2_FRONTEND_URL:-http://localhost:5173}
+    volumes:
+      - orderping-logs:/var/log/orderping
+    networks:
+      - orderping-network
+
+  # ===== Monitoring Stack =====
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: orderping-prometheus
+    restart: always
+    ports:
+      - "127.0.0.1:9090:9090"  # localhost만 접근 허용
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+    networks:
+      - orderping-network
+
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: orderping-loki
+    restart: always
+    ports:
+      - "127.0.0.1:3100:3100"  # localhost만 접근 허용
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - orderping-network
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: orderping-promtail
+    restart: always
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
+      - orderping-logs:/var/log/orderping:ro  # 애플리케이션 로그만 수집
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - orderping-network
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: orderping-grafana
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - orderping-network
+
+networks:
+  orderping-network:
+    driver: bridge
 
 volumes:
   orderping-mysql-data:
+  orderping-logs:
+  prometheus-data:
+  loki-data:
+  grafana-data:

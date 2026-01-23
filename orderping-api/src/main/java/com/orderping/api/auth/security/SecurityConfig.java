@@ -66,8 +66,13 @@ public class SecurityConfig {
                     "/api/menus/available",
                     // QR 및 딥링크 API
                     "/api/qr/**",
-                    "/api/payments/deeplink"
+                    "/api/payments/deeplink",
+                    // Actuator (health, prometheus만 공개)
+                    "/actuator/health",
+                    "/actuator/prometheus"
                 ).permitAll()
+                // 나머지 Actuator는 ADMIN만
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
                 // 고객 주문 관련 API (GET with tableId, POST)
                 .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/orders").permitAll()
