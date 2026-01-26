@@ -50,8 +50,8 @@ public class TableQrService {
             throw new NotFoundException("유효하지 않은 QR 코드입니다.");
         }
 
-        // 테이블 존재 여부 확인
-        StoreTable table = storeTableRepository.findById(claims.tableId())
+        // 활성 테이블 조회 (storeId + tableNum으로 CLOSED가 아닌 테이블 찾기)
+        StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(claims.storeId(), claims.tableNum())
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
 
         // 주점 정보 조회

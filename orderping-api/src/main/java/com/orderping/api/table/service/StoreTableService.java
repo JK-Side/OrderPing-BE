@@ -16,6 +16,7 @@ import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.api.table.dto.StoreTableUpdateRequest;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
+import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.menu.Menu;
@@ -50,6 +51,7 @@ public class StoreTableService {
             .storeId(request.storeId())
             .tableNum(request.tableNum())
             .status(TableStatus.EMPTY)
+            .qrImageUrl(request.qrImageUrl())
             .build();
 
         StoreTable saved = storeTableRepository.save(storeTable);
@@ -152,7 +154,42 @@ public class StoreTableService {
         StoreTable storeTable = storeTableRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
         validateStoreOwner(storeTable.getStoreId(), userId);
+        validateNoOrders(id);
         storeTableRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void deleteStoreTablesByTableNums(Long userId, Long storeId, List<Integer> tableNums) {
+        validateStoreOwner(storeId, userId);
+
+        List<StoreTable> tables = storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED).stream()
+            .filter(table -> tableNums.contains(table.getTableNum()))
+            .toList();
+
+        if (tables.isEmpty()) {
+            throw new NotFoundException("삭제할 테이블을 찾을 수 없습니다.");
+        }
+
+        List<Long> tablesWithOrders = new ArrayList<>();
+        for (StoreTable table : tables) {
+            if (!orderRepository.findByTableId(table.getId()).isEmpty()) {
+                tablesWithOrders.add((long) table.getTableNum());
+            }
+        }
+
+        if (!tablesWithOrders.isEmpty()) {
+            throw new BadRequestException("주문이 존재하는 테이블은 삭제할 수 없습니다. 테이블 번호: " + tablesWithOrders);
+        }
+
+        for (StoreTable table : tables) {
+            storeTableRepository.deleteById(table.getId());
+        }
+    }
+
+    private void validateNoOrders(Long tableId) {
+        if (!orderRepository.findByTableId(tableId).isEmpty()) {
+            throw new BadRequestException("주문이 존재하는 테이블은 삭제할 수 없습니다.");
+        }
     }
 
     @Transactional
@@ -189,11 +226,12 @@ public class StoreTableService {
             .build();
         storeTableRepository.save(closedTable);
 
-        // 같은 번호의 새 테이블 생성
+        // 같은 번호의 새 테이블 생성 (QR URL 유지)
         StoreTable newTable = StoreTable.builder()
             .storeId(currentTable.getStoreId())
             .tableNum(currentTable.getTableNum())
             .status(TableStatus.EMPTY)
+            .qrImageUrl(currentTable.getQrImageUrl())
             .build();
         StoreTable saved = storeTableRepository.save(newTable);
 

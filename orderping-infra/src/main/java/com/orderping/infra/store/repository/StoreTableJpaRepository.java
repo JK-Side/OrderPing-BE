@@ -1,5 +1,7 @@
 package com.orderping.infra.store.repository;
 
+import static com.orderping.domain.enums.TableStatus.CLOSED;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +19,6 @@ public interface StoreTableJpaRepository extends JpaRepository<StoreTableEntity,
     List<StoreTableEntity> findByStoreIdAndStatusNot(Long storeId, TableStatus status);
 
     Optional<StoreTableEntity> findByStoreIdAndTableNum(Long storeId, Integer tableNum);
+
+    Optional<StoreTableEntity> findByStoreIdAndTableNumAndStatusNot(Long storeId, Integer tableNum, TableStatus status);
 }

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
+import com.orderping.api.table.dto.StoreTableBulkDeleteRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
@@ -105,5 +106,15 @@ public class StoreTableController implements StoreTableApi {
     ) {
         List<StoreTableResponse> responses = storeTableService.createStoreTablesBulk(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(responses);
+    }
+
+    @DeleteMapping("/bulk")
+    @Override
+    public ResponseEntity<Void> deleteStoreTablesBulk(
+        @CurrentUser Long userId,
+        @RequestBody StoreTableBulkDeleteRequest request
+    ) {
+        storeTableService.deleteStoreTablesByTableNums(userId, request.storeId(), request.tableNums());
+        return ResponseEntity.noContent().build();
     }
 }

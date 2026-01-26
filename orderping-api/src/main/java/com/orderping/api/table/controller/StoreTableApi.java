@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
+import com.orderping.api.table.dto.StoreTableBulkDeleteRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
@@ -114,5 +115,18 @@ public interface StoreTableApi {
     ResponseEntity<List<StoreTableResponse>> createStoreTablesBulk(
         @Parameter(hidden = true) Long userId,
         StoreTableBulkCreateRequest request
+    );
+
+    @Operation(summary = "테이블 일괄 삭제", description = "지정한 테이블 번호들을 일괄 삭제합니다. 주문이 있는 테이블은 삭제할 수 없습니다. (본인 매장만 가능)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "테이블 일괄 삭제 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
+        @ApiResponse(responseCode = "400", description = "주문이 존재하는 테이블이 포함됨"),
+        @ApiResponse(responseCode = "404", description = "삭제할 테이블을 찾을 수 없음")
+    })
+    ResponseEntity<Void> deleteStoreTablesBulk(
+        @Parameter(hidden = true) Long userId,
+        StoreTableBulkDeleteRequest request
     );
 }
