@@ -370,6 +370,9 @@ GET /api/tables?storeId=1&status=ACTIVE
 | 토스 딥링크 | ✅ 완료 |
 | CORS 설정 | ✅ 완료 |
 | Claude PR 리뷰 | ✅ 완료 |
+| 모니터링 (Prometheus/Loki/Grafana) | ✅ 완료 |
+| 테이블 단체 생성/삭제 | ✅ 완료 |
+| QR 지속성 | ✅ 완료 |
 | Bean Validation | ⏳ 미구현 |
 | 카카오 알림톡 | ⏳ 미구현 |
 
