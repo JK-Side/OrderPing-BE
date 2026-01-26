@@ -370,6 +370,9 @@ GET /api/tables?storeId=1&status=ACTIVE
 | 토스 딥링크 | ✅ 완료 |
 | CORS 설정 | ✅ 완료 |
 | Claude PR 리뷰 | ✅ 완료 |
+| 모니터링 (Prometheus/Loki/Grafana) | ✅ 완료 |
+| 테이블 단체 생성/삭제 | ✅ 완료 |
+| QR 지속성 | ✅ 완료 |
 | Bean Validation | ⏳ 미구현 |
 | 카카오 알림톡 | ⏳ 미구현 |
 
@@ -441,6 +444,81 @@ cloud:
 ---
 
 ## 작업 로그
+
+### 2026-01-26
+
+**작업 내용**:
+
+#### 1. 모니터링 환경 구축
+- Prometheus + Loki + Grafana 모니터링 스택 설정
+- 모니터링 서버(43.201.31.24)와 orderping 서버 분리 구성
+- Spring Boot Actuator + Micrometer Prometheus 연동
+- Promtail로 로그 수집 → Loki 전송
+
+**모니터링 구성**:
+```
+모니터링 서버 (43.201.31.24)
+├── Prometheus (:9090) - 메트릭 수집
+├── Loki (:3100) - 로그 저장
+└── Grafana (:3000) - 대시보드
+
+Orderping 서버
+├── API (:8085) - /actuator/prometheus 엔드포인트 노출
+└── Promtail - 로그 수집 → Loki 전송
+```
+
+#### 2. Actuator 보안 설정
+- `/actuator/health`, `/actuator/prometheus`만 공개
+- 나머지 `/actuator/**`는 ADMIN 권한 필요
+
+#### 3. 테이블 단체 삭제 기능
+- `DELETE /api/tables/bulk` API 추가
+- 주문이 있는 테이블은 삭제 불가 (400 에러)
+
+**API**:
+```json
+DELETE /api/tables/bulk
+{
+  "storeId": 1,
+  "tableNums": [1, 2, 3]
+}
+```
+
+#### 4. 로그아웃 방식 변경
+- 쿠키 → 헤더 방식으로 변경
+- `X-Refresh-Token` 헤더로 refreshToken 전달
+
+#### 5. QR 코드 지속성 개선
+- `clearTable` 시 QR URL 유지되도록 수정
+- QR 토큰 조회: `tableId` → `storeId + tableNum`으로 변경
+- 테이블 갈아끼워도 같은 QR 계속 사용 가능
+
+#### 6. 테이블 생성 시 QR URL 지원
+- `POST /api/tables` 요청에 `qrImageUrl` 필드 추가 (선택)
+
+#### 7. 테이블 중복 생성 방지
+- 활성 테이블 중 동일한 `store_id + table_num` 조합 존재 시 생성 차단
+- MySQL 복합 unique 제약조건 대신 애플리케이션 레벨 검증
+- `createStoreTable`, `createStoreTablesBulk` 모두 적용
+
+**변경 파일**:
+- `SecurityConfig.java` - Actuator 엔드포인트 보안 설정
+- `AuthController.java` - 로그아웃 헤더 방식 변경
+- `StoreTableService.java` - 단체 삭제, clearTable QR 보존, 중복 테이블 방지
+- `StoreTableCreateRequest.java` - qrImageUrl 필드 추가
+- `StoreTableBulkDeleteRequest.java` - 신규
+- `TableQrService.java` - 활성 테이블 조회 방식 변경
+- `StoreTableRepository.java` - findActiveByStoreIdAndTableNum 추가
+- `docker/docker-compose.yml` - 모니터링 스택 제거 (별도 서버)
+- `docker/monitoring/promtail-config.yml` - Loki 전송 설정
+
+**주요 결정**:
+- 모니터링은 별도 서버에서 운영
+- QR은 물리적 테이블 번호 기준으로 지속
+- 주문 있는 테이블 삭제 차단
+- 복합 unique 제약조건 대신 애플리케이션 레벨 중복 검증 (clearTable 로직 때문)
+
+---
 
 ### 2026-01-20
 

@@ -59,6 +59,12 @@ public class StoreTableRepositoryImpl implements StoreTableRepository {
     }
 
     @Override
+    public Optional<StoreTable> findActiveByStoreIdAndTableNum(Long storeId, Integer tableNum) {
+        return jpaRepository.findByStoreIdAndTableNumAndStatusNot(storeId, tableNum, TableStatus.CLOSED)
+            .map(StoreTableEntity::toDomain);
+    }
+
+    @Override
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
     }

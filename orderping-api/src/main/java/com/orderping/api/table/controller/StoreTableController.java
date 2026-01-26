@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
+import com.orderping.api.table.dto.StoreTableBulkDeleteRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
@@ -24,6 +25,7 @@ import com.orderping.api.table.dto.StoreTableUpdateRequest;
 import com.orderping.api.table.service.StoreTableService;
 import com.orderping.domain.enums.TableStatus;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -37,7 +39,7 @@ public class StoreTableController implements StoreTableApi {
     @Override
     public ResponseEntity<StoreTableResponse> createStoreTable(
         @CurrentUser Long userId,
-        @RequestBody StoreTableCreateRequest request
+        @Valid @RequestBody StoreTableCreateRequest request
     ) {
         StoreTableResponse response = storeTableService.createStoreTable(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -105,5 +107,15 @@ public class StoreTableController implements StoreTableApi {
     ) {
         List<StoreTableResponse> responses = storeTableService.createStoreTablesBulk(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(responses);
+    }
+
+    @DeleteMapping("/bulk")
+    @Override
+    public ResponseEntity<Void> deleteStoreTablesBulk(
+        @CurrentUser Long userId,
+        @Valid @RequestBody StoreTableBulkDeleteRequest request
+    ) {
+        storeTableService.deleteStoreTablesByTableNums(userId, request.storeId(), request.tableNums());
+        return ResponseEntity.noContent().build();
     }
 }

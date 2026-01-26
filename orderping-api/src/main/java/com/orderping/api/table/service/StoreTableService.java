@@ -16,6 +16,7 @@ import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.api.table.dto.StoreTableUpdateRequest;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
+import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.menu.Menu;
@@ -46,10 +47,13 @@ public class StoreTableService {
     @Transactional
     public StoreTableResponse createStoreTable(Long userId, StoreTableCreateRequest request) {
         validateStoreOwner(request.storeId(), userId);
+        validateNoDuplicateActiveTable(request.storeId(), request.tableNum());
+
         StoreTable storeTable = StoreTable.builder()
             .storeId(request.storeId())
             .tableNum(request.tableNum())
             .status(TableStatus.EMPTY)
+            .qrImageUrl(request.qrImageUrl())
             .build();
 
         StoreTable saved = storeTableRepository.save(storeTable);
@@ -152,7 +156,42 @@ public class StoreTableService {
         StoreTable storeTable = storeTableRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
         validateStoreOwner(storeTable.getStoreId(), userId);
+        validateNoOrders(id);
         storeTableRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void deleteStoreTablesByTableNums(Long userId, Long storeId, List<Integer> tableNums) {
+        validateStoreOwner(storeId, userId);
+
+        List<StoreTable> tables = storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED).stream()
+            .filter(table -> tableNums.contains(table.getTableNum()))
+            .toList();
+
+        if (tables.isEmpty()) {
+            throw new NotFoundException("삭제할 테이블을 찾을 수 없습니다.");
+        }
+
+        List<Integer> tablesWithOrders = new ArrayList<>();
+        for (StoreTable table : tables) {
+            if (!orderRepository.findByTableId(table.getId()).isEmpty()) {
+                tablesWithOrders.add(table.getTableNum());
+            }
+        }
+
+        if (!tablesWithOrders.isEmpty()) {
+            throw new BadRequestException("주문이 존재하는 테이블은 삭제할 수 없습니다. 테이블 번호: " + tablesWithOrders);
+        }
+
+        for (StoreTable table : tables) {
+            storeTableRepository.deleteById(table.getId());
+        }
+    }
+
+    private void validateNoOrders(Long tableId) {
+        if (!orderRepository.findByTableId(tableId).isEmpty()) {
+            throw new BadRequestException("주문이 존재하는 테이블은 삭제할 수 없습니다.");
+        }
     }
 
     @Transactional
@@ -189,11 +228,12 @@ public class StoreTableService {
             .build();
         storeTableRepository.save(closedTable);
 
-        // 같은 번호의 새 테이블 생성
+        // 같은 번호의 새 테이블 생성 (QR URL 유지)
         StoreTable newTable = StoreTable.builder()
             .storeId(currentTable.getStoreId())
             .tableNum(currentTable.getTableNum())
             .status(TableStatus.EMPTY)
+            .qrImageUrl(currentTable.getQrImageUrl())
             .build();
         StoreTable saved = storeTableRepository.save(newTable);
 
@@ -203,6 +243,24 @@ public class StoreTableService {
     @Transactional
     public List<StoreTableResponse> createStoreTablesBulk(Long userId, StoreTableBulkCreateRequest request) {
         validateStoreOwner(request.storeId(), userId);
+
+        // 기존 활성 테이블 번호들 조회
+        List<Integer> existingTableNums = storeTableRepository.findByStoreIdAndStatusNot(request.storeId(), TableStatus.CLOSED)
+            .stream()
+            .map(StoreTable::getTableNum)
+            .toList();
+
+        // 중복 체크
+        List<Integer> duplicateNums = new ArrayList<>();
+        for (int i = 1; i <= request.count(); i++) {
+            if (existingTableNums.contains(i)) {
+                duplicateNums.add(i);
+            }
+        }
+
+        if (!duplicateNums.isEmpty()) {
+            throw new BadRequestException("이미 존재하는 테이블 번호입니다: " + duplicateNums);
+        }
 
         List<StoreTableResponse> responses = new ArrayList<>();
 
@@ -225,6 +283,13 @@ public class StoreTableService {
             .orElseThrow(() -> new NotFoundException("매장을 찾을 수 없습니다."));
         if (!store.getUserId().equals(userId)) {
             throw new ForbiddenException("본인 매장의 테이블만 관리할 수 있습니다.");
+        }
+    }
+
+    private void validateNoDuplicateActiveTable(Long storeId, Integer tableNum) {
+        boolean exists = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum).isPresent();
+        if (exists) {
+            throw new BadRequestException("이미 존재하는 테이블 번호입니다: " + tableNum);
         }
     }
 }
