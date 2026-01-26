@@ -47,6 +47,8 @@ public class StoreTableService {
     @Transactional
     public StoreTableResponse createStoreTable(Long userId, StoreTableCreateRequest request) {
         validateStoreOwner(request.storeId(), userId);
+        validateNoDuplicateActiveTable(request.storeId(), request.tableNum());
+
         StoreTable storeTable = StoreTable.builder()
             .storeId(request.storeId())
             .tableNum(request.tableNum())
@@ -242,6 +244,24 @@ public class StoreTableService {
     public List<StoreTableResponse> createStoreTablesBulk(Long userId, StoreTableBulkCreateRequest request) {
         validateStoreOwner(request.storeId(), userId);
 
+        // 기존 활성 테이블 번호들 조회
+        List<Integer> existingTableNums = storeTableRepository.findByStoreIdAndStatusNot(request.storeId(), TableStatus.CLOSED)
+            .stream()
+            .map(StoreTable::getTableNum)
+            .toList();
+
+        // 중복 체크
+        List<Integer> duplicateNums = new ArrayList<>();
+        for (int i = 1; i <= request.count(); i++) {
+            if (existingTableNums.contains(i)) {
+                duplicateNums.add(i);
+            }
+        }
+
+        if (!duplicateNums.isEmpty()) {
+            throw new BadRequestException("이미 존재하는 테이블 번호입니다: " + duplicateNums);
+        }
+
         List<StoreTableResponse> responses = new ArrayList<>();
 
         for (int i = 1; i <= request.count(); i++) {
@@ -263,6 +283,13 @@ public class StoreTableService {
             .orElseThrow(() -> new NotFoundException("매장을 찾을 수 없습니다."));
         if (!store.getUserId().equals(userId)) {
             throw new ForbiddenException("본인 매장의 테이블만 관리할 수 있습니다.");
+        }
+    }
+
+    private void validateNoDuplicateActiveTable(Long storeId, Integer tableNum) {
+        boolean exists = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum).isPresent();
+        if (exists) {
+            throw new BadRequestException("이미 존재하는 테이블 번호입니다: " + tableNum);
         }
     }
 }

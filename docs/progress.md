@@ -496,10 +496,15 @@ DELETE /api/tables/bulk
 #### 6. 테이블 생성 시 QR URL 지원
 - `POST /api/tables` 요청에 `qrImageUrl` 필드 추가 (선택)
 
+#### 7. 테이블 중복 생성 방지
+- 활성 테이블 중 동일한 `store_id + table_num` 조합 존재 시 생성 차단
+- MySQL 복합 unique 제약조건 대신 애플리케이션 레벨 검증
+- `createStoreTable`, `createStoreTablesBulk` 모두 적용
+
 **변경 파일**:
 - `SecurityConfig.java` - Actuator 엔드포인트 보안 설정
 - `AuthController.java` - 로그아웃 헤더 방식 변경
-- `StoreTableService.java` - 단체 삭제, clearTable QR 보존
+- `StoreTableService.java` - 단체 삭제, clearTable QR 보존, 중복 테이블 방지
 - `StoreTableCreateRequest.java` - qrImageUrl 필드 추가
 - `StoreTableBulkDeleteRequest.java` - 신규
 - `TableQrService.java` - 활성 테이블 조회 방식 변경
@@ -511,6 +516,7 @@ DELETE /api/tables/bulk
 - 모니터링은 별도 서버에서 운영
 - QR은 물리적 테이블 번호 기준으로 지속
 - 주문 있는 테이블 삭제 차단
+- 복합 unique 제약조건 대신 애플리케이션 레벨 중복 검증 (clearTable 로직 때문)
 
 ---
 
