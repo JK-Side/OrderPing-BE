@@ -170,10 +170,10 @@ public class StoreTableService {
             throw new NotFoundException("삭제할 테이블을 찾을 수 없습니다.");
         }
 
-        List<Long> tablesWithOrders = new ArrayList<>();
+        List<Integer> tablesWithOrders = new ArrayList<>();
         for (StoreTable table : tables) {
             if (!orderRepository.findByTableId(table.getId()).isEmpty()) {
-                tablesWithOrders.add((long) table.getTableNum());
+                tablesWithOrders.add(table.getTableNum());
             }
         }
 

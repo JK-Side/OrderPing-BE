@@ -25,6 +25,7 @@ import com.orderping.api.table.dto.StoreTableUpdateRequest;
 import com.orderping.api.table.service.StoreTableService;
 import com.orderping.domain.enums.TableStatus;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -38,7 +39,7 @@ public class StoreTableController implements StoreTableApi {
     @Override
     public ResponseEntity<StoreTableResponse> createStoreTable(
         @CurrentUser Long userId,
-        @RequestBody StoreTableCreateRequest request
+        @Valid @RequestBody StoreTableCreateRequest request
     ) {
         StoreTableResponse response = storeTableService.createStoreTable(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -112,7 +113,7 @@ public class StoreTableController implements StoreTableApi {
     @Override
     public ResponseEntity<Void> deleteStoreTablesBulk(
         @CurrentUser Long userId,
-        @RequestBody StoreTableBulkDeleteRequest request
+        @Valid @RequestBody StoreTableBulkDeleteRequest request
     ) {
         storeTableService.deleteStoreTablesByTableNums(userId, request.storeId(), request.tableNums());
         return ResponseEntity.noContent().build();

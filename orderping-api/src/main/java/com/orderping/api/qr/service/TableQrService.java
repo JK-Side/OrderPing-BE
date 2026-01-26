@@ -47,7 +47,7 @@ public class TableQrService {
         try {
             claims = qrTokenProvider.parseTableToken(token);
         } catch (JwtException e) {
-            throw new NotFoundException("유효하지 않은 QR 코드입니다.");
+            throw new NotFoundException("유효하지 않은 QR 코드입니다: " + e.getMessage());
         }
 
         // 활성 테이블 조회 (storeId + tableNum으로 CLOSED가 아닌 테이블 찾기)
