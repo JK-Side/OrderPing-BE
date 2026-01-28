@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableBulkDeleteRequest;
+import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
@@ -128,5 +129,18 @@ public interface StoreTableApi {
     ResponseEntity<Void> deleteStoreTablesBulk(
         @Parameter(hidden = true) Long userId,
         StoreTableBulkDeleteRequest request
+    );
+
+    @Operation(summary = "테이블 QR 일괄 업데이트", description = "여러 테이블의 QR 이미지 URL을 일괄 업데이트합니다 (본인 매장만 가능)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "QR 일괄 업데이트 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
+        @ApiResponse(responseCode = "404", description = "테이블을 찾을 수 없음")
+    })
+    ResponseEntity<List<StoreTableResponse>> updateStoreTableQrBulk(
+        @Parameter(hidden = true) Long userId,
+        @Parameter(description = "매장 ID", required = true) Long storeId,
+        StoreTableBulkQrUpdateRequest request
     );
 }

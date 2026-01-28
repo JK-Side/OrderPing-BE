@@ -4,6 +4,7 @@ import java.util.List;
 
 public record OrderCreateRequest(
     Long tableId,
+    Integer tableNum,
     Long storeId,
     String sessionId,
     String depositorName,

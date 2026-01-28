@@ -2,7 +2,6 @@ package com.orderping.api.auth.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -60,22 +59,14 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/api/images/**",
                     "/api/auth/**",
-                    // 고객용 공개 API
-                    "/api/banks",
-                    "/api/stores/*/order",
-                    "/api/menus/available",
-                    // QR 및 딥링크 API
-                    "/api/qr/**",
-                    "/api/payments/deeplink",
+                    // 고객용 API (인증 불필요)
+                    "/api/customer/**",
                     // Actuator (health, prometheus만 공개)
                     "/actuator/health",
                     "/actuator/prometheus"
                 ).permitAll()
                 // 나머지 Actuator는 ADMIN만
                 .requestMatchers("/actuator/**").hasRole("ADMIN")
-                // 고객 주문 관련 API (GET with tableId, POST)
-                .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/orders").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2

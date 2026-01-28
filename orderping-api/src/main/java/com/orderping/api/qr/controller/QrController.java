@@ -17,9 +17,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/qr")
+@RequestMapping("/api/customer/qr")
 @RequiredArgsConstructor
-@Tag(name = "QR", description = "QR 코드 관련 API")
+@Tag(name = "Customer QR", description = "고객용 QR 코드 API")
 public class QrController {
 
     private final TableQrService tableQrService;

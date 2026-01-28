@@ -52,6 +52,8 @@ orderping/
 
 ## API 엔드포인트
 
+### 운영자용 API (인증 필요)
+
 | 경로 | 설명 |
 |------|------|
 | `/api/auth` | 인증 관리 (토큰 재발급, 로그아웃) |
@@ -62,11 +64,17 @@ orderping/
 | `/api/tables` | 테이블 관리 |
 | `/api/categories` | 카테고리 관리 |
 | `/api/menus` | 메뉴 관리 |
-| `/api/orders` | 주문 관리 |
+| `/api/orders` | 주문 관리 (매장 기준) |
 | `/api/payments` | 결제 관리 |
 | `/api/images` | 이미지 업로드 (Presigned URL) |
-| `/api/qr` | QR 코드 / 토스 딥링크 |
-| `/api/banks` | 은행 목록 조회 |
+
+### 고객용 API (인증 불필요)
+
+| 경로 | 설명 |
+|------|------|
+| `/api/customer/orders` | 고객 주문 (생성, 테이블별 조회) |
+| `/api/customer/qr` | QR 코드로 테이블 정보 조회 |
+| `/api/customer/banks` | 은행 목록 조회 (토스 딥링크용) |
 
 ---
 
@@ -372,7 +380,11 @@ GET /api/tables?storeId=1&status=ACTIVE
 | Claude PR 리뷰 | ✅ 완료 |
 | 모니터링 (Prometheus/Loki/Grafana) | ✅ 완료 |
 | 테이블 단체 생성/삭제 | ✅ 완료 |
+| 테이블 QR 일괄 업데이트 | ✅ 완료 |
 | QR 지속성 | ✅ 완료 |
+| Access Log (Tomcat) | ✅ 완료 |
+| Swagger 그룹 분리 (운영자/고객) | ✅ 완료 |
+| 고객용 주문 API | ✅ 완료 |
 | Bean Validation | ⏳ 미구현 |
 | 카카오 알림톡 | ⏳ 미구현 |
 
@@ -517,6 +529,136 @@ DELETE /api/tables/bulk
 - QR은 물리적 테이블 번호 기준으로 지속
 - 주문 있는 테이블 삭제 차단
 - 복합 unique 제약조건 대신 애플리케이션 레벨 중복 검증 (clearTable 로직 때문)
+
+---
+
+### 2026-01-28
+
+**작업 내용**:
+
+#### 1. Tomcat Access Log 설정
+- HTTP 요청 로그를 파일로 기록
+- `/var/log/orderping/access.log`에 저장
+- 클라이언트 IP, 요청 메서드, URI, 쿼리 스트링, 응답 시간 포함
+
+**패턴**:
+```
+%{yyyy-MM-dd HH:mm:ss}t [%{X-Forwarded-For}i] %s %m %U%q %Dms
+```
+
+**예시 출력**:
+```
+2026-01-28 14:30:45 [123.45.67.89] 200 GET /api/tables?storeId=1 45ms
+```
+
+#### 2. Docker 컨테이너 시간대 설정
+- API 컨테이너에 `TZ: Asia/Seoul` 환경변수 추가
+- 로그 타임스탬프가 한국 시간으로 표시
+
+#### 3. 테이블 QR 일괄 업데이트 API
+- `PATCH /api/tables/bulk/{storeId}` 엔드포인트 추가
+- 여러 테이블의 QR 이미지 URL을 한 번에 업데이트
+
+**API**:
+```json
+PATCH /api/tables/bulk/{storeId}
+{
+  "updates": [
+    { "tableId": 1, "qrImageUrl": "https://s3.../qr1.png" },
+    { "tableId": 2, "qrImageUrl": "https://s3.../qr2.png" }
+  ]
+}
+```
+
+#### 4. 주문 조회 API 통합
+- 기존 두 개의 엔드포인트를 하나로 통합
+- `status` 파라미터를 선택적으로 사용
+
+**API**:
+```
+GET /api/orders?storeId=1           → 해당 매장의 모든 주문
+GET /api/orders?storeId=1&status=PENDING  → PENDING 상태만
+```
+
+#### 5. 주문에 tableNum 필드 추가
+- Order 도메인, 엔티티, DTO에 `tableNum` 필드 추가
+- 주문 생성 시 `tableNum`을 함께 저장
+- 조회 시 테이블 조인 없이 바로 `tableNum` 반환
+
+**주문 생성 요청**:
+```json
+POST /api/orders
+{
+  "tableId": 1,
+  "tableNum": 3,
+  "storeId": 1,
+  ...
+}
+```
+
+**변경 파일**:
+- `application.yml` - Tomcat access log 설정 추가
+- `docker-compose.yml` - TZ 환경변수 추가
+- `StoreTableBulkQrUpdateRequest.java` - 신규 DTO
+- `StoreTableService.java` - `updateStoreTableQrBulk` 메서드 추가
+- `StoreTableController.java` - QR 일괄 업데이트 엔드포인트 추가
+- `StoreTableApi.java` - Swagger 문서 추가
+- `OrderController.java` - 주문 조회 API 통합
+- `OrderService.java` - `getOrdersByStore` 메서드로 통합
+- `OrderApi.java` - Swagger 문서 통합
+- `Order.java` (domain) - `tableNum` 필드 추가
+- `OrderEntity.java` (infra) - `table_num` 컬럼 추가
+- `OrderCreateRequest.java` - `tableNum` 필드 추가
+- `OrderResponse.java` - `tableNum` 필드 추가
+
+#### 6. Swagger 문서 그룹 분리
+- 운영자용 API와 고객용 API를 Swagger에서 분리
+- `/swagger-ui.html` 접속 시 드롭다운으로 선택 가능
+
+**그룹**:
+- `1. 운영자용 API`: `/api/**` (고객용 제외)
+- `2. 고객용 API`: `/api/customer/**`, `/api/qr/**`, `/api/banks/**`
+
+#### 7. 고객용 주문 API 분리
+- 고객 주문 API를 `/api/customer/orders`로 분리
+- 테이블별 주문 조회 시 메뉴 상세 정보 포함
+
+**고객용 API**:
+```
+POST /api/customer/orders              → 주문 생성
+GET  /api/customer/orders/table/{id}   → 테이블 주문 내역 (메뉴 포함)
+GET  /api/customer/qr/tables/{token}   → QR 토큰으로 테이블 정보 조회
+GET  /api/customer/banks               → 은행 목록 조회
+```
+
+**응답 예시** (메뉴 포함):
+```json
+{
+  "id": 1,
+  "tableId": 1,
+  "tableNum": 3,
+  "status": "PENDING",
+  "totalPrice": 25000,
+  "menus": [
+    { "menuId": 1, "menuName": "소주", "quantity": 2, "price": 5000, "isService": false },
+    { "menuId": 2, "menuName": "삼겹살", "quantity": 1, "price": 15000, "isService": false }
+  ]
+}
+```
+
+**추가 변경 파일**:
+- `SwaggerConfig.java` - GroupedOpenApi 설정 추가
+- `CustomerOrderController.java` - 신규 (고객용 주문 컨트롤러)
+- `OrderDetailResponse.java` - 신규 (메뉴 포함 응답 DTO)
+- `OrderService.java` - `getOrdersWithMenusByTableId` 메서드 추가
+- `SecurityConfig.java` - `/api/customer/**` permitAll 추가
+
+**주요 결정**:
+- Access log는 Promtail이 자동 수집 (*.log 패턴)
+- Promtail에서 `/actuator`, `/swagger-ui`, `/v3/api-docs` 경로는 drop
+- 주문에 `tableNum`을 직접 저장하여 조회 시 성능 향상
+- 운영자/고객 API 분리로 Swagger 가독성 향상
+- 고객용 주문 조회에만 메뉴 상세 포함 (성능 고려)
 
 ---
 

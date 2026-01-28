@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.orderping.api.qr.service.QrTokenProvider;
 import com.orderping.api.table.dto.OrderMenuSummary;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
+import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
@@ -273,6 +274,40 @@ public class StoreTableService {
 
             StoreTable saved = storeTableRepository.save(storeTable);
             responses.add(StoreTableResponse.from(saved));
+        }
+
+        return responses;
+    }
+
+    @Transactional
+    public List<StoreTableResponse> updateStoreTableQrBulk(Long userId, Long storeId, StoreTableBulkQrUpdateRequest request) {
+        validateStoreOwner(storeId, userId);
+
+        List<StoreTableResponse> responses = new ArrayList<>();
+        List<Long> notFoundIds = new ArrayList<>();
+
+        for (StoreTableBulkQrUpdateRequest.TableQrUpdate update : request.updates()) {
+            StoreTable table = storeTableRepository.findById(update.tableId()).orElse(null);
+
+            if (table == null || !table.getStoreId().equals(storeId)) {
+                notFoundIds.add(update.tableId());
+                continue;
+            }
+
+            StoreTable updated = StoreTable.builder()
+                .id(table.getId())
+                .storeId(table.getStoreId())
+                .tableNum(table.getTableNum())
+                .status(table.getStatus())
+                .qrImageUrl(update.qrImageUrl())
+                .build();
+
+            StoreTable saved = storeTableRepository.save(updated);
+            responses.add(StoreTableResponse.from(saved));
+        }
+
+        if (!notFoundIds.isEmpty()) {
+            throw new NotFoundException("테이블을 찾을 수 없습니다. ID: " + notFoundIds);
         }
 
         return responses;
