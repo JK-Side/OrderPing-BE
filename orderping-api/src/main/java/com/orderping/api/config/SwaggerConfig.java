@@ -1,5 +1,6 @@
 package com.orderping.api.config;
 
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -29,5 +30,22 @@ public class SwaggerConfig {
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
                         .bearerFormat("JWT")));
+    }
+
+    @Bean
+    public GroupedOpenApi ownerApi() {
+        return GroupedOpenApi.builder()
+            .group("1. 운영자용 API")
+            .pathsToMatch("/api/**")
+            .pathsToExclude("/api/customer/**")
+            .build();
+    }
+
+    @Bean
+    public GroupedOpenApi customerApi() {
+        return GroupedOpenApi.builder()
+            .group("2. 고객용 API")
+            .pathsToMatch("/api/customer/**")
+            .build();
     }
 }

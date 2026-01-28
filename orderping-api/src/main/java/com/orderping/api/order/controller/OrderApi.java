@@ -34,27 +34,16 @@ public interface OrderApi {
         @Parameter(description = "주문 ID", required = true) Long id
     );
 
-    @Operation(summary = "매장별 주문 목록", description = "매장 ID로 주문 목록을 조회합니다 (본인 매장만 가능)")
+    @Operation(summary = "매장별 주문 목록", description = "매장 ID로 주문 목록을 조회합니다. status를 지정하면 해당 상태의 주문만 조회합니다. (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "조회 성공"),
         @ApiResponse(responseCode = "401", description = "인증 필요"),
         @ApiResponse(responseCode = "403", description = "본인 매장이 아님")
     })
-    ResponseEntity<List<OrderResponse>> getOrdersByStoreId(
-        @Parameter(hidden = true) Long userId,
-        @Parameter(description = "매장 ID", required = true) Long storeId
-    );
-
-    @Operation(summary = "매장별 상태별 주문 목록", description = "매장 ID와 주문 상태로 주문 목록을 조회합니다 (본인 매장만 가능)")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요"),
-        @ApiResponse(responseCode = "403", description = "본인 매장이 아님")
-    })
-    ResponseEntity<List<OrderResponse>> getOrdersByStoreIdAndStatus(
+    ResponseEntity<List<OrderResponse>> getOrdersByStore(
         @Parameter(hidden = true) Long userId,
         @Parameter(description = "매장 ID", required = true) Long storeId,
-        @Parameter(description = "주문 상태", required = true) OrderStatus status
+        @Parameter(description = "주문 상태 (선택, 미지정 시 전체 조회)") OrderStatus status
     );
 
     @Operation(summary = "테이블별 주문 목록", description = "테이블 ID로 주문 목록을 조회합니다")

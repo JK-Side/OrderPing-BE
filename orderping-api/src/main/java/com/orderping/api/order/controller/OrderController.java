@@ -46,22 +46,12 @@ public class OrderController implements OrderApi {
 
     @GetMapping(params = "storeId")
     @Override
-    public ResponseEntity<List<OrderResponse>> getOrdersByStoreId(
-        @CurrentUser Long userId,
-        @RequestParam Long storeId
-    ) {
-        List<OrderResponse> responses = orderService.getOrdersByStoreId(userId, storeId);
-        return ResponseEntity.ok(responses);
-    }
-
-    @GetMapping(params = {"storeId", "status"})
-    @Override
-    public ResponseEntity<List<OrderResponse>> getOrdersByStoreIdAndStatus(
+    public ResponseEntity<List<OrderResponse>> getOrdersByStore(
         @CurrentUser Long userId,
         @RequestParam Long storeId,
-        @RequestParam OrderStatus status
+        @RequestParam(required = false) OrderStatus status
     ) {
-        List<OrderResponse> responses = orderService.getOrdersByStoreIdAndStatus(userId, storeId, status);
+        List<OrderResponse> responses = orderService.getOrdersByStore(userId, storeId, status);
         return ResponseEntity.ok(responses);
     }
 
