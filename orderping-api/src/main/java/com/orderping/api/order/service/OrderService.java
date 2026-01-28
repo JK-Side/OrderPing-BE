@@ -1,6 +1,8 @@
 package com.orderping.api.order.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +12,7 @@ import com.orderping.api.order.dto.OrderDetailResponse;
 import com.orderping.api.order.dto.OrderResponse;
 import com.orderping.api.order.dto.OrderStatusUpdateRequest;
 import com.orderping.domain.enums.OrderStatus;
+import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.exception.OutOfStockException;
@@ -20,7 +23,9 @@ import com.orderping.domain.order.OrderMenu;
 import com.orderping.domain.order.repository.OrderMenuRepository;
 import com.orderping.domain.order.repository.OrderRepository;
 import com.orderping.domain.store.Store;
+import com.orderping.domain.store.StoreTable;
 import com.orderping.domain.store.repository.StoreRepository;
+import com.orderping.domain.store.repository.StoreTableRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,9 +38,18 @@ public class OrderService {
     private final OrderMenuRepository orderMenuRepository;
     private final MenuRepository menuRepository;
     private final StoreRepository storeRepository;
+    private final StoreTableRepository storeTableRepository;
 
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest request) {
+        // 테이블 정보 검증
+        StoreTable table = storeTableRepository.findById(request.tableId())
+            .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
+
+        if (!table.getTableNum().equals(request.tableNum())) {
+            throw new BadRequestException("테이블 번호가 일치하지 않습니다.");
+        }
+
         // 비관적 락으로 메뉴 조회 및 재고 검증
         for (OrderCreateRequest.OrderMenuRequest menuRequest : request.menus()) {
             Menu menu = menuRepository.findByIdWithLock(menuRequest.menuId())
@@ -119,20 +133,26 @@ public class OrderService {
 
     private OrderDetailResponse toOrderDetailResponse(Order order) {
         List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(order.getId());
-        List<OrderDetailResponse.OrderMenuDetail> menuDetails = orderMenus.stream()
-            .map(om -> {
-                String menuName = menuRepository.findById(om.getMenuId())
-                    .map(Menu::getName)
-                    .orElse("삭제된 메뉴");
-                return new OrderDetailResponse.OrderMenuDetail(
-                    om.getMenuId(),
-                    menuName,
-                    om.getQuantity(),
-                    om.getPrice(),
-                    om.getIsService()
-                );
-            })
+
+        // 모든 메뉴 ID를 한 번에 조회 (N+1 방지)
+        List<Long> menuIds = orderMenus.stream()
+            .map(OrderMenu::getMenuId)
+            .distinct()
             .toList();
+
+        Map<Long, String> menuNames = menuRepository.findAllByIds(menuIds).stream()
+            .collect(Collectors.toMap(Menu::getId, Menu::getName));
+
+        List<OrderDetailResponse.OrderMenuDetail> menuDetails = orderMenus.stream()
+            .map(om -> new OrderDetailResponse.OrderMenuDetail(
+                om.getMenuId(),
+                menuNames.getOrDefault(om.getMenuId(), "삭제된 메뉴"),
+                om.getQuantity(),
+                om.getPrice(),
+                om.getIsService()
+            ))
+            .toList();
+
         return OrderDetailResponse.from(order, menuDetails);
     }
 

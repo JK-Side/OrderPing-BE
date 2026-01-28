@@ -31,6 +31,16 @@ public class MenuRepositoryImpl implements MenuRepository {
     }
 
     @Override
+    public List<Menu> findAllByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return jpaRepository.findAllById(ids).stream()
+            .map(MenuEntity::toDomain)
+            .toList();
+    }
+
+    @Override
     public List<Menu> findByStoreId(Long storeId) {
         return jpaRepository.findByStoreId(storeId).stream()
             .map(MenuEntity::toDomain)
