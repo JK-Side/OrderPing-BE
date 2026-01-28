@@ -8,6 +8,7 @@ import com.orderping.domain.order.Order;
 public record OrderResponse(
     Long id,
     Long tableId,
+    Integer tableNum,
     Long storeId,
     String sessionId,
     String depositorName,
@@ -21,6 +22,7 @@ public record OrderResponse(
         return new OrderResponse(
             order.getId(),
             order.getTableId(),
+            order.getTableNum(),
             order.getStoreId(),
             order.getSessionId(),
             order.getDepositorName(),
