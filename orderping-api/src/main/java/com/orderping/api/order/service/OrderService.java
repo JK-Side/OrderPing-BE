@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.orderping.api.order.dto.OrderCreateRequest;
+import com.orderping.api.order.dto.OrderDetailResponse;
 import com.orderping.api.order.dto.OrderResponse;
 import com.orderping.api.order.dto.OrderStatusUpdateRequest;
 import com.orderping.domain.enums.OrderStatus;
@@ -59,6 +60,7 @@ public class OrderService {
 
         Order order = Order.builder()
             .tableId(request.tableId())
+            .tableNum(request.tableNum())
             .storeId(request.storeId())
             .sessionId(request.sessionId())
             .depositorName(request.depositorName())
@@ -90,16 +92,14 @@ public class OrderService {
         return OrderResponse.from(order);
     }
 
-    public List<OrderResponse> getOrdersByStoreId(Long userId, Long storeId) {
+    public List<OrderResponse> getOrdersByStore(Long userId, Long storeId, OrderStatus status) {
         validateStoreOwner(storeId, userId);
+        if (status != null) {
+            return orderRepository.findByStoreIdAndStatus(storeId, status).stream()
+                .map(OrderResponse::from)
+                .toList();
+        }
         return orderRepository.findByStoreId(storeId).stream()
-            .map(OrderResponse::from)
-            .toList();
-    }
-
-    public List<OrderResponse> getOrdersByStoreIdAndStatus(Long userId, Long storeId, OrderStatus status) {
-        validateStoreOwner(storeId, userId);
-        return orderRepository.findByStoreIdAndStatus(storeId, status).stream()
             .map(OrderResponse::from)
             .toList();
     }
@@ -108,6 +108,32 @@ public class OrderService {
         return orderRepository.findByTableId(tableId).stream()
             .map(OrderResponse::from)
             .toList();
+    }
+
+    public List<OrderDetailResponse> getOrdersWithMenusByTableId(Long tableId) {
+        List<Order> orders = orderRepository.findByTableId(tableId);
+        return orders.stream()
+            .map(this::toOrderDetailResponse)
+            .toList();
+    }
+
+    private OrderDetailResponse toOrderDetailResponse(Order order) {
+        List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(order.getId());
+        List<OrderDetailResponse.OrderMenuDetail> menuDetails = orderMenus.stream()
+            .map(om -> {
+                String menuName = menuRepository.findById(om.getMenuId())
+                    .map(Menu::getName)
+                    .orElse("삭제된 메뉴");
+                return new OrderDetailResponse.OrderMenuDetail(
+                    om.getMenuId(),
+                    menuName,
+                    om.getQuantity(),
+                    om.getPrice(),
+                    om.getIsService()
+                );
+            })
+            .toList();
+        return OrderDetailResponse.from(order, menuDetails);
     }
 
     @Transactional
@@ -119,6 +145,7 @@ public class OrderService {
         Order updated = Order.builder()
             .id(order.getId())
             .tableId(order.getTableId())
+            .tableNum(order.getTableNum())
             .storeId(order.getStoreId())
             .sessionId(order.getSessionId())
             .depositorName(order.getDepositorName())
