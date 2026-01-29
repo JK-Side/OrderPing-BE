@@ -5,7 +5,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,12 +34,14 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "로그아웃", description = "헤더의 Refresh Token을 무효화하고 쿠키를 삭제합니다.")
+    @Operation(summary = "로그아웃", description = "쿠키의 Refresh Token을 무효화하고 쿠키를 삭제합니다.")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-        @RequestHeader(name = "X-Refresh-Token") String refreshToken
+        @CookieValue(name = REFRESH_TOKEN_COOKIE_NAME, required = false) String refreshToken
     ) {
-        authService.logout(refreshToken);
+        if (refreshToken != null) {
+            authService.logout(refreshToken);
+        }
 
         // 쿠키 삭제
         ResponseCookie deleteCookie = ResponseCookie.from(REFRESH_TOKEN_COOKIE_NAME, "")
