@@ -19,7 +19,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 public class S3Service {
 
     private static final Duration PRESIGNED_URL_EXPIRATION = Duration.ofMinutes(10);
-    private static final Set<String> ALLOWED_DIRECTORIES = Set.of("menus", "stores");
+    private static final Set<String> ALLOWED_DIRECTORIES = Set.of("menus", "stores", "tables");
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg");
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private final S3Presigner s3Presigner;

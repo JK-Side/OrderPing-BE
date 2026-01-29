@@ -70,6 +70,7 @@ class PaymentRepositoryImplTest {
 
         savedOrder = orderRepository.save(Order.builder()
             .tableId(savedTable.getId())
+            .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
             .sessionId("session-123")
             .status(OrderStatus.PENDING)
