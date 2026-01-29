@@ -69,6 +69,7 @@ class OrderRepositoryImplTest {
         // given
         Order order = Order.builder()
             .tableId(savedTable.getId())
+            .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
             .sessionId("session-123")
             .status(OrderStatus.PENDING)
@@ -93,6 +94,7 @@ class OrderRepositoryImplTest {
 
         orderRepository.save(Order.builder()
             .tableId(savedTable.getId())
+            .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
             .sessionId(sessionId)
             .status(OrderStatus.PENDING)
@@ -101,6 +103,7 @@ class OrderRepositoryImplTest {
 
         orderRepository.save(Order.builder()
             .tableId(savedTable.getId())
+            .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
             .sessionId(sessionId)
             .status(OrderStatus.COOKING)
@@ -120,6 +123,7 @@ class OrderRepositoryImplTest {
         // given
         orderRepository.save(Order.builder()
             .tableId(savedTable.getId())
+            .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
             .sessionId("session-1")
             .status(OrderStatus.PENDING)
@@ -128,6 +132,7 @@ class OrderRepositoryImplTest {
 
         orderRepository.save(Order.builder()
             .tableId(savedTable.getId())
+            .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
             .sessionId("session-2")
             .status(OrderStatus.COOKING)
@@ -136,6 +141,7 @@ class OrderRepositoryImplTest {
 
         orderRepository.save(Order.builder()
             .tableId(savedTable.getId())
+            .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
             .sessionId("session-3")
             .status(OrderStatus.PENDING)
