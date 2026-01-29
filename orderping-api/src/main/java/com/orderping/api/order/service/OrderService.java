@@ -100,10 +100,10 @@ public class OrderService {
         return OrderResponse.from(savedOrder);
     }
 
-    public OrderResponse getOrder(Long id) {
+    public OrderDetailResponse getOrder(Long id) {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
-        return OrderResponse.from(order);
+        return toOrderDetailResponse(order);
     }
 
     public List<OrderResponse> getOrdersByStore(Long userId, Long storeId, OrderStatus status) {
