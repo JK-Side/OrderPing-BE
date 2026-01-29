@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.order.dto.OrderCreateRequest;
+import com.orderping.api.order.dto.OrderDetailResponse;
 import com.orderping.api.order.dto.OrderResponse;
 import com.orderping.api.order.dto.OrderStatusUpdateRequest;
 import com.orderping.api.order.service.OrderService;
@@ -39,8 +40,8 @@ public class OrderController implements OrderApi {
 
     @GetMapping("/{id}")
     @Override
-    public ResponseEntity<OrderResponse> getOrder(@PathVariable Long id) {
-        OrderResponse response = orderService.getOrder(id);
+    public ResponseEntity<OrderDetailResponse> getOrder(@PathVariable Long id) {
+        OrderDetailResponse response = orderService.getOrder(id);
         return ResponseEntity.ok(response);
     }
 
@@ -52,13 +53,6 @@ public class OrderController implements OrderApi {
         @RequestParam(required = false) OrderStatus status
     ) {
         List<OrderResponse> responses = orderService.getOrdersByStore(userId, storeId, status);
-        return ResponseEntity.ok(responses);
-    }
-
-    @GetMapping(params = "tableId")
-    @Override
-    public ResponseEntity<List<OrderResponse>> getOrdersByTableId(@RequestParam Long tableId) {
-        List<OrderResponse> responses = orderService.getOrdersByTableId(tableId);
         return ResponseEntity.ok(responses);
     }
 
