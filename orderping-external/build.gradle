@@ -18,6 +18,7 @@ repositories {
 dependencies {
     implementation project(':orderping-domain')
     implementation 'org.springframework.boot:spring-boot-starter:3.5.0'
+    implementation 'org.springframework.boot:spring-boot-starter-web:3.5.0'
 
     // AWS SDK v2
     implementation platform('software.amazon.awssdk:bom:2.21.0')

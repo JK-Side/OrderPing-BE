@@ -2,10 +2,12 @@ package com.orderping.api.store.service;
 
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.orderping.api.store.dto.StoreCreateRequest;
+import com.orderping.api.store.event.StoreCreatedEvent;
 import com.orderping.api.store.dto.StoreDetailResponse;
 import com.orderping.api.store.dto.StoreResponse;
 import com.orderping.api.store.dto.StoreUpdateRequest;
@@ -19,6 +21,8 @@ import com.orderping.domain.store.Store;
 import com.orderping.domain.store.StoreAccount;
 import com.orderping.domain.store.repository.StoreAccountRepository;
 import com.orderping.domain.store.repository.StoreRepository;
+import com.orderping.domain.user.User;
+import com.orderping.domain.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +35,8 @@ public class StoreService {
     private final StoreAccountRepository storeAccountRepository;
     private final CategoryRepository categoryRepository;
     private final MenuRepository menuRepository;
+    private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public StoreResponse createStore(Long userId, StoreCreateRequest request) {
@@ -55,6 +61,12 @@ public class StoreService {
                 .build();
             storeAccountRepository.save(storeAccount);
         }
+
+        // 가게 생성 이벤트 발행
+        String ownerNickname = userRepository.findById(userId)
+            .map(User::getNickname)
+            .orElse("Unknown");
+        eventPublisher.publishEvent(new StoreCreatedEvent(saved, ownerNickname));
 
         return StoreResponse.from(saved);
     }
