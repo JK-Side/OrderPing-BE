@@ -7,8 +7,8 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class DiscordConfig {
 
-    @Bean
-    public RestTemplate restTemplate() {
+    @Bean("discordRestTemplate")
+    public RestTemplate discordRestTemplate() {
         return new RestTemplate();
     }
 }
