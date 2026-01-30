@@ -1,5 +1,6 @@
 package com.orderping.external.discord;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -7,16 +8,22 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class DiscordWebhookService {
 
     private final DiscordProperties discordProperties;
     private final RestTemplate restTemplate;
+
+    public DiscordWebhookService(
+        DiscordProperties discordProperties,
+        @Qualifier("discordRestTemplate") RestTemplate restTemplate
+    ) {
+        this.discordProperties = discordProperties;
+        this.restTemplate = restTemplate;
+    }
 
     @Async
     public void sendMessage(String content) {
