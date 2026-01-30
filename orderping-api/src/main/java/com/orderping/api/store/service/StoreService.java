@@ -63,8 +63,9 @@ public class StoreService {
         }
 
         // 가게 생성 이벤트 발행
-        User owner = userRepository.findById(userId).orElse(null);
-        String ownerNickname = owner != null ? owner.getNickname() : "Unknown";
+        String ownerNickname = userRepository.findById(userId)
+            .map(User::getNickname)
+            .orElse("Unknown");
         eventPublisher.publishEvent(new StoreCreatedEvent(saved, ownerNickname));
 
         return StoreResponse.from(saved);

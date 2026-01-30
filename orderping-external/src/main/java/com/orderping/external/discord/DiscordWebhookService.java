@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DiscordWebhookService {
 
     private final DiscordProperties discordProperties;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     @Async
     public void sendMessage(String content) {
