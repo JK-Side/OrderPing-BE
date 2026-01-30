@@ -13,7 +13,7 @@ orderping/
 ├── orderping-api        # REST API, 컨트롤러, 서비스 (Spring Boot 3.5)
 ├── orderping-domain     # 순수 도메인 모델, 리포지토리 인터페이스
 ├── orderping-infra      # JPA 엔티티, 리포지토리 구현체
-└── orderping-external   # 외부 연동 (현재 비어있음)
+└── orderping-external   # 외부 연동 (AWS S3, Discord 웹훅)
 ```
 
 ## 기술 스택
@@ -385,14 +385,14 @@ GET /api/tables?storeId=1&status=ACTIVE
 | Access Log (Tomcat) | ✅ 완료 |
 | Swagger 그룹 분리 (운영자/고객) | ✅ 완료 |
 | 고객용 주문 API | ✅ 완료 |
-| Bean Validation | ⏳ 미구현 |
+| Bean Validation | ✅ 완료 |
+| Discord 웹훅 알림 | ✅ 완료 |
 | 카카오 알림톡 | ⏳ 미구현 |
 
 ---
 
 ## 다음 작업 예정
 
-- [ ] Bean Validation 추가 (입력 검증)
 - [ ] 카카오 알림톡 연동
 - [ ] 주문 실시간 알림 (WebSocket/SSE)
 - [ ] 테스트 코드 보강
@@ -439,6 +439,9 @@ cloud:
     credentials:
       access-key: ${AWS_ACCESS_KEY}
       secret-key: ${AWS_SECRET_KEY}
+
+discord:
+  webhook-url: ${DISCORD_WEBHOOK_URL}
 ```
 
 ---
@@ -679,6 +682,82 @@ GET  /api/customer/banks               → 은행 목록 조회
 **주요 결정**:
 - RefreshToken은 절대 응답 바디에 노출하지 않음
 - HttpOnly + Secure + SameSite=None 쿠키 사용
+
+---
+
+### 2026-01-29
+
+**작업 내용**:
+
+#### 1. N+1 쿼리 최적화
+- `toOrderDetailResponse`에서 메뉴 조회 시 N+1 쿼리 문제 수정
+- `MenuRepository.findAllByIds()` 배치 조회 메서드 추가
+
+#### 2. 주문 생성 시 테이블 검증 추가
+- `tableId`와 `tableNum` 일관성 검증
+- 존재하지 않는 테이블이나 번호 불일치 시 에러 반환
+
+#### 3. 주문 상세 조회 API 개선
+- `GET /api/orders/{id}` 응답에 메뉴 정보 포함
+- `OrderResponse` → `OrderDetailResponse`로 변경
+
+#### 4. 주문 조회 API 충돌 해결
+- `getOrdersByStore`와 `getOrdersByTableId` 간 Ambiguous handler 에러 수정
+- 테이블별 조회는 고객용 API(`/api/customer/orders/table/{tableId}`)로 통합
+
+#### 5. 로그아웃 API 개선
+- `X-Refresh-Token` 헤더 → 쿠키 방식으로 변경 (`/refresh`와 동일)
+- 쿠키가 없어도 에러 없이 처리 (optional)
+
+#### 6. Presigned URL 허용 확장
+- SVG 파일 확장자 허용 (`.svg`)
+- `tables` 디렉토리 허용
+
+#### 7. Bean Validation 추가
+- `spring-boot-starter-validation` 의존성 추가
+- `@Valid`, `@NotNull`, `@NotEmpty` 등 검증 어노테이션 사용 가능
+
+#### 8. Discord 웹훅 알림 기능
+- 가게 생성 시 Discord로 알림 전송
+- Spring Event 기반 비동기 처리
+
+**Discord 알림 흐름**:
+```
+StoreService.createStore()
+  → eventPublisher.publishEvent(StoreCreatedEvent)
+  → StoreEventListener.handleStoreCreated() [@Async]
+  → DiscordWebhookService.sendEmbed()
+```
+
+**환경변수**:
+```bash
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxx/yyy
+```
+
+**변경 파일**:
+- `MenuRepository.java` - `findAllByIds()` 추가
+- `MenuRepositoryImpl.java` - 배치 조회 구현
+- `OrderService.java` - N+1 수정, 테이블 검증 추가, getOrder 반환타입 변경
+- `OrderController.java` - `getOrdersByTableId` 제거
+- `OrderApi.java` - 인터페이스 정리
+- `AuthController.java` - 로그아웃 쿠키 방식으로 변경
+- `S3Service.java` - `.svg`, `tables` 허용
+- `build.gradle` (api) - validation 의존성 추가
+- `build.gradle` (external) - web 의존성 추가
+- `DiscordProperties.java` - 신규
+- `DiscordWebhookService.java` - 신규
+- `StoreCreatedEvent.java` - 신규
+- `StoreEventListener.java` - 신규
+- `StoreService.java` - 이벤트 발행 추가
+- `OrderpingApiApplication.java` - `@EnableAsync` 추가
+- `application.yml` - `discord.webhook-url` 설정 추가
+- `OrderRepositoryImplTest.java` - `tableNum` 필드 추가
+- `PaymentRepositoryImplTest.java` - `tableNum` 필드 추가
+
+**주요 결정**:
+- Discord 알림은 비동기로 처리하여 API 응답 지연 방지
+- 이벤트 기반 구조로 향후 이메일/SMS 등 확장 용이
+- 로그아웃은 쿠키가 없어도 성공 응답 (쿠키 삭제만 수행)
 
 ---
 
