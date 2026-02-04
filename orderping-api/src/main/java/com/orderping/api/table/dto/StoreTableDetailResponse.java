@@ -13,12 +13,14 @@ public record StoreTableDetailResponse(
     TableStatus status,
     String qrImageUrl,
     List<OrderMenuSummary> orderMenus,
+    List<OrderMenuSummary> serviceMenus,
     Long totalOrderAmount,
     OrderStatus orderStatus
 ) {
     public static StoreTableDetailResponse from(
         StoreTable storeTable,
         List<OrderMenuSummary> orderMenus,
+        List<OrderMenuSummary> serviceMenus,
         Long totalOrderAmount,
         OrderStatus orderStatus
     ) {
@@ -29,6 +31,7 @@ public record StoreTableDetailResponse(
             storeTable.getStatus(),
             storeTable.getQrImageUrl(),
             orderMenus,
+            serviceMenus,
             totalOrderAmount,
             orderStatus
         );

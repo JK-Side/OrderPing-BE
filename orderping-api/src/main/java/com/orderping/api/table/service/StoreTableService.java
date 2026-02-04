@@ -103,8 +103,9 @@ public class StoreTableService {
     private StoreTableDetailResponse toDetailResponse(StoreTable storeTable) {
         List<Order> orders = orderRepository.findByTableId(storeTable.getId());
 
-        // menuId -> (menuName, totalQuantity, price) 집계용 Map
-        Map<Long, MenuAggregate> menuAggregateMap = new LinkedHashMap<>();
+        // 일반 메뉴와 서비스 메뉴 분리 집계
+        Map<Long, MenuAggregate> orderMenuAggregateMap = new LinkedHashMap<>();
+        Map<Long, MenuAggregate> serviceMenuAggregateMap = new LinkedHashMap<>();
         long totalAmount = 0L;
         OrderStatus highestPriorityStatus = null;
 
@@ -123,8 +124,11 @@ public class StoreTableService {
                 Long menuId = orderMenu.getMenuId();
                 Long quantity = orderMenu.getQuantity();
                 Long price = orderMenu.getPrice();
+                boolean isService = Boolean.TRUE.equals(orderMenu.getIsService());
 
-                menuAggregateMap.compute(menuId, (id, existing) -> {
+                Map<Long, MenuAggregate> targetMap = isService ? serviceMenuAggregateMap : orderMenuAggregateMap;
+
+                targetMap.compute(menuId, (id, existing) -> {
                     if (existing == null) {
                         String menuName = menuRepository.findById(menuId)
                             .map(Menu::getName)
@@ -135,11 +139,14 @@ public class StoreTableService {
                     }
                 });
 
-                totalAmount += price * quantity;
+                // 서비스 메뉴는 총액에서 제외
+                if (!isService) {
+                    totalAmount += price * quantity;
+                }
             }
         }
 
-        List<OrderMenuSummary> orderMenus = menuAggregateMap.entrySet().stream()
+        List<OrderMenuSummary> orderMenus = orderMenuAggregateMap.entrySet().stream()
             .map(entry -> new OrderMenuSummary(
                 entry.getKey(),
                 entry.getValue().menuName,
@@ -148,7 +155,16 @@ public class StoreTableService {
             ))
             .toList();
 
-        return StoreTableDetailResponse.from(storeTable, orderMenus, totalAmount, highestPriorityStatus);
+        List<OrderMenuSummary> serviceMenus = serviceMenuAggregateMap.entrySet().stream()
+            .map(entry -> new OrderMenuSummary(
+                entry.getKey(),
+                entry.getValue().menuName,
+                entry.getValue().quantity,
+                entry.getValue().price
+            ))
+            .toList();
+
+        return StoreTableDetailResponse.from(storeTable, orderMenus, serviceMenus, totalAmount, highestPriorityStatus);
     }
 
     @Transactional
