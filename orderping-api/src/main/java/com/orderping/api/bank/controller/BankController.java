@@ -13,7 +13,7 @@ import com.orderping.api.bank.service.BankService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/customer/banks")
+@RequestMapping("/api/banks")
 @RequiredArgsConstructor
 public class BankController implements BankApi {
 
