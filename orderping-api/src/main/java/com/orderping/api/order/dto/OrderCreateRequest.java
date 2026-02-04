@@ -13,9 +13,7 @@ public record OrderCreateRequest(
 ) {
     public record OrderMenuRequest(
         Long menuId,
-        Long quantity,
-        Long price,
-        Boolean isService
+        Long quantity
     ) {
     }
 }
