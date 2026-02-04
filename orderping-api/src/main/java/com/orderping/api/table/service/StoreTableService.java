@@ -1,7 +1,9 @@
 package com.orderping.api.table.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -100,7 +102,8 @@ public class StoreTableService {
     private StoreTableDetailResponse toDetailResponse(StoreTable storeTable) {
         List<Order> orders = orderRepository.findByTableId(storeTable.getId());
 
-        List<OrderMenuSummary> orderMenus = new ArrayList<>();
+        // menuId -> (menuName, totalQuantity, price) 집계용 Map
+        Map<Long, MenuAggregate> menuAggregateMap = new LinkedHashMap<>();
         long totalAmount = 0L;
         OrderStatus highestPriorityStatus = null;
 
@@ -116,23 +119,38 @@ public class StoreTableService {
 
             List<OrderMenu> menus = orderMenuRepository.findByOrderId(order.getId());
             for (OrderMenu orderMenu : menus) {
-                String menuName = menuRepository.findById(orderMenu.getMenuId())
-                    .map(Menu::getName)
-                    .orElse("삭제된 메뉴");
+                Long menuId = orderMenu.getMenuId();
+                Long quantity = orderMenu.getQuantity();
+                Long price = orderMenu.getPrice();
 
-                orderMenus.add(new OrderMenuSummary(
-                    orderMenu.getMenuId(),
-                    menuName,
-                    orderMenu.getQuantity(),
-                    orderMenu.getPrice()
-                ));
+                menuAggregateMap.compute(menuId, (id, existing) -> {
+                    if (existing == null) {
+                        String menuName = menuRepository.findById(menuId)
+                            .map(Menu::getName)
+                            .orElse("삭제된 메뉴");
+                        return new MenuAggregate(menuName, quantity, price);
+                    } else {
+                        return new MenuAggregate(existing.menuName, existing.quantity + quantity, existing.price);
+                    }
+                });
 
-                totalAmount += orderMenu.getPrice() * orderMenu.getQuantity();
+                totalAmount += price * quantity;
             }
         }
 
+        List<OrderMenuSummary> orderMenus = menuAggregateMap.entrySet().stream()
+            .map(entry -> new OrderMenuSummary(
+                entry.getKey(),
+                entry.getValue().menuName,
+                entry.getValue().quantity,
+                entry.getValue().price
+            ))
+            .toList();
+
         return StoreTableDetailResponse.from(storeTable, orderMenus, totalAmount, highestPriorityStatus);
     }
+
+    private record MenuAggregate(String menuName, Long quantity, Long price) {}
 
     @Transactional
     public StoreTableResponse updateStoreTableStatus(Long userId, Long id, StoreTableStatusUpdateRequest request) {
