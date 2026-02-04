@@ -12,6 +12,7 @@ import com.orderping.api.order.dto.OrderDetailResponse;
 import com.orderping.api.order.dto.OrderResponse;
 import com.orderping.api.order.dto.OrderStatusUpdateRequest;
 import com.orderping.domain.enums.OrderStatus;
+import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
@@ -48,6 +49,10 @@ public class OrderService {
 
         if (!table.getTableNum().equals(request.tableNum())) {
             throw new BadRequestException("테이블 번호가 일치하지 않습니다.");
+        }
+
+        if (table.getStatus() == TableStatus.CLOSED) {
+            throw new BadRequestException("종료된 테이블에는 주문할 수 없습니다.");
         }
 
         // 비관적 락으로 메뉴 조회 및 재고 검증
