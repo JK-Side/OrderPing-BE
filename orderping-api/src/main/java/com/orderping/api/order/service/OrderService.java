@@ -2,6 +2,7 @@ package com.orderping.api.order.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -170,14 +171,38 @@ public class OrderService {
 
     public List<OrderResponse> getOrdersByStore(Long userId, Long storeId, OrderStatus status) {
         validateStoreOwner(storeId, userId);
+
+        List<Order> orders;
         if (status != null) {
-            return orderRepository.findByStoreIdAndStatus(storeId, status).stream()
-                .map(OrderResponse::from)
-                .toList();
+            orders = orderRepository.findByStoreIdAndStatus(storeId, status);
+        } else {
+            orders = orderRepository.findByStoreId(storeId);
         }
-        return orderRepository.findByStoreId(storeId).stream()
+
+        // 종료된 테이블의 주문 제외
+        Set<Long> closedTableIds = getClosedTableIds(orders);
+
+        return orders.stream()
+            .filter(order -> !closedTableIds.contains(order.getTableId()))
             .map(OrderResponse::from)
             .toList();
+    }
+
+    private Set<Long> getClosedTableIds(List<Order> orders) {
+        List<Long> tableIds = orders.stream()
+            .map(Order::getTableId)
+            .distinct()
+            .toList();
+
+        if (tableIds.isEmpty()) {
+            return Set.of();
+        }
+
+        return tableIds.stream()
+            .map(storeTableRepository::findById)
+            .filter(opt -> opt.isPresent() && opt.get().getStatus() == TableStatus.CLOSED)
+            .map(opt -> opt.get().getId())
+            .collect(Collectors.toSet());
     }
 
     public List<OrderResponse> getOrdersByTableId(Long tableId) {
