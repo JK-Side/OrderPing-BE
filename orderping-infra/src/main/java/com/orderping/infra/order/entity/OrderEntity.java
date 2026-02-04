@@ -59,7 +59,8 @@ public class OrderEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public OrderEntity(Long id, Long tableId, Integer tableNum, Long storeId, String sessionId, String depositorName, OrderStatus status,
+    public OrderEntity(Long id, Long tableId, Integer tableNum, Long storeId, String sessionId, String depositorName,
+        OrderStatus status,
         Long totalPrice, Long couponAmount, LocalDateTime createdAt) {
         this.id = id;
         this.tableId = tableId;

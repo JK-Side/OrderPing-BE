@@ -46,6 +46,23 @@ public record OrderDetailResponse(
     @Schema(description = "주문 메뉴 목록")
     List<OrderMenuDetail> menus
 ) {
+    public static OrderDetailResponse from(Order order, List<OrderMenuDetail> menus) {
+        return new OrderDetailResponse(
+            order.getId(),
+            order.getTableId(),
+            order.getTableNum(),
+            order.getStoreId(),
+            order.getSessionId(),
+            order.getDepositorName(),
+            order.getStatus(),
+            order.getTotalPrice(),
+            order.getCouponAmount(),
+            order.getCashAmount(),
+            order.getCreatedAt(),
+            menus
+        );
+    }
+
     @Schema(description = "주문 메뉴 상세")
     public record OrderMenuDetail(
         @Schema(description = "메뉴 ID")
@@ -62,22 +79,6 @@ public record OrderDetailResponse(
 
         @Schema(description = "서비스 여부")
         Boolean isService
-    ) {}
-
-    public static OrderDetailResponse from(Order order, List<OrderMenuDetail> menus) {
-        return new OrderDetailResponse(
-            order.getId(),
-            order.getTableId(),
-            order.getTableNum(),
-            order.getStoreId(),
-            order.getSessionId(),
-            order.getDepositorName(),
-            order.getStatus(),
-            order.getTotalPrice(),
-            order.getCouponAmount(),
-            order.getCashAmount(),
-            order.getCreatedAt(),
-            menus
-        );
+    ) {
     }
 }

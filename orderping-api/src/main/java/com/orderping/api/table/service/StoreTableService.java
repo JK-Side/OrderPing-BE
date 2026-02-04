@@ -85,7 +85,8 @@ public class StoreTableService {
             .toList();
     }
 
-    public List<StoreTableDetailResponse> getStoreTablesByStoreIdAndStatus(Long userId, Long storeId, TableStatus status) {
+    public List<StoreTableDetailResponse> getStoreTablesByStoreIdAndStatus(Long userId, Long storeId,
+        TableStatus status) {
         validateStoreOwner(storeId, userId);
         return storeTableRepository.findByStoreIdAndStatus(storeId, status).stream()
             .map(this::toDetailResponse)
@@ -149,8 +150,6 @@ public class StoreTableService {
 
         return StoreTableDetailResponse.from(storeTable, orderMenus, totalAmount, highestPriorityStatus);
     }
-
-    private record MenuAggregate(String menuName, Long quantity, Long price) {}
 
     @Transactional
     public StoreTableResponse updateStoreTableStatus(Long userId, Long id, StoreTableStatusUpdateRequest request) {
@@ -264,7 +263,8 @@ public class StoreTableService {
         validateStoreOwner(request.storeId(), userId);
 
         // 기존 활성 테이블 번호들 조회
-        List<Integer> existingTableNums = storeTableRepository.findByStoreIdAndStatusNot(request.storeId(), TableStatus.CLOSED)
+        List<Integer> existingTableNums = storeTableRepository.findByStoreIdAndStatusNot(request.storeId(),
+                TableStatus.CLOSED)
             .stream()
             .map(StoreTable::getTableNum)
             .toList();
@@ -298,7 +298,8 @@ public class StoreTableService {
     }
 
     @Transactional
-    public List<StoreTableResponse> updateStoreTableQrBulk(Long userId, Long storeId, StoreTableBulkQrUpdateRequest request) {
+    public List<StoreTableResponse> updateStoreTableQrBulk(Long userId, Long storeId,
+        StoreTableBulkQrUpdateRequest request) {
         validateStoreOwner(storeId, userId);
 
         List<StoreTableResponse> responses = new ArrayList<>();
@@ -344,5 +345,8 @@ public class StoreTableService {
         if (exists) {
             throw new BadRequestException("이미 존재하는 테이블 번호입니다: " + tableNum);
         }
+    }
+
+    private record MenuAggregate(String menuName, Long quantity, Long price) {
     }
 }

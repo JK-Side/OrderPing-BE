@@ -89,7 +89,7 @@ class StoreTableServiceTest {
             given(storeTableRepository.save(any(StoreTable.class))).willAnswer(invocation -> {
                 StoreTable table = invocation.getArgument(0);
                 return StoreTable.builder()
-                    .id((long) table.getTableNum())
+                    .id((long)table.getTableNum())
                     .storeId(table.getStoreId())
                     .tableNum(table.getTableNum())
                     .status(table.getStatus())
