@@ -198,10 +198,9 @@ public class OrderService {
             return Set.of();
         }
 
-        return tableIds.stream()
-            .map(storeTableRepository::findById)
-            .filter(opt -> opt.isPresent() && opt.get().getStatus() == TableStatus.CLOSED)
-            .map(opt -> opt.get().getId())
+        return storeTableRepository.findAllByIds(tableIds).stream()
+            .filter(table -> table.getStatus() == TableStatus.CLOSED)
+            .map(StoreTable::getId)
             .collect(Collectors.toSet());
     }
 
