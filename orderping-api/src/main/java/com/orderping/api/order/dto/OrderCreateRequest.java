@@ -6,7 +6,6 @@ public record OrderCreateRequest(
     Long tableId,
     Integer tableNum,
     Long storeId,
-    String sessionId,
     String depositorName,
     Long couponAmount,
     List<OrderMenuRequest> menus

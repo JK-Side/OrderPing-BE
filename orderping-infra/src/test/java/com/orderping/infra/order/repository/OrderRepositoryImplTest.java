@@ -71,7 +71,6 @@ class OrderRepositoryImplTest {
             .tableId(savedTable.getId())
             .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
-            .sessionId("session-123")
             .status(OrderStatus.PENDING)
             .totalPrice(25000L)
             .build();
@@ -83,38 +82,6 @@ class OrderRepositoryImplTest {
         assertNotNull(savedOrder.getId());
         assertEquals(OrderStatus.PENDING, savedOrder.getStatus());
         assertEquals(25000L, savedOrder.getTotalPrice());
-        assertEquals("session-123", savedOrder.getSessionId());
-    }
-
-    @Test
-    @DisplayName("세션 ID로 주문 조회")
-    void findBySessionId() {
-        // given
-        String sessionId = "customer-session-abc";
-
-        orderRepository.save(Order.builder()
-            .tableId(savedTable.getId())
-            .tableNum(savedTable.getTableNum())
-            .storeId(savedStore.getId())
-            .sessionId(sessionId)
-            .status(OrderStatus.PENDING)
-            .totalPrice(10000L)
-            .build());
-
-        orderRepository.save(Order.builder()
-            .tableId(savedTable.getId())
-            .tableNum(savedTable.getTableNum())
-            .storeId(savedStore.getId())
-            .sessionId(sessionId)
-            .status(OrderStatus.COOKING)
-            .totalPrice(15000L)
-            .build());
-
-        // when
-        List<Order> orders = orderRepository.findBySessionId(sessionId);
-
-        // then
-        assertEquals(2, orders.size());
     }
 
     @Test
@@ -125,7 +92,6 @@ class OrderRepositoryImplTest {
             .tableId(savedTable.getId())
             .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
-            .sessionId("session-1")
             .status(OrderStatus.PENDING)
             .totalPrice(10000L)
             .build());
@@ -134,7 +100,6 @@ class OrderRepositoryImplTest {
             .tableId(savedTable.getId())
             .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
-            .sessionId("session-2")
             .status(OrderStatus.COOKING)
             .totalPrice(20000L)
             .build());
@@ -143,7 +108,6 @@ class OrderRepositoryImplTest {
             .tableId(savedTable.getId())
             .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
-            .sessionId("session-3")
             .status(OrderStatus.PENDING)
             .totalPrice(30000L)
             .build());

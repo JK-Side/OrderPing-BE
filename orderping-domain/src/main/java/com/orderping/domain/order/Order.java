@@ -14,7 +14,6 @@ public class Order {
     private final Long tableId;
     private final Integer tableNum;
     private final Long storeId;
-    private final String sessionId;
     private final String depositorName;
     private final OrderStatus status;
     private final Long totalPrice;

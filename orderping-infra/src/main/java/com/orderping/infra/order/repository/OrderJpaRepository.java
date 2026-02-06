@@ -13,7 +13,5 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Long> {
 
     List<OrderEntity> findByTableId(Long tableId);
 
-    List<OrderEntity> findBySessionId(String sessionId);
-
     List<OrderEntity> findByStoreIdAndStatus(Long storeId, OrderStatus status);
 }

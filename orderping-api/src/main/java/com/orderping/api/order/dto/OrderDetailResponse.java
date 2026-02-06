@@ -22,9 +22,6 @@ public record OrderDetailResponse(
     @Schema(description = "매장 ID")
     Long storeId,
 
-    @Schema(description = "세션 ID")
-    String sessionId,
-
     @Schema(description = "입금자명")
     String depositorName,
 
@@ -52,7 +49,6 @@ public record OrderDetailResponse(
             order.getTableId(),
             order.getTableNum(),
             order.getStoreId(),
-            order.getSessionId(),
             order.getDepositorName(),
             order.getStatus(),
             order.getTotalPrice(),
