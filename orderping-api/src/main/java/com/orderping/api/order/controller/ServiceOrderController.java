@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Service Order", description = "서비스(무료) 주문 API")
 @RestController
-@RequestMapping("/api/customer/order")
+@RequestMapping("/api/orders/service")
 @RequiredArgsConstructor
 public class ServiceOrderController {
 
