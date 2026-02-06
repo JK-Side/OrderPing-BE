@@ -23,5 +23,6 @@ public record StoreTableBulkQrUpdateRequest(
         @Schema(description = "QR 이미지 URL", example = "https://s3.../qr1.png")
         @NotNull(message = "QR 이미지 URL은 필수입니다.")
         String qrImageUrl
-    ) {}
+    ) {
+    }
 }

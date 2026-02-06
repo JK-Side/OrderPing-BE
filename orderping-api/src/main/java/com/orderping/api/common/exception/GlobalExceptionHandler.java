@@ -2,8 +2,10 @@ package com.orderping.api.common.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.orderping.api.common.dto.ErrorResponse;
 import com.orderping.domain.exception.BadRequestException;
@@ -66,6 +68,28 @@ public class GlobalExceptionHandler {
             e.getMessage()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(NoResourceFoundException e) {
+        log.debug("Resource not found: {}", e.getResourcePath());
+        ErrorResponse response = ErrorResponse.of(
+            HttpStatus.NOT_FOUND.value(),
+            "NOT_FOUND",
+            "요청한 리소스를 찾을 수 없습니다."
+        );
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ResponseEntity<ErrorResponse> handleMissingRequestCookieException(MissingRequestCookieException e) {
+        log.debug("Missing cookie: {}", e.getCookieName());
+        ErrorResponse response = ErrorResponse.of(
+            HttpStatus.BAD_REQUEST.value(),
+            "BAD_REQUEST",
+            "필수 쿠키가 누락되었습니다: " + e.getCookieName()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(Exception.class)

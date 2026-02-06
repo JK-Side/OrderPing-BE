@@ -34,19 +34,19 @@ orderping/
 
 ## 도메인 모델
 
-| 도메인 | 설명 |
-|--------|------|
-| User | 사용자 (Owner) |
-| AuthAccount | 소셜 로그인 계정 (Kakao) |
-| RefreshToken | JWT Refresh Token (DB 저장) |
-| Store | 주점 |
-| StoreTable | 테이블 |
-| StoreAccount | 주점 계좌 정보 (암호화 저장) |
-| Category | 메뉴 카테고리 |
-| Menu | 메뉴 |
-| Order / OrderMenu | 주문 |
-| Payment | 결제 |
-| Bank | 은행 정보 (토스 딥링크용) |
+| 도메인               | 설명                        |
+|-------------------|---------------------------|
+| User              | 사용자 (Owner)               |
+| AuthAccount       | 소셜 로그인 계정 (Kakao)         |
+| RefreshToken      | JWT Refresh Token (DB 저장) |
+| Store             | 주점                        |
+| StoreTable        | 테이블                       |
+| StoreAccount      | 주점 계좌 정보 (암호화 저장)         |
+| Category          | 메뉴 카테고리                   |
+| Menu              | 메뉴                        |
+| Order / OrderMenu | 주문                        |
+| Payment           | 결제                        |
+| Bank              | 은행 정보 (토스 딥링크용)           |
 
 ---
 
@@ -54,27 +54,27 @@ orderping/
 
 ### 운영자용 API (인증 필요)
 
-| 경로 | 설명 |
-|------|------|
-| `/api/auth` | 인증 관리 (토큰 재발급, 로그아웃) |
-| `/api/users` | 사용자 관리 |
-| `/api/main` | 메인 페이지 정보 |
-| `/api/stores` | 주점 관리 |
-| `/api/stores/accounts` | 주점 계좌 관리 |
-| `/api/tables` | 테이블 관리 |
-| `/api/categories` | 카테고리 관리 |
-| `/api/menus` | 메뉴 관리 |
-| `/api/orders` | 주문 관리 (매장 기준) |
-| `/api/payments` | 결제 관리 |
-| `/api/images` | 이미지 업로드 (Presigned URL) |
+| 경로                     | 설명                      |
+|------------------------|-------------------------|
+| `/api/auth`            | 인증 관리 (토큰 재발급, 로그아웃)    |
+| `/api/users`           | 사용자 관리                  |
+| `/api/main`            | 메인 페이지 정보               |
+| `/api/stores`          | 주점 관리                   |
+| `/api/stores/accounts` | 주점 계좌 관리                |
+| `/api/tables`          | 테이블 관리                  |
+| `/api/categories`      | 카테고리 관리                 |
+| `/api/menus`           | 메뉴 관리                   |
+| `/api/orders`          | 주문 관리 (매장 기준)           |
+| `/api/payments`        | 결제 관리                   |
+| `/api/images`          | 이미지 업로드 (Presigned URL) |
 
 ### 고객용 API (인증 불필요)
 
-| 경로 | 설명 |
-|------|------|
+| 경로                     | 설명                  |
+|------------------------|---------------------|
 | `/api/customer/orders` | 고객 주문 (생성, 테이블별 조회) |
-| `/api/customer/qr` | QR 코드로 테이블 정보 조회 |
-| `/api/customer/banks` | 은행 목록 조회 (토스 딥링크용) |
+| `/api/customer/qr`     | QR 코드로 테이블 정보 조회    |
+| `/api/customer/banks`  | 은행 목록 조회 (토스 딥링크용)  |
 
 ---
 
@@ -85,6 +85,7 @@ orderping/
 **브랜치**: `feat/multi-module`
 
 **작업 내용**:
+
 - Gradle 멀티모듈 프로젝트 구조 생성
 - Docker / Docker Compose 설정
 - 기본 프로젝트 세팅
@@ -96,9 +97,10 @@ orderping/
 **브랜치**: `feat/domain-module`
 
 **작업 내용**:
+
 - 도메인 클래스 생성
-  - User, AuthAccount, Store, StoreTable, StoreAccount
-  - Category, Menu, Order, OrderMenu, Payment
+    - User, AuthAccount, Store, StoreTable, StoreAccount
+    - Category, Menu, Order, OrderMenu, Payment
 - 도메인 리포지토리 인터페이스 정의
 - Enum 타입 정의 (Role, AuthProvider, OrderStatus, PaymentMethod, PaymentStatus, TableStatus)
 - 도메인 테스트 코드 작성
@@ -110,6 +112,7 @@ orderping/
 **브랜치**: `feat/infra-module`
 
 **작업 내용**:
+
 - JPA 엔티티 생성 (모든 도메인에 대응)
 - JPA 리포지토리 구현체 생성
 - 도메인-엔티티 변환 로직
@@ -122,6 +125,7 @@ orderping/
 **브랜치**: `feat/claude-pr-review-bot`
 
 **작업 내용**:
+
 - GitHub Action으로 Claude 코드 리뷰 자동화
 - PR 생성 시 자동 리뷰 댓글
 
@@ -132,6 +136,7 @@ orderping/
 **브랜치**: `feat/api-module`
 
 **작업 내용**:
+
 - REST API 컨트롤러 생성 (User, Store, Menu, Order, Payment 등)
 - 서비스 레이어 구현
 - DTO 클래스 생성
@@ -147,12 +152,14 @@ orderping/
 **브랜치**: `feat/presigned-url`
 
 **작업 내용**:
+
 - AWS S3 Presigned URL 발급 API
 - 이미지 업로드 기능 구현
 - 파일 크기 제한 응답 추가
 - 입력 검증 로직 추가
 
 **API**:
+
 ```
 POST /api/images/presigned-url
 - 요청: { "fileName": "image.jpg", "contentType": "image/jpeg" }
@@ -166,6 +173,7 @@ POST /api/images/presigned-url
 **브랜치**: `feat/kakao-oauth`
 
 **작업 내용**:
+
 - Spring Security + OAuth2 설정
 - Kakao 소셜 로그인 연동
 - JWT Access Token / Refresh Token 구현
@@ -174,6 +182,7 @@ POST /api/images/presigned-url
 - 토큰 만료시간 설정 (Access: 15분, Refresh: 7일)
 
 **인증 흐름**:
+
 ```
 1. GET /oauth2/authorization/kakao → 카카오 로그인 페이지
 2. 카카오 인증 완료 → /login/oauth2/code/kakao 콜백
@@ -188,6 +197,7 @@ POST /api/images/presigned-url
 **브랜치**: `fix/docker-port`
 
 **작업 내용**:
+
 - docker-compose 포트번호 수정
 
 ---
@@ -197,6 +207,7 @@ POST /api/images/presigned-url
 **브랜치**: `feat/cors`
 
 **작업 내용**:
+
 - CORS 기본 설정 추가
 - 프론트엔드 도메인 허용
 
@@ -207,6 +218,7 @@ POST /api/images/presigned-url
 **브랜치**: `feat/callback-uri`
 
 **작업 내용**:
+
 - 카카오 OAuth 리다이렉트 URI 변경
 
 ---
@@ -216,6 +228,7 @@ POST /api/images/presigned-url
 **브랜치**: `fix/redirect-uri`
 
 **작업 내용**:
+
 - 도커 컴포즈 환경변수 카카오 리다이렉트 URI 수정
 
 ---
@@ -225,6 +238,7 @@ POST /api/images/presigned-url
 **브랜치**: `feat/toss-deeplink`
 
 **작업 내용**:
+
 - 토스 송금 딥링크 생성 기능
 - QR 코드 URL 생성
 - 은행 정보 관리 (Bank 도메인)
@@ -232,6 +246,7 @@ POST /api/images/presigned-url
 - Security 세팅 추가
 
 **API**:
+
 ```
 GET /api/qr/toss-deeplink?storeId=1&amount=10000
 - 응답: 토스앱 딥링크 URL
@@ -247,11 +262,13 @@ GET /api/banks
 **브랜치**: `feat/getby-category&store`
 
 **작업 내용**:
+
 - 메뉴 조회 API 통합 (Ambiguous handler 에러 해결)
 - `findByStoreIdAndCategoryId` 메서드 추가
 - 복합 쿼리 파라미터 지원
 
 **문제 상황**:
+
 ```java
 // 기존 - 충돌 발생
 @GetMapping(params = "storeId")
@@ -259,6 +276,7 @@ GET /api/banks
 ```
 
 **해결**:
+
 ```java
 // 변경 - 단일 엔드포인트
 @GetMapping
@@ -269,6 +287,7 @@ public ResponseEntity<List<MenuResponse>> getMenus(
 ```
 
 **API**:
+
 ```
 GET /api/menus?storeId=1
 GET /api/menus?categoryId=1
@@ -282,6 +301,7 @@ GET /api/menus?storeId=1&categoryId=2  # 신규
 **브랜치**: `fix/token-header`
 
 **작업 내용**:
+
 - JWT 토큰 전달 방식 개선
 - GitHub Action 삭제된 파일 에러 수정
 
@@ -304,14 +324,14 @@ GET /api/menus?storeId=1&categoryId=2  # 신규
 
 **변경 파일**:
 
-| 파일 | 변경 내용 |
-|------|----------|
-| `OAuth2AuthenticationSuccessHandler.java` | refreshToken을 쿠키로 설정, URL에는 accessToken만 |
-| `AuthService.java` | `TokenPair` record 추가 (내부용), `refreshTokens()`는 accessToken만 반환 |
-| `TokenResponse.java` | refreshToken 필드 제거 |
-| `AuthController.java` | `@CookieValue`로 refreshToken 수신 |
-| `TokenRefreshRequest.java` | 삭제 |
-| `LogoutRequest.java` | 삭제 |
+| 파일                                        | 변경 내용                                                           |
+|-------------------------------------------|-----------------------------------------------------------------|
+| `OAuth2AuthenticationSuccessHandler.java` | refreshToken을 쿠키로 설정, URL에는 accessToken만                        |
+| `AuthService.java`                        | `TokenPair` record 추가 (내부용), `refreshTokens()`는 accessToken만 반환 |
+| `TokenResponse.java`                      | refreshToken 필드 제거                                              |
+| `AuthController.java`                     | `@CookieValue`로 refreshToken 수신                                 |
+| `TokenRefreshRequest.java`                | 삭제                                                              |
+| `LogoutRequest.java`                      | 삭제                                                              |
 
 **최종 JWT 인증 흐름**:
 
@@ -343,16 +363,17 @@ GET /api/menus?storeId=1&categoryId=2  # 신규
 
 **보안 특성**:
 
-| 토큰 | 저장 위치 | 전송 방식 | XSS | CSRF |
-|------|----------|----------|-----|------|
-| AccessToken | 메모리 | Authorization 헤더 | 안전 | 안전 |
-| RefreshToken | HttpOnly 쿠키 | 자동 (쿠키) | 안전 | SameSite로 보호 |
+| 토큰           | 저장 위치       | 전송 방식            | XSS | CSRF         |
+|--------------|-------------|------------------|-----|--------------|
+| AccessToken  | 메모리         | Authorization 헤더 | 안전  | 안전           |
+| RefreshToken | HttpOnly 쿠키 | 자동 (쿠키)          | 안전  | SameSite로 보호 |
 
 #### 3. StoreTable 조회 API 통합
 
 Menu API와 동일한 패턴 적용
 
 **API**:
+
 ```
 GET /api/tables?storeId=1
 GET /api/tables?storeId=1&status=ACTIVE
@@ -362,32 +383,32 @@ GET /api/tables?storeId=1&status=ACTIVE
 
 ## 구현 상태 요약
 
-| 기능 | 상태 |
-|------|------|
-| 멀티모듈 구조 | ✅ 완료 |
-| 도메인 모델 | ✅ 완료 |
-| JPA 엔티티/리포지토리 | ✅ 완료 |
-| REST API (CRUD) | ✅ 완료 |
-| Swagger 문서 | ✅ 완료 |
-| JWT 인증 | ✅ 완료 |
-| OAuth2 (Kakao) | ✅ 완료 |
-| RefreshToken (쿠키) | ✅ 완료 |
-| 전역 예외 처리 | ✅ 완료 |
-| 계좌 암호화 | ✅ 완료 |
-| Presigned URL | ✅ 완료 |
-| 토스 딥링크 | ✅ 완료 |
-| CORS 설정 | ✅ 완료 |
-| Claude PR 리뷰 | ✅ 완료 |
-| 모니터링 (Prometheus/Loki/Grafana) | ✅ 완료 |
-| 테이블 단체 생성/삭제 | ✅ 완료 |
-| 테이블 QR 일괄 업데이트 | ✅ 완료 |
-| QR 지속성 | ✅ 완료 |
-| Access Log (Tomcat) | ✅ 완료 |
-| Swagger 그룹 분리 (운영자/고객) | ✅ 완료 |
-| 고객용 주문 API | ✅ 완료 |
-| Bean Validation | ✅ 완료 |
-| Discord 웹훅 알림 | ✅ 완료 |
-| 카카오 알림톡 | ⏳ 미구현 |
+| 기능                             | 상태    |
+|--------------------------------|-------|
+| 멀티모듈 구조                        | ✅ 완료  |
+| 도메인 모델                         | ✅ 완료  |
+| JPA 엔티티/리포지토리                  | ✅ 완료  |
+| REST API (CRUD)                | ✅ 완료  |
+| Swagger 문서                     | ✅ 완료  |
+| JWT 인증                         | ✅ 완료  |
+| OAuth2 (Kakao)                 | ✅ 완료  |
+| RefreshToken (쿠키)              | ✅ 완료  |
+| 전역 예외 처리                       | ✅ 완료  |
+| 계좌 암호화                         | ✅ 완료  |
+| Presigned URL                  | ✅ 완료  |
+| 토스 딥링크                         | ✅ 완료  |
+| CORS 설정                        | ✅ 완료  |
+| Claude PR 리뷰                   | ✅ 완료  |
+| 모니터링 (Prometheus/Loki/Grafana) | ✅ 완료  |
+| 테이블 단체 생성/삭제                   | ✅ 완료  |
+| 테이블 QR 일괄 업데이트                 | ✅ 완료  |
+| QR 지속성                         | ✅ 완료  |
+| Access Log (Tomcat)            | ✅ 완료  |
+| Swagger 그룹 분리 (운영자/고객)         | ✅ 완료  |
+| 고객용 주문 API                     | ✅ 완료  |
+| Bean Validation                | ✅ 완료  |
+| Discord 웹훅 알림                  | ✅ 완료  |
+| 카카오 알림톡                        | ⏳ 미구현 |
 
 ---
 
@@ -465,12 +486,14 @@ discord:
 **작업 내용**:
 
 #### 1. 모니터링 환경 구축
+
 - Prometheus + Loki + Grafana 모니터링 스택 설정
 - 모니터링 서버(43.201.31.24)와 orderping 서버 분리 구성
 - Spring Boot Actuator + Micrometer Prometheus 연동
 - Promtail로 로그 수집 → Loki 전송
 
 **모니터링 구성**:
+
 ```
 모니터링 서버 (43.201.31.24)
 ├── Prometheus (:9090) - 메트릭 수집
@@ -483,14 +506,17 @@ Orderping 서버
 ```
 
 #### 2. Actuator 보안 설정
+
 - `/actuator/health`, `/actuator/prometheus`만 공개
 - 나머지 `/actuator/**`는 ADMIN 권한 필요
 
 #### 3. 테이블 단체 삭제 기능
+
 - `DELETE /api/tables/bulk` API 추가
 - 주문이 있는 테이블은 삭제 불가 (400 에러)
 
 **API**:
+
 ```json
 DELETE /api/tables/bulk
 {
@@ -500,23 +526,28 @@ DELETE /api/tables/bulk
 ```
 
 #### 4. 로그아웃 방식 변경
+
 - 쿠키 → 헤더 방식으로 변경
 - `X-Refresh-Token` 헤더로 refreshToken 전달
 
 #### 5. QR 코드 지속성 개선
+
 - `clearTable` 시 QR URL 유지되도록 수정
 - QR 토큰 조회: `tableId` → `storeId + tableNum`으로 변경
 - 테이블 갈아끼워도 같은 QR 계속 사용 가능
 
 #### 6. 테이블 생성 시 QR URL 지원
+
 - `POST /api/tables` 요청에 `qrImageUrl` 필드 추가 (선택)
 
 #### 7. 테이블 중복 생성 방지
+
 - 활성 테이블 중 동일한 `store_id + table_num` 조합 존재 시 생성 차단
 - MySQL 복합 unique 제약조건 대신 애플리케이션 레벨 검증
 - `createStoreTable`, `createStoreTablesBulk` 모두 적용
 
 **변경 파일**:
+
 - `SecurityConfig.java` - Actuator 엔드포인트 보안 설정
 - `AuthController.java` - 로그아웃 헤더 방식 변경
 - `StoreTableService.java` - 단체 삭제, clearTable QR 보존, 중복 테이블 방지
@@ -528,6 +559,7 @@ DELETE /api/tables/bulk
 - `docker/monitoring/promtail-config.yml` - Loki 전송 설정
 
 **주요 결정**:
+
 - 모니터링은 별도 서버에서 운영
 - QR은 물리적 테이블 번호 기준으로 지속
 - 주문 있는 테이블 삭제 차단
@@ -540,29 +572,35 @@ DELETE /api/tables/bulk
 **작업 내용**:
 
 #### 1. Tomcat Access Log 설정
+
 - HTTP 요청 로그를 파일로 기록
 - `/var/log/orderping/access.log`에 저장
 - 클라이언트 IP, 요청 메서드, URI, 쿼리 스트링, 응답 시간 포함
 
 **패턴**:
+
 ```
 %{yyyy-MM-dd HH:mm:ss}t [%{X-Forwarded-For}i] %s %m %U%q %Dms
 ```
 
 **예시 출력**:
+
 ```
 2026-01-28 14:30:45 [123.45.67.89] 200 GET /api/tables?storeId=1 45ms
 ```
 
 #### 2. Docker 컨테이너 시간대 설정
+
 - API 컨테이너에 `TZ: Asia/Seoul` 환경변수 추가
 - 로그 타임스탬프가 한국 시간으로 표시
 
 #### 3. 테이블 QR 일괄 업데이트 API
+
 - `PATCH /api/tables/bulk/{storeId}` 엔드포인트 추가
 - 여러 테이블의 QR 이미지 URL을 한 번에 업데이트
 
 **API**:
+
 ```json
 PATCH /api/tables/bulk/{storeId}
 {
@@ -574,21 +612,25 @@ PATCH /api/tables/bulk/{storeId}
 ```
 
 #### 4. 주문 조회 API 통합
+
 - 기존 두 개의 엔드포인트를 하나로 통합
 - `status` 파라미터를 선택적으로 사용
 
 **API**:
+
 ```
 GET /api/orders?storeId=1           → 해당 매장의 모든 주문
 GET /api/orders?storeId=1&status=PENDING  → PENDING 상태만
 ```
 
 #### 5. 주문에 tableNum 필드 추가
+
 - Order 도메인, 엔티티, DTO에 `tableNum` 필드 추가
 - 주문 생성 시 `tableNum`을 함께 저장
 - 조회 시 테이블 조인 없이 바로 `tableNum` 반환
 
 **주문 생성 요청**:
+
 ```json
 POST /api/orders
 {
@@ -600,6 +642,7 @@ POST /api/orders
 ```
 
 **변경 파일**:
+
 - `application.yml` - Tomcat access log 설정 추가
 - `docker-compose.yml` - TZ 환경변수 추가
 - `StoreTableBulkQrUpdateRequest.java` - 신규 DTO
@@ -615,18 +658,22 @@ POST /api/orders
 - `OrderResponse.java` - `tableNum` 필드 추가
 
 #### 6. Swagger 문서 그룹 분리
+
 - 운영자용 API와 고객용 API를 Swagger에서 분리
 - `/swagger-ui.html` 접속 시 드롭다운으로 선택 가능
 
 **그룹**:
+
 - `1. 운영자용 API`: `/api/**` (고객용 제외)
 - `2. 고객용 API`: `/api/customer/**`, `/api/qr/**`, `/api/banks/**`
 
 #### 7. 고객용 주문 API 분리
+
 - 고객 주문 API를 `/api/customer/orders`로 분리
 - 테이블별 주문 조회 시 메뉴 상세 정보 포함
 
 **고객용 API**:
+
 ```
 POST /api/customer/orders              → 주문 생성
 GET  /api/customer/orders/table/{id}   → 테이블 주문 내역 (메뉴 포함)
@@ -635,6 +682,7 @@ GET  /api/customer/banks               → 은행 목록 조회
 ```
 
 **응답 예시** (메뉴 포함):
+
 ```json
 {
   "id": 1,
@@ -650,6 +698,7 @@ GET  /api/customer/banks               → 은행 목록 조회
 ```
 
 **추가 변경 파일**:
+
 - `SwaggerConfig.java` - GroupedOpenApi 설정 추가
 - `CustomerOrderController.java` - 신규 (고객용 주문 컨트롤러)
 - `OrderDetailResponse.java` - 신규 (메뉴 포함 응답 DTO)
@@ -657,6 +706,7 @@ GET  /api/customer/banks               → 은행 목록 조회
 - `SecurityConfig.java` - `/api/customer/**` permitAll 추가
 
 **주요 결정**:
+
 - Access log는 Promtail이 자동 수집 (*.log 패턴)
 - Promtail에서 `/actuator`, `/swagger-ui`, `/v3/api-docs` 경로는 drop
 - 주문에 `tableNum`을 직접 저장하여 조회 시 성능 향상
@@ -668,18 +718,21 @@ GET  /api/customer/banks               → 은행 목록 조회
 ### 2026-01-20
 
 **작업 내용**:
+
 - RefreshToken HttpOnly 쿠키 방식 전환
 - JWT Access Token 만료시간 10시간으로 변경
 - StoreTable/Menu 조회 API 통합
 - 불필요한 DTO 삭제 (TokenRefreshRequest, LogoutRequest)
 
 **변경 파일**:
+
 - `AuthService.java` - TokenPair record 추가
 - `AuthController.java` - @CookieValue 방식으로 변경
 - `OAuth2AuthenticationSuccessHandler.java` - 쿠키 설정 추가
 - `TokenResponse.java` - refreshToken 필드 제거
 
 **주요 결정**:
+
 - RefreshToken은 절대 응답 바디에 노출하지 않음
 - HttpOnly + Secure + SameSite=None 쿠키 사용
 
@@ -690,38 +743,47 @@ GET  /api/customer/banks               → 은행 목록 조회
 **작업 내용**:
 
 #### 1. N+1 쿼리 최적화
+
 - `toOrderDetailResponse`에서 메뉴 조회 시 N+1 쿼리 문제 수정
 - `MenuRepository.findAllByIds()` 배치 조회 메서드 추가
 
 #### 2. 주문 생성 시 테이블 검증 추가
+
 - `tableId`와 `tableNum` 일관성 검증
 - 존재하지 않는 테이블이나 번호 불일치 시 에러 반환
 
 #### 3. 주문 상세 조회 API 개선
+
 - `GET /api/orders/{id}` 응답에 메뉴 정보 포함
 - `OrderResponse` → `OrderDetailResponse`로 변경
 
 #### 4. 주문 조회 API 충돌 해결
+
 - `getOrdersByStore`와 `getOrdersByTableId` 간 Ambiguous handler 에러 수정
 - 테이블별 조회는 고객용 API(`/api/customer/orders/table/{tableId}`)로 통합
 
 #### 5. 로그아웃 API 개선
+
 - `X-Refresh-Token` 헤더 → 쿠키 방식으로 변경 (`/refresh`와 동일)
 - 쿠키가 없어도 에러 없이 처리 (optional)
 
 #### 6. Presigned URL 허용 확장
+
 - SVG 파일 확장자 허용 (`.svg`)
 - `tables` 디렉토리 허용
 
 #### 7. Bean Validation 추가
+
 - `spring-boot-starter-validation` 의존성 추가
 - `@Valid`, `@NotNull`, `@NotEmpty` 등 검증 어노테이션 사용 가능
 
 #### 8. Discord 웹훅 알림 기능
+
 - 가게 생성 시 Discord로 알림 전송
 - Spring Event 기반 비동기 처리
 
 **Discord 알림 흐름**:
+
 ```
 StoreService.createStore()
   → eventPublisher.publishEvent(StoreCreatedEvent)
@@ -730,11 +792,13 @@ StoreService.createStore()
 ```
 
 **환경변수**:
+
 ```bash
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxx/yyy
 ```
 
 **변경 파일**:
+
 - `MenuRepository.java` - `findAllByIds()` 추가
 - `MenuRepositoryImpl.java` - 배치 조회 구현
 - `OrderService.java` - N+1 수정, 테이블 검증 추가, getOrder 반환타입 변경
@@ -755,9 +819,104 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxx/yyy
 - `PaymentRepositoryImplTest.java` - `tableNum` 필드 추가
 
 **주요 결정**:
+
 - Discord 알림은 비동기로 처리하여 API 응답 지연 방지
 - 이벤트 기반 구조로 향후 이메일/SMS 등 확장 용이
 - 로그아웃은 쿠키가 없어도 성공 응답 (쿠키 삭제만 수행)
+
+---
+
+### 2026-02-04
+
+**작업 내용**:
+
+#### 1. 테이블 조회 시 같은 메뉴 수량 합치기
+
+- `/api/tables?storeId=..` 조회 시 동일 메뉴의 수량을 합산하여 반환
+- `LinkedHashMap`을 사용하여 메뉴별 집계
+
+**변경 전**:
+
+```json
+"orderMenus": [
+  { "menuId": 1, "menuName": "소주", "quantity": 2 },
+  { "menuId": 1, "menuName": "소주", "quantity": 3 }
+]
+```
+
+**변경 후**:
+
+```json
+"orderMenus": [
+  { "menuId": 1, "menuName": "소주", "quantity": 5 }
+]
+```
+
+#### 2. 종료된 테이블 주문 차단
+
+- `createOrder`, `createServiceOrder`에서 CLOSED 상태 테이블 주문 시 400 에러 반환
+- 에러 메시지: "종료된 테이블에는 주문할 수 없습니다."
+
+#### 3. 주문 목록에서 종료된 테이블 제외
+
+- `/api/orders?storeId=..` 조회 시 CLOSED 테이블의 주문 필터링
+- 종료된 테이블 주문은 추후 통계 기능에서 집계 예정
+
+#### 4. 주문 API 가격 자동 계산
+
+- 요청에서 `price`, `isService` 필드 제거
+- 서버에서 메뉴 DB 조회하여 가격 자동 계산
+
+**주문 생성 요청 (변경 후)**:
+
+```json
+POST /api/customer/orders
+{
+  "tableId": 1,
+  "tableNum": 3,
+  "storeId": 1,
+  "sessionId": "abc",
+  "depositorName": "홍길동",
+  "couponAmount": 0,
+  "menus": [
+    { "menuId": 1, "quantity": 2 },
+    { "menuId": 2, "quantity": 1 }
+  ]
+}
+```
+
+#### 5. 서비스(무료) 주문 API 분리
+
+- 서비스 주문용 별도 API 추가
+- 가격 0원, `isService: true`로 저장
+
+**API**:
+
+```json
+POST /api/customer/order
+{
+  "tableId": 1,
+  "tableNum": 3,
+  "storeId": 1,
+  "menus": [
+    { "menuId": 1, "quantity": 1 }
+  ]
+}
+```
+
+**변경 파일**:
+
+- `StoreTableService.java` - 메뉴 수량 합산 로직 추가
+- `OrderService.java` - 테이블 상태 검증, 가격 자동 계산, 종료 테이블 필터링
+- `OrderCreateRequest.java` - `price`, `isService` 필드 제거
+- `ServiceOrderCreateRequest.java` - 신규 (서비스 주문용 DTO)
+- `ServiceOrderController.java` - 신규 (서비스 주문 컨트롤러)
+
+**주요 결정**:
+
+- 일반 주문과 서비스 주문 API 분리하여 책임 명확화
+- 가격은 클라이언트가 아닌 서버에서 계산 (보안 및 일관성)
+- 종료된 테이블 주문은 운영 화면에서 숨기고 통계에서만 사용
 
 ---
 

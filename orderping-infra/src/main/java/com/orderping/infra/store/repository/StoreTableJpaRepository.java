@@ -1,7 +1,5 @@
 package com.orderping.infra.store.repository;
 
-import static com.orderping.domain.enums.TableStatus.CLOSED;
-
 import java.util.List;
 import java.util.Optional;
 

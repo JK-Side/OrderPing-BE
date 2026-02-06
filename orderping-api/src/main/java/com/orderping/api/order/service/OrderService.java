@@ -2,6 +2,7 @@ package com.orderping.api.order.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -11,7 +12,9 @@ import com.orderping.api.order.dto.OrderCreateRequest;
 import com.orderping.api.order.dto.OrderDetailResponse;
 import com.orderping.api.order.dto.OrderResponse;
 import com.orderping.api.order.dto.OrderStatusUpdateRequest;
+import com.orderping.api.order.dto.ServiceOrderCreateRequest;
 import com.orderping.domain.enums.OrderStatus;
+import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
@@ -50,7 +53,14 @@ public class OrderService {
             throw new BadRequestException("테이블 번호가 일치하지 않습니다.");
         }
 
-        // 비관적 락으로 메뉴 조회 및 재고 검증
+        if (table.getStatus() == TableStatus.CLOSED) {
+            throw new BadRequestException("종료된 테이블에는 주문할 수 없습니다.");
+        }
+
+        // 메뉴 조회, 재고 검증 및 가격 계산
+        long totalPrice = 0L;
+        Map<Long, Menu> menuMap = new java.util.HashMap<>();
+
         for (OrderCreateRequest.OrderMenuRequest menuRequest : request.menus()) {
             Menu menu = menuRepository.findByIdWithLock(menuRequest.menuId())
                 .orElseThrow(() -> new NotFoundException("메뉴 ID " + menuRequest.menuId() + "를 찾을 수 없습니다."));
@@ -62,13 +72,9 @@ public class OrderService {
             }
 
             menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
+            menuMap.put(menu.getId(), menu);
+            totalPrice += menu.getPrice() * menuRequest.quantity();
         }
-
-        // 서비스 메뉴는 가격 계산에서 제외 (0원)
-        long totalPrice = request.menus().stream()
-            .filter(m -> !Boolean.TRUE.equals(m.isService()))
-            .mapToLong(m -> m.price() * m.quantity())
-            .sum();
 
         Long couponAmount = request.couponAmount() != null ? request.couponAmount() : 0L;
 
@@ -76,7 +82,6 @@ public class OrderService {
             .tableId(request.tableId())
             .tableNum(request.tableNum())
             .storeId(request.storeId())
-            .sessionId(request.sessionId())
             .depositorName(request.depositorName())
             .status(OrderStatus.PENDING)
             .totalPrice(totalPrice)
@@ -86,13 +91,70 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         for (OrderCreateRequest.OrderMenuRequest menuRequest : request.menus()) {
-            boolean isService = Boolean.TRUE.equals(menuRequest.isService());
+            Menu menu = menuMap.get(menuRequest.menuId());
             OrderMenu orderMenu = OrderMenu.builder()
                 .orderId(savedOrder.getId())
                 .menuId(menuRequest.menuId())
                 .quantity(menuRequest.quantity())
-                .price(isService ? 0L : menuRequest.price())
-                .isService(isService)
+                .price(menu.getPrice())
+                .isService(false)
+                .build();
+            orderMenuRepository.save(orderMenu);
+        }
+
+        return OrderResponse.from(savedOrder);
+    }
+
+    @Transactional
+    public OrderResponse createServiceOrder(ServiceOrderCreateRequest request) {
+        // 테이블 정보 검증
+        StoreTable table = storeTableRepository.findById(request.tableId())
+            .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
+
+        if (!table.getTableNum().equals(request.tableNum())) {
+            throw new BadRequestException("테이블 번호가 일치하지 않습니다.");
+        }
+
+        if (table.getStatus() == TableStatus.CLOSED) {
+            throw new BadRequestException("종료된 테이블에는 주문할 수 없습니다.");
+        }
+
+        // 메뉴 조회 및 재고 검증
+        Map<Long, Menu> menuMap = new java.util.HashMap<>();
+
+        for (ServiceOrderCreateRequest.ServiceMenuRequest menuRequest : request.menus()) {
+            Menu menu = menuRepository.findByIdWithLock(menuRequest.menuId())
+                .orElseThrow(() -> new NotFoundException("메뉴 ID " + menuRequest.menuId() + "를 찾을 수 없습니다."));
+
+            if (menu.getStock() < menuRequest.quantity()) {
+                throw new OutOfStockException(
+                    String.format("'%s' 메뉴의 재고가 부족합니다. (현재: %d, 요청: %d)",
+                        menu.getName(), menu.getStock(), menuRequest.quantity()));
+            }
+
+            menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
+            menuMap.put(menu.getId(), menu);
+        }
+
+        // 서비스 주문은 총액 0원
+        Order order = Order.builder()
+            .tableId(request.tableId())
+            .tableNum(request.tableNum())
+            .storeId(request.storeId())
+            .status(OrderStatus.PENDING)
+            .totalPrice(0L)
+            .couponAmount(0L)
+            .build();
+
+        Order savedOrder = orderRepository.save(order);
+
+        for (ServiceOrderCreateRequest.ServiceMenuRequest menuRequest : request.menus()) {
+            OrderMenu orderMenu = OrderMenu.builder()
+                .orderId(savedOrder.getId())
+                .menuId(menuRequest.menuId())
+                .quantity(menuRequest.quantity())
+                .price(0L)
+                .isService(true)
                 .build();
             orderMenuRepository.save(orderMenu);
         }
@@ -108,14 +170,37 @@ public class OrderService {
 
     public List<OrderResponse> getOrdersByStore(Long userId, Long storeId, OrderStatus status) {
         validateStoreOwner(storeId, userId);
+
+        List<Order> orders;
         if (status != null) {
-            return orderRepository.findByStoreIdAndStatus(storeId, status).stream()
-                .map(OrderResponse::from)
-                .toList();
+            orders = orderRepository.findByStoreIdAndStatus(storeId, status);
+        } else {
+            orders = orderRepository.findByStoreId(storeId);
         }
-        return orderRepository.findByStoreId(storeId).stream()
+
+        // 종료된 테이블의 주문 제외
+        Set<Long> closedTableIds = getClosedTableIds(orders);
+
+        return orders.stream()
+            .filter(order -> !closedTableIds.contains(order.getTableId()))
             .map(OrderResponse::from)
             .toList();
+    }
+
+    private Set<Long> getClosedTableIds(List<Order> orders) {
+        List<Long> tableIds = orders.stream()
+            .map(Order::getTableId)
+            .distinct()
+            .toList();
+
+        if (tableIds.isEmpty()) {
+            return Set.of();
+        }
+
+        return storeTableRepository.findAllByIds(tableIds).stream()
+            .filter(table -> table.getStatus() == TableStatus.CLOSED)
+            .map(StoreTable::getId)
+            .collect(Collectors.toSet());
     }
 
     public List<OrderResponse> getOrdersByTableId(Long tableId) {
@@ -167,7 +252,6 @@ public class OrderService {
             .tableId(order.getTableId())
             .tableNum(order.getTableNum())
             .storeId(order.getStoreId())
-            .sessionId(order.getSessionId())
             .depositorName(order.getDepositorName())
             .status(request.status())
             .totalPrice(order.getTotalPrice())

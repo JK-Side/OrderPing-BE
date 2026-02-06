@@ -65,6 +65,16 @@ public class StoreTableRepositoryImpl implements StoreTableRepository {
     }
 
     @Override
+    public List<StoreTable> findAllByIds(List<Long> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return jpaRepository.findAllById(ids).stream()
+            .map(StoreTableEntity::toDomain)
+            .toList();
+    }
+
+    @Override
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
     }

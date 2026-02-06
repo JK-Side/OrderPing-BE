@@ -1,7 +1,9 @@
 package com.orderping.api.table.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,7 +85,8 @@ public class StoreTableService {
             .toList();
     }
 
-    public List<StoreTableDetailResponse> getStoreTablesByStoreIdAndStatus(Long userId, Long storeId, TableStatus status) {
+    public List<StoreTableDetailResponse> getStoreTablesByStoreIdAndStatus(Long userId, Long storeId,
+        TableStatus status) {
         validateStoreOwner(storeId, userId);
         return storeTableRepository.findByStoreIdAndStatus(storeId, status).stream()
             .map(this::toDetailResponse)
@@ -100,7 +103,9 @@ public class StoreTableService {
     private StoreTableDetailResponse toDetailResponse(StoreTable storeTable) {
         List<Order> orders = orderRepository.findByTableId(storeTable.getId());
 
-        List<OrderMenuSummary> orderMenus = new ArrayList<>();
+        // 일반 메뉴와 서비스 메뉴 분리 집계
+        Map<Long, MenuAggregate> orderMenuAggregateMap = new LinkedHashMap<>();
+        Map<Long, MenuAggregate> serviceMenuAggregateMap = new LinkedHashMap<>();
         long totalAmount = 0L;
         OrderStatus highestPriorityStatus = null;
 
@@ -116,22 +121,50 @@ public class StoreTableService {
 
             List<OrderMenu> menus = orderMenuRepository.findByOrderId(order.getId());
             for (OrderMenu orderMenu : menus) {
-                String menuName = menuRepository.findById(orderMenu.getMenuId())
-                    .map(Menu::getName)
-                    .orElse("삭제된 메뉴");
+                Long menuId = orderMenu.getMenuId();
+                Long quantity = orderMenu.getQuantity();
+                Long price = orderMenu.getPrice();
+                boolean isService = Boolean.TRUE.equals(orderMenu.getIsService());
 
-                orderMenus.add(new OrderMenuSummary(
-                    orderMenu.getMenuId(),
-                    menuName,
-                    orderMenu.getQuantity(),
-                    orderMenu.getPrice()
-                ));
+                Map<Long, MenuAggregate> targetMap = isService ? serviceMenuAggregateMap : orderMenuAggregateMap;
 
-                totalAmount += orderMenu.getPrice() * orderMenu.getQuantity();
+                targetMap.compute(menuId, (id, existing) -> {
+                    if (existing == null) {
+                        String menuName = menuRepository.findById(menuId)
+                            .map(Menu::getName)
+                            .orElse("삭제된 메뉴");
+                        return new MenuAggregate(menuName, quantity, price);
+                    } else {
+                        return new MenuAggregate(existing.menuName, existing.quantity + quantity, existing.price);
+                    }
+                });
+
+                // 서비스 메뉴는 총액에서 제외
+                if (!isService) {
+                    totalAmount += price * quantity;
+                }
             }
         }
 
-        return StoreTableDetailResponse.from(storeTable, orderMenus, totalAmount, highestPriorityStatus);
+        List<OrderMenuSummary> orderMenus = orderMenuAggregateMap.entrySet().stream()
+            .map(entry -> new OrderMenuSummary(
+                entry.getKey(),
+                entry.getValue().menuName,
+                entry.getValue().quantity,
+                entry.getValue().price
+            ))
+            .toList();
+
+        List<OrderMenuSummary> serviceMenus = serviceMenuAggregateMap.entrySet().stream()
+            .map(entry -> new OrderMenuSummary(
+                entry.getKey(),
+                entry.getValue().menuName,
+                entry.getValue().quantity,
+                entry.getValue().price
+            ))
+            .toList();
+
+        return StoreTableDetailResponse.from(storeTable, orderMenus, serviceMenus, totalAmount, highestPriorityStatus);
     }
 
     @Transactional
@@ -246,7 +279,8 @@ public class StoreTableService {
         validateStoreOwner(request.storeId(), userId);
 
         // 기존 활성 테이블 번호들 조회
-        List<Integer> existingTableNums = storeTableRepository.findByStoreIdAndStatusNot(request.storeId(), TableStatus.CLOSED)
+        List<Integer> existingTableNums = storeTableRepository.findByStoreIdAndStatusNot(request.storeId(),
+                TableStatus.CLOSED)
             .stream()
             .map(StoreTable::getTableNum)
             .toList();
@@ -280,7 +314,8 @@ public class StoreTableService {
     }
 
     @Transactional
-    public List<StoreTableResponse> updateStoreTableQrBulk(Long userId, Long storeId, StoreTableBulkQrUpdateRequest request) {
+    public List<StoreTableResponse> updateStoreTableQrBulk(Long userId, Long storeId,
+        StoreTableBulkQrUpdateRequest request) {
         validateStoreOwner(storeId, userId);
 
         List<StoreTableResponse> responses = new ArrayList<>();
@@ -326,5 +361,8 @@ public class StoreTableService {
         if (exists) {
             throw new BadRequestException("이미 존재하는 테이블 번호입니다: " + tableNum);
         }
+    }
+
+    private record MenuAggregate(String menuName, Long quantity, Long price) {
     }
 }

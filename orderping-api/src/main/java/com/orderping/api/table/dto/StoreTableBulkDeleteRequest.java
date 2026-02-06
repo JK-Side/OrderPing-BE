@@ -15,4 +15,5 @@ public record StoreTableBulkDeleteRequest(
     @Schema(description = "삭제할 테이블 번호 목록", example = "[1, 2, 3]")
     @NotEmpty(message = "삭제할 테이블 번호는 최소 1개 이상 필요합니다.")
     List<Integer> tableNums
-) {}
+) {
+}

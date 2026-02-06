@@ -39,9 +39,6 @@ public class OrderEntity {
     @Column(name = "store_id", nullable = false)
     private Long storeId;
 
-    @Column(name = "session_id", nullable = false, length = 36)
-    private String sessionId;
-
     @Column(name = "depositor_name", length = 50)
     private String depositorName;
 
@@ -59,13 +56,13 @@ public class OrderEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public OrderEntity(Long id, Long tableId, Integer tableNum, Long storeId, String sessionId, String depositorName, OrderStatus status,
+    public OrderEntity(Long id, Long tableId, Integer tableNum, Long storeId, String depositorName,
+        OrderStatus status,
         Long totalPrice, Long couponAmount, LocalDateTime createdAt) {
         this.id = id;
         this.tableId = tableId;
         this.tableNum = tableNum;
         this.storeId = storeId;
-        this.sessionId = sessionId;
         this.depositorName = depositorName;
         this.status = status;
         this.totalPrice = totalPrice;
@@ -80,7 +77,6 @@ public class OrderEntity {
             .tableId(order.getTableId())
             .tableNum(order.getTableNum())
             .storeId(order.getStoreId())
-            .sessionId(order.getSessionId())
             .depositorName(order.getDepositorName())
             .status(order.getStatus())
             .totalPrice(order.getTotalPrice())
@@ -110,7 +106,6 @@ public class OrderEntity {
             .tableId(this.tableId)
             .tableNum(this.tableNum)
             .storeId(this.storeId)
-            .sessionId(this.sessionId)
             .depositorName(this.depositorName)
             .status(this.status)
             .totalPrice(this.totalPrice)

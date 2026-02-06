@@ -2,15 +2,13 @@ package com.orderping.api.order.dto;
 
 import java.util.List;
 
-public record OrderCreateRequest(
+public record ServiceOrderCreateRequest(
     Long tableId,
     Integer tableNum,
     Long storeId,
-    String depositorName,
-    Long couponAmount,
-    List<OrderMenuRequest> menus
+    List<ServiceMenuRequest> menus
 ) {
-    public record OrderMenuRequest(
+    public record ServiceMenuRequest(
         Long menuId,
         Long quantity
     ) {

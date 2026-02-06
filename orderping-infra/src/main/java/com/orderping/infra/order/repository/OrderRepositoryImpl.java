@@ -46,13 +46,6 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
-    public List<Order> findBySessionId(String sessionId) {
-        return jpaRepository.findBySessionId(sessionId).stream()
-            .map(OrderEntity::toDomain)
-            .toList();
-    }
-
-    @Override
     public List<Order> findByStoreIdAndStatus(Long storeId, OrderStatus status) {
         return jpaRepository.findByStoreIdAndStatus(storeId, status).stream()
             .map(OrderEntity::toDomain)

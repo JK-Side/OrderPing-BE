@@ -72,7 +72,6 @@ class PaymentRepositoryImplTest {
             .tableId(savedTable.getId())
             .tableNum(savedTable.getTableNum())
             .storeId(savedStore.getId())
-            .sessionId("session-123")
             .status(OrderStatus.PENDING)
             .totalPrice(25000L)
             .build());
