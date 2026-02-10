@@ -875,7 +875,6 @@ POST /api/customer/orders
   "tableId": 1,
   "tableNum": 3,
   "storeId": 1,
-  "sessionId": "abc",
   "depositorName": "홍길동",
   "couponAmount": 0,
   "menus": [
@@ -917,6 +916,32 @@ POST /api/customer/order
 - 일반 주문과 서비스 주문 API 분리하여 책임 명확화
 - 가격은 클라이언트가 아닌 서버에서 계산 (보안 및 일관성)
 - 종료된 테이블 주문은 운영 화면에서 숨기고 통계에서만 사용
+
+---
+
+### 2026-02-10
+
+**작업 내용**:
+
+#### 1. Discord 알림 줄바꿈 수정
+
+- `StoreEventListener`에서 `\\n` → `\n`으로 수정
+- Discord 임베드 메시지에서 줄바꿈이 정상 표시되도록 개선
+
+#### 2. 서비스 주문 개선
+
+- 주문자명(`depositorName`)에 `"서비스"` 자동 입력
+- 서비스 주문 상태를 `PENDING` → `COMPLETE`로 변경 (즉시 완료 처리)
+
+**변경 파일**:
+
+- `StoreEventListener.java` - 줄바꿈 문자 수정
+- `OrderService.java` - 서비스 주문 depositorName, status 변경
+
+**주요 결정**:
+
+- 서비스 주문은 사장님이 직접 넣는 것이므로 별도 확인 없이 바로 완료 처리
+- 주문 디스코드 알림은 TPS 고려하여 배치 방식으로 추후 구현 예정
 
 ---
 
