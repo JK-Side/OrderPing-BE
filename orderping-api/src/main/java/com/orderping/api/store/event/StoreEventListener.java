@@ -28,7 +28,7 @@ public class StoreEventListener {
 
         String title = "새로운 가게가 등록되었습니다!";
         String description = String.format(
-            "**가게명:** %s\\n**사장님:** %s\\n**가게 ID:** %d",
+            "**가게명:** %s\n**사장님:** %s\n**가게 ID:** %d",
             store.getName(),
             ownerNickname,
             store.getId()
