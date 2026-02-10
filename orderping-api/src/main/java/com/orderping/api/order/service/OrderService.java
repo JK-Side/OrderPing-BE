@@ -136,12 +136,13 @@ public class OrderService {
             menuMap.put(menu.getId(), menu);
         }
 
-        // 서비스 주문은 총액 0원
+        // 서비스 주문은 총액 0원, 즉시 완료 처리
         Order order = Order.builder()
             .tableId(request.tableId())
             .tableNum(request.tableNum())
             .storeId(request.storeId())
-            .status(OrderStatus.PENDING)
+            .depositorName("서비스")
+            .status(OrderStatus.COMPLETE)
             .totalPrice(0L)
             .couponAmount(0L)
             .build();
