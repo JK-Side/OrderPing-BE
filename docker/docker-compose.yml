@@ -1,34 +1,14 @@
 version: "3.8"
 
 services:
-  mysql:
-    image: mysql:8.4.0
-    container_name: orderping-mysql
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      TZ: Asia/Seoul
-    ports:
-      - "3310:3306"
-    volumes:
-      - orderping-mysql-data:/var/lib/mysql
-    command: >
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_unicode_ci
-    networks:
-      - orderping-network
-
   api:
     build:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: orderping-api
     restart: always
-    depends_on:
-      - mysql
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8085:8080"
     environment:
@@ -69,5 +49,4 @@ networks:
     driver: bridge
 
 volumes:
-  orderping-mysql-data:
   orderping-logs:
