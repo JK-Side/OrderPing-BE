@@ -13,6 +13,7 @@ import com.orderping.api.qr.service.QrTokenProvider.TableQrClaims;
 import com.orderping.api.store.dto.StoreDetailResponse.CategoryWithMenusResponse;
 import com.orderping.domain.bank.Bank;
 import com.orderping.domain.bank.repository.BankRepository;
+import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.menu.Category;
 import com.orderping.domain.menu.Menu;
@@ -50,15 +51,30 @@ public class TableQrService {
             throw new NotFoundException("유효하지 않은 QR 코드입니다: " + e.getMessage());
         }
 
-        // 활성 테이블 조회 (storeId + tableNum으로 CLOSED가 아닌 테이블 찾기)
         StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(claims.storeId(), claims.tableNum())
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
 
-        // 주점 정보 조회
         Store store = storeRepository.findById(claims.storeId())
             .orElseThrow(() -> new NotFoundException("주점을 찾을 수 없습니다."));
 
-        // 카테고리 및 메뉴 조회
+        return buildTableInfoResponse(store, table);
+    }
+
+    public TableQrInfoResponse getTableInfoByTableId(Long tableId) {
+        StoreTable table = storeTableRepository.findById(tableId)
+            .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
+
+        if (table.getStatus() == TableStatus.CLOSED) {
+            throw new NotFoundException("종료된 테이블입니다.");
+        }
+
+        Store store = storeRepository.findById(table.getStoreId())
+            .orElseThrow(() -> new NotFoundException("주점을 찾을 수 없습니다."));
+
+        return buildTableInfoResponse(store, table);
+    }
+
+    private TableQrInfoResponse buildTableInfoResponse(Store store, StoreTable table) {
         List<Category> categories = categoryRepository.findAll();
         List<Menu> menus = menuRepository.findByStoreId(store.getId());
 
@@ -69,11 +85,10 @@ public class TableQrService {
             .map(category -> CategoryWithMenusResponse.from(
                 category,
                 menusByCategory.getOrDefault(category.getId(), List.of()),
-                false  // isManage = false (고객용)
+                false  // 고객용 화면
             ))
             .toList();
 
-        // 계좌 정보 조회
         AccountInfo accountInfo = getAccountInfo(store.getId());
 
         return new TableQrInfoResponse(
