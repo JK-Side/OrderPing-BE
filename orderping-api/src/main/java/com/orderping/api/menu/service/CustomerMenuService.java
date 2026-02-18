@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.orderping.api.menu.dto.CustomerMenuDetailResponse;
 import com.orderping.api.qr.dto.TableQrInfoResponse;
-import com.orderping.api.qr.service.TableQrService;
+import com.orderping.api.table.service.CustomerTableService;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.menu.Menu;
 import com.orderping.domain.menu.repository.MenuRepository;
@@ -17,11 +17,11 @@ import lombok.RequiredArgsConstructor;
 @Transactional(readOnly = true)
 public class CustomerMenuService {
 
-    private final TableQrService tableQrService;
+    private final CustomerTableService customerTableService;
     private final MenuRepository menuRepository;
 
     public TableQrInfoResponse getMenusByTable(Long tableId) {
-        return tableQrService.getTableInfoByTableId(tableId);
+        return customerTableService.getTableInfo(tableId);
     }
 
     public CustomerMenuDetailResponse getMenuDetail(Long menuId) {
@@ -30,4 +30,3 @@ public class CustomerMenuService {
         return CustomerMenuDetailResponse.from(menu);
     }
 }
-
