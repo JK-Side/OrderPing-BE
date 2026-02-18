@@ -28,7 +28,7 @@ public class CustomerMenuController implements CustomerMenuApi {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{menuId}")
+    @GetMapping("/details/{menuId}")
     @Override
     public ResponseEntity<CustomerMenuDetailResponse> getMenuDetail(
         @PathVariable Long menuId
