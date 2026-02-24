@@ -61,6 +61,8 @@ public class SecurityConfig {
                     "/api/auth/**",
                     // 고객용 API (인증 불필요)
                     "/api/customer/**",
+                    // 결제 딥링크 (인증 불필요)
+                    "/api/payments/deeplink",
                     // Actuator (health, prometheus만 공개)
                     "/actuator/health",
                     "/actuator/prometheus"
