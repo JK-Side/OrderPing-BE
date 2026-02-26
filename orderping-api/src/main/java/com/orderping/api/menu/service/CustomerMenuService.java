@@ -24,6 +24,10 @@ public class CustomerMenuService {
         return customerTableService.getTableInfo(tableId);
     }
 
+    public TableQrInfoResponse getMenusByStoreAndTableNum(Long storeId, Integer tableNum) {
+        return customerTableService.getTableInfoByStoreAndTableNum(storeId, tableNum);
+    }
+
     public CustomerMenuDetailResponse getMenuDetail(Long menuId) {
         Menu menu = menuRepository.findById(menuId)
             .orElseThrow(() -> new NotFoundException("메뉴를 찾을 수 없습니다."));

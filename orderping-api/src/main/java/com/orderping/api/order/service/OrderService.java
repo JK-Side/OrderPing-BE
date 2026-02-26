@@ -15,7 +15,6 @@ import com.orderping.api.order.dto.OrderStatusUpdateRequest;
 import com.orderping.api.order.dto.ServiceOrderCreateRequest;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
-import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.exception.OutOfStockException;
@@ -25,6 +24,7 @@ import com.orderping.domain.order.Order;
 import com.orderping.domain.order.OrderMenu;
 import com.orderping.domain.order.repository.OrderMenuRepository;
 import com.orderping.domain.order.repository.OrderRepository;
+import com.orderping.api.table.service.TableResolverService;
 import com.orderping.domain.store.Store;
 import com.orderping.domain.store.StoreTable;
 import com.orderping.domain.store.repository.StoreRepository;
@@ -42,20 +42,11 @@ public class OrderService {
     private final MenuRepository menuRepository;
     private final StoreRepository storeRepository;
     private final StoreTableRepository storeTableRepository;
+    private final TableResolverService tableResolverService;
 
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest request) {
-        // 테이블 정보 검증
-        StoreTable table = storeTableRepository.findById(request.tableId())
-            .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
-
-        if (!table.getTableNum().equals(request.tableNum())) {
-            throw new BadRequestException("테이블 번호가 일치하지 않습니다.");
-        }
-
-        if (table.getStatus() == TableStatus.CLOSED) {
-            throw new BadRequestException("종료된 테이블에는 주문할 수 없습니다.");
-        }
+        StoreTable table = tableResolverService.resolveActiveTable(request.storeId(), request.tableNum());
 
         // 메뉴 조회, 재고 검증 및 가격 계산
         long totalPrice = 0L;
@@ -79,8 +70,8 @@ public class OrderService {
         Long couponAmount = request.couponAmount() != null ? request.couponAmount() : 0L;
 
         Order order = Order.builder()
-            .tableId(request.tableId())
-            .tableNum(request.tableNum())
+            .tableId(table.getId())
+            .tableNum(table.getTableNum())
             .storeId(request.storeId())
             .depositorName(request.depositorName())
             .status(OrderStatus.PENDING)
@@ -107,17 +98,7 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createServiceOrder(ServiceOrderCreateRequest request) {
-        // 테이블 정보 검증
-        StoreTable table = storeTableRepository.findById(request.tableId())
-            .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
-
-        if (!table.getTableNum().equals(request.tableNum())) {
-            throw new BadRequestException("테이블 번호가 일치하지 않습니다.");
-        }
-
-        if (table.getStatus() == TableStatus.CLOSED) {
-            throw new BadRequestException("종료된 테이블에는 주문할 수 없습니다.");
-        }
+        StoreTable table = tableResolverService.resolveActiveTable(request.storeId(), request.tableNum());
 
         // 메뉴 조회 및 재고 검증
         Map<Long, Menu> menuMap = new java.util.HashMap<>();
@@ -138,8 +119,8 @@ public class OrderService {
 
         // 서비스 주문은 총액 0원, 즉시 완료 처리
         Order order = Order.builder()
-            .tableId(request.tableId())
-            .tableNum(request.tableNum())
+            .tableId(table.getId())
+            .tableNum(table.getTableNum())
             .storeId(request.storeId())
             .depositorName("서비스")
             .status(OrderStatus.COMPLETE)
@@ -212,6 +193,15 @@ public class OrderService {
 
     public List<OrderDetailResponse> getOrdersWithMenusByTableId(Long tableId) {
         List<Order> orders = orderRepository.findByTableId(tableId);
+        return orders.stream()
+            .map(this::toOrderDetailResponse)
+            .toList();
+    }
+
+    public List<OrderDetailResponse> getOrdersWithMenusByStoreAndTableNum(Long storeId, Integer tableNum) {
+        StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)
+            .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
+        List<Order> orders = orderRepository.findByTableId(table.getId());
         return orders.stream()
             .map(this::toOrderDetailResponse)
             .toList();

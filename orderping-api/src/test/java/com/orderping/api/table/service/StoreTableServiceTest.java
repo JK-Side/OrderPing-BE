@@ -373,9 +373,10 @@ class StoreTableServiceTest {
             Order completeOrder = createOrder(1L, OrderStatus.COMPLETE);
             Order cookingOrder = createOrder(2L, OrderStatus.COOKING);
             Order pendingOrder = createOrder(3L, OrderStatus.PENDING);
+            // menuId를 각각 다르게 설정 - 동일 menuId는 수량이 합산되므로
             OrderMenu orderMenu1 = createOrderMenu(1L, 1L, 1L, 5000L);
-            OrderMenu orderMenu2 = createOrderMenu(2L, 1L, 2L, 5000L);
-            OrderMenu orderMenu3 = createOrderMenu(3L, 1L, 3L, 5000L);
+            OrderMenu orderMenu2 = createOrderMenu(2L, 2L, 2L, 5000L);
+            OrderMenu orderMenu3 = createOrderMenu(3L, 3L, 3L, 5000L);
 
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
             given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
@@ -388,8 +389,9 @@ class StoreTableServiceTest {
                 .willReturn(List.of(orderMenu2));
             given(orderMenuRepository.findByOrderId(3L))
                 .willReturn(List.of(orderMenu3));
-            given(menuRepository.findById(1L))
-                .willReturn(Optional.of(testMenu));
+            given(menuRepository.findById(1L)).willReturn(Optional.of(testMenu));
+            given(menuRepository.findById(2L)).willReturn(Optional.of(testMenu));
+            given(menuRepository.findById(3L)).willReturn(Optional.of(testMenu));
 
             // when
             List<StoreTableDetailResponse> responses = storeTableService.getStoreTables(userId, storeId, null);
