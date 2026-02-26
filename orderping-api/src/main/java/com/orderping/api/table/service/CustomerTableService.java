@@ -38,6 +38,16 @@ public class CustomerTableService {
     private final CategoryRepository categoryRepository;
     private final MenuRepository menuRepository;
     private final BankRepository bankRepository;
+    private final TableResolverService tableResolverService;
+
+    public TableQrInfoResponse getTableInfoByStoreAndTableNum(Long storeId, Integer tableNum) {
+        StoreTable table = tableResolverService.resolveActiveTable(storeId, tableNum);
+
+        Store store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new NotFoundException("주점을 찾을 수 없습니다."));
+
+        return buildTableInfoResponse(store, table);
+    }
 
     public TableQrInfoResponse getTableInfo(Long tableId) {
         StoreTable table = storeTableRepository.findById(tableId)

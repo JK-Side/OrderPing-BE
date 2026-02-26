@@ -3,7 +3,6 @@ package com.orderping.api.order.dto;
 import java.util.List;
 
 public record OrderCreateRequest(
-    Long tableId,
     Integer tableNum,
     Long storeId,
     String depositorName,
