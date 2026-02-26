@@ -22,6 +22,8 @@ public interface StoreTableRepository {
 
     Optional<StoreTable> findActiveByStoreIdAndTableNum(Long storeId, Integer tableNum);
 
+    List<StoreTable> findAllActiveByStoreIdAndTableNum(Long storeId, Integer tableNum);
+
     List<StoreTable> findAllByIds(List<Long> ids);
 
     void deleteById(Long id);
