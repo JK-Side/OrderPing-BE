@@ -1,6 +1,7 @@
 package com.orderping.api.table.service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.orderping.api.table.dto.OrderMenuSummary;
+import com.orderping.api.table.dto.TableQrUrlResponse;
+import com.orderping.api.table.dto.TableQrUrlsResponse;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
@@ -336,6 +339,17 @@ public class StoreTableService {
         }
 
         return responses;
+    }
+
+    public TableQrUrlsResponse getQrImageUrls(Long userId, Long storeId) {
+        validateStoreOwner(storeId, userId);
+        List<TableQrUrlResponse> tables = storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED)
+            .stream()
+            .filter(t -> t.getQrImageUrl() != null && !t.getQrImageUrl().isBlank())
+            .sorted(Comparator.comparing(StoreTable::getTableNum))
+            .map(t -> new TableQrUrlResponse(t.getTableNum(), t.getQrImageUrl()))
+            .toList();
+        return new TableQrUrlsResponse(storeId, tables);
     }
 
     private void validateStoreOwner(Long storeId, Long userId) {
