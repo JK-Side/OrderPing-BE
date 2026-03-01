@@ -205,7 +205,7 @@ public class OrderService {
         StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
         List<Order> orders = orderRepository.findByTableIdOrderById(table.getId());
-        var result = new java.util.ArrayList<CustomerOrderDetailResponse>();
+        List<CustomerOrderDetailResponse> result = new java.util.ArrayList<>();
         for (int i = 0; i < orders.size(); i++) {
             result.add(toCustomerOrderDetailResponse(orders.get(i), i + 1));
         }

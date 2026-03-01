@@ -69,7 +69,7 @@ public class UserService {
                 MyPageResponse.AccountInfo accountInfo = accounts.isEmpty() ? null
                     : new MyPageResponse.AccountInfo(
                         accounts.get(0).getBankCode(),
-                        bankNameByCode.getOrDefault(accounts.get(0).getBankCode(), accounts.get(0).getBankCode()),
+                        bankNameByCode.getOrDefault(accounts.get(0).getBankCode(), "알 수 없는 은행"),
                         accounts.get(0).getAccountHolder(),
                         accounts.get(0).getAccountNumberEnc()
                     );
