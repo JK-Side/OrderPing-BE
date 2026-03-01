@@ -16,6 +16,8 @@ public interface OrderRepository {
 
     List<Order> findByTableId(Long tableId);
 
+    List<Order> findByTableIdOrderById(Long tableId);
+
     List<Order> findByStoreIdAndStatus(Long storeId, OrderStatus status);
 
     void deleteById(Long id);

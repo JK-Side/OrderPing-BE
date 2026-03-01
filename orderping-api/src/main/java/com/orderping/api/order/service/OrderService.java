@@ -4,10 +4,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.orderping.api.order.dto.CustomerOrderDetailResponse;
 import com.orderping.api.order.dto.OrderCreateRequest;
 import com.orderping.api.order.dto.OrderDetailResponse;
 import com.orderping.api.order.dto.OrderResponse;
@@ -16,6 +18,7 @@ import com.orderping.api.order.dto.ServiceOrderCreateRequest;
 import com.orderping.api.table.service.TableResolverService;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
+import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.exception.OutOfStockException;
@@ -57,6 +60,10 @@ public class OrderService {
         for (OrderCreateRequest.OrderMenuRequest menuRequest : request.menus()) {
             Menu menu = menuRepository.findByIdWithLock(menuRequest.menuId())
                 .orElseThrow(() -> new NotFoundException("메뉴 ID " + menuRequest.menuId() + "를 찾을 수 없습니다."));
+
+            if (!menu.getStoreId().equals(request.storeId())) {
+                throw new BadRequestException("메뉴 ID " + menuRequest.menuId() + "는 해당 주점의 메뉴가 아닙니다.");
+            }
 
             if (menu.getStock() < menuRequest.quantity()) {
                 throw new OutOfStockException(
@@ -108,6 +115,10 @@ public class OrderService {
         for (ServiceOrderCreateRequest.ServiceMenuRequest menuRequest : request.menus()) {
             Menu menu = menuRepository.findByIdWithLock(menuRequest.menuId())
                 .orElseThrow(() -> new NotFoundException("메뉴 ID " + menuRequest.menuId() + "를 찾을 수 없습니다."));
+
+            if (!menu.getStoreId().equals(request.storeId())) {
+                throw new BadRequestException("메뉴 ID " + menuRequest.menuId() + "는 해당 주점의 메뉴가 아닙니다.");
+            }
 
             if (menu.getStock() < menuRequest.quantity()) {
                 throw new OutOfStockException(
@@ -200,19 +211,28 @@ public class OrderService {
             .toList();
     }
 
-    public List<OrderDetailResponse> getOrdersWithMenusByStoreAndTableNum(Long storeId, Integer tableNum) {
+    public List<CustomerOrderDetailResponse> getOrdersWithMenusByStoreAndTableNum(Long storeId, Integer tableNum) {
         StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
-        List<Order> orders = orderRepository.findByTableId(table.getId());
-        return orders.stream()
-            .map(this::toOrderDetailResponse)
+        List<Order> orders = orderRepository.findByTableIdOrderById(table.getId());
+        return IntStream.range(0, orders.size())
+            .mapToObj(i -> toCustomerOrderDetailResponse(orders.get(i), i + 1))
             .toList();
     }
 
     private OrderDetailResponse toOrderDetailResponse(Order order) {
+        List<OrderDetailResponse.OrderMenuDetail> menuDetails = buildMenuDetails(order);
+        return OrderDetailResponse.from(order, menuDetails);
+    }
+
+    private CustomerOrderDetailResponse toCustomerOrderDetailResponse(Order order, int orderIndex) {
+        List<OrderDetailResponse.OrderMenuDetail> menuDetails = buildMenuDetails(order);
+        return CustomerOrderDetailResponse.from(order, menuDetails, orderIndex);
+    }
+
+    private List<OrderDetailResponse.OrderMenuDetail> buildMenuDetails(Order order) {
         List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(order.getId());
 
-        // 모든 메뉴 ID를 한 번에 조회 (N+1 방지)
         List<Long> menuIds = orderMenus.stream()
             .map(OrderMenu::getMenuId)
             .distinct()
@@ -221,7 +241,7 @@ public class OrderService {
         Map<Long, String> menuNames = menuRepository.findAllByIds(menuIds).stream()
             .collect(Collectors.toMap(Menu::getId, Menu::getName));
 
-        List<OrderDetailResponse.OrderMenuDetail> menuDetails = orderMenus.stream()
+        return orderMenus.stream()
             .map(om -> new OrderDetailResponse.OrderMenuDetail(
                 om.getMenuId(),
                 menuNames.getOrDefault(om.getMenuId(), "삭제된 메뉴"),
@@ -230,8 +250,6 @@ public class OrderService {
                 om.getIsService()
             ))
             .toList();
-
-        return OrderDetailResponse.from(order, menuDetails);
     }
 
     @Transactional

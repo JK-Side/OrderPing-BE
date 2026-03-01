@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.orderping.api.order.dto.CustomerOrderDetailResponse;
 import com.orderping.api.order.dto.OrderCreateRequest;
-import com.orderping.api.order.dto.OrderDetailResponse;
 import com.orderping.api.order.dto.OrderResponse;
 import com.orderping.api.order.service.OrderService;
 
@@ -45,11 +45,10 @@ public class CustomerOrderController {
     @Operation(summary = "테이블 주문 내역 조회", description = "storeId + tableNum으로 활성 테이블의 주문 내역을 조회합니다 (인증 불필요)")
     @ApiResponse(responseCode = "200", description = "조회 성공")
     @GetMapping("/table")
-    public ResponseEntity<List<OrderDetailResponse>> getOrdersByTable(
+    public ResponseEntity<List<CustomerOrderDetailResponse>> getOrdersByTable(
         @RequestParam Long storeId,
         @RequestParam Integer tableNum
     ) {
-        List<OrderDetailResponse> responses = orderService.getOrdersWithMenusByStoreAndTableNum(storeId, tableNum);
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(orderService.getOrdersWithMenusByStoreAndTableNum(storeId, tableNum));
     }
 }
