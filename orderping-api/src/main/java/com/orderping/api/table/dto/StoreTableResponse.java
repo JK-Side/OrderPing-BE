@@ -8,8 +8,6 @@ public record StoreTableResponse(
     Long storeId,
     Integer tableNum,
     TableStatus status,
-    String qrToken,
-    String qrUrl,
     String qrImageUrl
 ) {
     public static StoreTableResponse from(StoreTable storeTable) {
@@ -18,20 +16,6 @@ public record StoreTableResponse(
             storeTable.getStoreId(),
             storeTable.getTableNum(),
             storeTable.getStatus(),
-            null,
-            null,
-            storeTable.getQrImageUrl()
-        );
-    }
-
-    public static StoreTableResponse from(StoreTable storeTable, String qrToken, String qrUrl) {
-        return new StoreTableResponse(
-            storeTable.getId(),
-            storeTable.getStoreId(),
-            storeTable.getTableNum(),
-            storeTable.getStatus(),
-            qrToken,
-            qrUrl,
             storeTable.getQrImageUrl()
         );
     }

@@ -79,6 +79,11 @@ public class MenuRepositoryImpl implements MenuRepository {
     }
 
     @Override
+    public int increaseStock(Long id, Long quantity) {
+        return jpaRepository.increaseStock(id, quantity);
+    }
+
+    @Override
     public Optional<Menu> findByIdWithLock(Long id) {
         return jpaRepository.findByIdWithLock(id)
             .map(MenuEntity::toDomain);

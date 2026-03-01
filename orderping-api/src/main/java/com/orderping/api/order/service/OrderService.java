@@ -13,6 +13,7 @@ import com.orderping.api.order.dto.OrderDetailResponse;
 import com.orderping.api.order.dto.OrderResponse;
 import com.orderping.api.order.dto.OrderStatusUpdateRequest;
 import com.orderping.api.order.dto.ServiceOrderCreateRequest;
+import com.orderping.api.table.service.TableResolverService;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.exception.ForbiddenException;
@@ -24,14 +25,15 @@ import com.orderping.domain.order.Order;
 import com.orderping.domain.order.OrderMenu;
 import com.orderping.domain.order.repository.OrderMenuRepository;
 import com.orderping.domain.order.repository.OrderRepository;
-import com.orderping.api.table.service.TableResolverService;
 import com.orderping.domain.store.Store;
 import com.orderping.domain.store.StoreTable;
 import com.orderping.domain.store.repository.StoreRepository;
 import com.orderping.domain.store.repository.StoreTableRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -259,6 +261,17 @@ public class OrderService {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
         validateStoreOwner(order.getStoreId(), userId);
+
+        // 주문 취소 시 재고 복구
+        List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(id);
+        for (OrderMenu orderMenu : orderMenus) {
+            int updated = menuRepository.increaseStock(orderMenu.getMenuId(), orderMenu.getQuantity());
+            if (updated == 0) {
+                log.warn("재고 복구 실패 - 메뉴가 존재하지 않습니다: menuId={}, quantity={}, orderId={}",
+                    orderMenu.getMenuId(), orderMenu.getQuantity(), id);
+            }
+        }
+
         orderRepository.deleteById(id);
     }
 

@@ -70,11 +70,12 @@ orderping/
 
 ### 고객용 API (인증 불필요)
 
-| 경로                     | 설명                  |
-|------------------------|---------------------|
-| `/api/customer/orders` | 고객 주문 (생성, 테이블별 조회) |
-| `/api/customer/qr`     | QR 코드로 테이블 정보 조회    |
-| `/api/customer/banks`  | 은행 목록 조회 (토스 딥링크용)  |
+| 경로                          | 설명                    |
+|-----------------------------|-----------------------|
+| `/api/customer/orders`      | 고객 주문 (생성, 테이블별 조회)   |
+| `/api/customer/stores/{id}` | 메뉴 목록 조회 (?tableNum=) |
+| `/api/customer/qr`          | QR 코드로 테이블 정보 조회      |
+| `/api/customer/banks`       | 은행 목록 조회 (토스 딥링크용)    |
 
 ---
 
@@ -408,6 +409,10 @@ GET /api/tables?storeId=1&status=ACTIVE
 | 고객용 주문 API                     | ✅ 완료  |
 | Bean Validation                | ✅ 완료  |
 | Discord 웹훅 알림                  | ✅ 완료  |
+| 주문 취소 시 재고 복구                  | ✅ 완료  |
+| QR storeId+tableNum 기반 지속성     | ✅ 완료  |
+| TableResolverService           | ✅ 완료  |
+| 테이블 QR URL 일괄 조회               | ✅ 완료  |
 | 카카오 알림톡                        | ⏳ 미구현 |
 
 ---
@@ -942,6 +947,107 @@ POST /api/customer/order
 
 - 서비스 주문은 사장님이 직접 넣는 것이므로 별도 확인 없이 바로 완료 처리
 - 주문 디스코드 알림은 TPS 고려하여 배치 방식으로 추후 구현 예정
+
+---
+
+### 2026-03-01
+
+**작업 내용**:
+
+#### 1. 주문 시스템 QR 지속성 개선 (storeId + tableId → storeId + tableNum)
+
+- `clearTable` 후 테이블 ID가 바뀌어도 QR 재발급이 불필요하도록 변경
+- 고객 주문 API에서 `tableId` 제거, `storeId + tableNum` 조합으로 활성 테이블 조회
+- `CustomerOrderController`, `CustomerMenuController` 경로/파라미터 변경
+
+**고객 API 변경**:
+
+```
+[변경 전]
+POST /api/customer/orders        body: { tableId, storeId, ... }
+GET  /api/customer/orders/table/{tableId}
+GET  /api/customer/menus/tables/{tableId}
+
+[변경 후]
+POST /api/customer/orders        body: { tableNum, storeId, ... }
+GET  /api/customer/orders/table?storeId=1&tableNum=3
+GET  /api/customer/stores/{storeId}?tableNum=3
+```
+
+#### 2. TableResolverService 추가
+
+- 동일 `storeId + tableNum`으로 활성 테이블이 2개 이상일 때 하나를 선택하고 나머지를 CLOSED 처리
+- 선택 우선순위: ① 주문이 있는 테이블 → ② 가장 최근 생성(id 최대)
+- `CustomerTableService`, `TableQrService`, `OrderService`에서 모두 활용
+
+#### 3. 주문 취소 시 재고 복구
+
+- `OrderService.deleteOrder()` 에서 주문 삭제 전 `menuRepository.increaseStock()` 호출
+- `MenuRepository`, `MenuJpaRepository`, `MenuRepositoryImpl`에 `increaseStock` 메서드 추가
+- 재고 복구 시 `isSoldOut = false` 자동 리셋
+
+#### 4. StoreTableResponse DTO에서 qrToken, qrUrl 완전 제거
+
+- `qrToken`, `qrUrl` 필드를 null 반환이 아닌 DTO 자체에서 제거
+- `StoreTableService`에서 `QrTokenProvider` 의존성 제거
+
+#### 5. 테이블 QR URL 일괄 조회 API 추가
+
+- `GET /api/tables/qr?storeId={storeId}` 엔드포인트 추가
+- 활성(non-CLOSED) 테이블 중 `qrImageUrl`이 등록된 것만 `tableNum` 오름차순으로 반환
+- 프론트엔드에서 QR PDF 생성에 활용
+
+**응답**:
+
+```json
+{
+  "storeId": 1,
+  "tables": [
+    { "tableNum": 1, "qrImageUrl": "https://..." },
+    { "tableNum": 2, "qrImageUrl": "https://..." }
+  ]
+}
+```
+
+#### 6. 테스트 코드 추가
+
+- `TableResolverServiceTest` - 7가지 케이스 (단일/복수 활성 테이블, 주문 유무, QR 보존 등)
+- `OrderServiceTest` - 일반 주문 및 서비스 주문 생성 9가지 케이스
+
+**변경 파일**:
+
+- `OrderCreateRequest.java` - `tableId` 필드 제거
+- `ServiceOrderCreateRequest.java` - `tableId` 필드 제거
+- `OrderService.java` - `resolveActiveTable` 사용, `deleteOrder` 재고 복구 추가
+- `CustomerOrderController.java` - `/table?storeId=&tableNum=` 방식으로 변경
+- `CustomerMenuController.java` - `/api/customer/stores/{storeId}?tableNum=` 경로 변경
+- `CustomerMenuApi.java` - 인터페이스 변경
+- `CustomerMenuService.java` - `storeId + tableNum` 기반 조회로 변경
+- `CustomerTableService.java` - `TableResolverService` 주입
+- `TableResolverService.java` - 신규 (활성 테이블 충돌 해결 서비스)
+- `StoreTableRepository.java` - `findAllActiveByStoreIdAndTableNum` 추가
+- `StoreTableJpaRepository.java` - `findAllByStoreIdAndTableNumAndStatusNot` 추가
+- `StoreTableRepositoryImpl.java` - 구현체 추가
+- `TableQrService.java` - `TableResolverService` 사용으로 변경
+- `MenuRepository.java` - `increaseStock` 추가
+- `MenuJpaRepository.java` - `@Modifying @Query`로 재고 복구 쿼리 추가
+- `MenuRepositoryImpl.java` - `increaseStock` 구현
+- `StoreTableResponse.java` - `qrToken`, `qrUrl` 필드 완전 제거
+- `StoreTableService.java` - `QrTokenProvider` 제거, `getQrImageUrls` 추가
+- `StoreTableController.java` - `GET /api/tables/qr` 엔드포인트 추가
+- `StoreTableApi.java` - Swagger 문서 추가
+- `TableQrUrlResponse.java` - 신규 DTO
+- `TableQrUrlsResponse.java` - 신규 래퍼 DTO
+- `TableResolverServiceTest.java` - 신규
+- `OrderServiceTest.java` - 신규
+- `StoreTableServiceTest.java` - 기존 테스트 수정 (menuId 중복 버그 수정)
+
+**주요 결정**:
+
+- QR은 `tableNum` 기준으로 지속 → 테이블 교체 후에도 QR 재발급 불필요
+- 동시 활성 테이블 충돌은 `TableResolverService`에서 자동 정리
+- 재고 복구는 주문 취소(운영자 삭제) 시에만 동작
+- QR PDF 생성은 프론트엔드에서 담당, 백엔드는 URL 배열만 제공
 
 ---
 

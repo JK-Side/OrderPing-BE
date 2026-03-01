@@ -1,6 +1,7 @@
 package com.orderping.api.table.service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,7 +9,6 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.orderping.api.qr.service.QrTokenProvider;
 import com.orderping.api.table.dto.OrderMenuSummary;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
@@ -17,6 +17,8 @@ import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.api.table.dto.StoreTableUpdateRequest;
+import com.orderping.api.table.dto.TableQrUrlResponse;
+import com.orderping.api.table.dto.TableQrUrlsResponse;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.exception.BadRequestException;
@@ -45,7 +47,6 @@ public class StoreTableService {
     private final OrderRepository orderRepository;
     private final OrderMenuRepository orderMenuRepository;
     private final MenuRepository menuRepository;
-    private final QrTokenProvider qrTokenProvider;
 
     @Transactional
     public StoreTableResponse createStoreTable(Long userId, StoreTableCreateRequest request) {
@@ -61,15 +62,7 @@ public class StoreTableService {
 
         StoreTable saved = storeTableRepository.save(storeTable);
 
-        // QR 토큰 생성
-        String qrToken = qrTokenProvider.createTableToken(
-            saved.getStoreId(),
-            saved.getId(),
-            saved.getTableNum()
-        );
-        String qrUrl = qrTokenProvider.buildTableQrUrl(qrToken);
-
-        return StoreTableResponse.from(saved, qrToken, qrUrl);
+        return StoreTableResponse.from(saved);
     }
 
     public StoreTableResponse getStoreTable(Long id) {
@@ -346,6 +339,17 @@ public class StoreTableService {
         }
 
         return responses;
+    }
+
+    public TableQrUrlsResponse getQrImageUrls(Long userId, Long storeId) {
+        validateStoreOwner(storeId, userId);
+        List<TableQrUrlResponse> tables = storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED)
+            .stream()
+            .filter(t -> t.getQrImageUrl() != null && !t.getQrImageUrl().isBlank())
+            .sorted(Comparator.comparing(StoreTable::getTableNum))
+            .map(t -> new TableQrUrlResponse(t.getTableNum(), t.getQrImageUrl()))
+            .toList();
+        return new TableQrUrlsResponse(storeId, tables);
     }
 
     private void validateStoreOwner(Long storeId, Long userId) {

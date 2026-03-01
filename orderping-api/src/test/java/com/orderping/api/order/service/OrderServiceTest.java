@@ -1,9 +1,9 @@
 package com.orderping.api.order.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -33,7 +33,6 @@ import com.orderping.domain.menu.repository.MenuRepository;
 import com.orderping.domain.order.Order;
 import com.orderping.domain.order.repository.OrderMenuRepository;
 import com.orderping.domain.order.repository.OrderRepository;
-import com.orderping.domain.store.Store;
 import com.orderping.domain.store.StoreTable;
 import com.orderping.domain.store.repository.StoreRepository;
 import com.orderping.domain.store.repository.StoreTableRepository;
@@ -41,21 +40,24 @@ import com.orderping.domain.store.repository.StoreTableRepository;
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
-    @Mock private OrderRepository orderRepository;
-    @Mock private OrderMenuRepository orderMenuRepository;
-    @Mock private MenuRepository menuRepository;
-    @Mock private StoreRepository storeRepository;
-    @Mock private StoreTableRepository storeTableRepository;
-    @Mock private TableResolverService tableResolverService;
-
-    @InjectMocks
-    private OrderService orderService;
-
     private final Long storeId = 1L;
     private final Long tableId = 10L;
     private final Integer tableNum = 3;
     private final Long menuId = 100L;
-
+    @Mock
+    private OrderRepository orderRepository;
+    @Mock
+    private OrderMenuRepository orderMenuRepository;
+    @Mock
+    private MenuRepository menuRepository;
+    @Mock
+    private StoreRepository storeRepository;
+    @Mock
+    private StoreTableRepository storeTableRepository;
+    @Mock
+    private TableResolverService tableResolverService;
+    @InjectMocks
+    private OrderService orderService;
     private StoreTable activeTable;
     private Menu testMenu;
 

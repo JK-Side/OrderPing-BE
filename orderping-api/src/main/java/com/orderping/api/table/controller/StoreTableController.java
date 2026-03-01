@@ -23,6 +23,7 @@ import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.api.table.dto.StoreTableUpdateRequest;
+import com.orderping.api.table.dto.TableQrUrlsResponse;
 import com.orderping.api.table.service.StoreTableService;
 import com.orderping.domain.enums.TableStatus;
 
@@ -118,6 +119,15 @@ public class StoreTableController implements StoreTableApi {
     ) {
         storeTableService.deleteStoreTablesByTableNums(userId, request.storeId(), request.tableNums());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/qr")
+    @Override
+    public ResponseEntity<TableQrUrlsResponse> getQrImageUrls(
+        @CurrentUser Long userId,
+        @RequestParam Long storeId
+    ) {
+        return ResponseEntity.ok(storeTableService.getQrImageUrls(userId, storeId));
     }
 
     @PatchMapping("/bulk/{storeId}")

@@ -30,4 +30,8 @@ public interface MenuJpaRepository extends JpaRepository<MenuEntity, Long> {
     @Modifying
     @Query("UPDATE MenuEntity m SET m.stock = m.stock - :quantity WHERE m.id = :id AND m.stock >= :quantity")
     int decreaseStock(@Param("id") Long id, @Param("quantity") Long quantity);
+
+    @Modifying
+    @Query("UPDATE MenuEntity m SET m.stock = m.stock + :quantity, m.isSoldOut = false WHERE m.id = :id")
+    int increaseStock(@Param("id") Long id, @Param("quantity") Long quantity);
 }

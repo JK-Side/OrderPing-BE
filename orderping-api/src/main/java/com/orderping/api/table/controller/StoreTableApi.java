@@ -12,6 +12,7 @@ import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.api.table.dto.StoreTableUpdateRequest;
+import com.orderping.api.table.dto.TableQrUrlsResponse;
 import com.orderping.domain.enums.TableStatus;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -129,6 +130,18 @@ public interface StoreTableApi {
     ResponseEntity<Void> deleteStoreTablesBulk(
         @Parameter(hidden = true) Long userId,
         StoreTableBulkDeleteRequest request
+    );
+
+    @Operation(summary = "테이블 QR URL 목록 조회", description = "매장의 활성 테이블 중 QR 이미지 URL이 등록된 테이블 목록을 반환합니다 (본인 매장만 가능)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
+        @ApiResponse(responseCode = "404", description = "매장을 찾을 수 없음")
+    })
+    ResponseEntity<TableQrUrlsResponse> getQrImageUrls(
+        @Parameter(hidden = true) Long userId,
+        @Parameter(description = "매장 ID", required = true) Long storeId
     );
 
     @Operation(summary = "테이블 QR 일괄 업데이트", description = "여러 테이블의 QR 이미지 URL을 일괄 업데이트합니다 (본인 매장만 가능)")

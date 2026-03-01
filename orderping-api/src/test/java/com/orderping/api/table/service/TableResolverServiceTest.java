@@ -8,7 +8,6 @@ import static org.mockito.Mockito.*;
 
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,17 +27,14 @@ import com.orderping.domain.store.repository.StoreTableRepository;
 @ExtendWith(MockitoExtension.class)
 class TableResolverServiceTest {
 
-    @Mock
-    private StoreTableRepository storeTableRepository;
-
-    @Mock
-    private OrderRepository orderRepository;
-
-    @InjectMocks
-    private TableResolverService tableResolverService;
-
     private final Long storeId = 1L;
     private final Integer tableNum = 3;
+    @Mock
+    private StoreTableRepository storeTableRepository;
+    @Mock
+    private OrderRepository orderRepository;
+    @InjectMocks
+    private TableResolverService tableResolverService;
 
     private StoreTable activeTable(Long id) {
         return StoreTable.builder()
