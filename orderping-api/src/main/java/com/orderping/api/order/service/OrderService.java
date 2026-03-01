@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.orderping.api.order.dto.CustomerOrderDetailResponse;
 import com.orderping.api.order.dto.OrderCreateRequest;
 import com.orderping.api.order.dto.OrderDetailResponse;
 import com.orderping.api.order.dto.OrderResponse;
@@ -200,19 +201,30 @@ public class OrderService {
             .toList();
     }
 
-    public List<OrderDetailResponse> getOrdersWithMenusByStoreAndTableNum(Long storeId, Integer tableNum) {
+    public List<CustomerOrderDetailResponse> getOrdersWithMenusByStoreAndTableNum(Long storeId, Integer tableNum) {
         StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
-        List<Order> orders = orderRepository.findByTableId(table.getId());
-        return orders.stream()
-            .map(this::toOrderDetailResponse)
-            .toList();
+        List<Order> orders = orderRepository.findByTableIdOrderById(table.getId());
+        var result = new java.util.ArrayList<CustomerOrderDetailResponse>();
+        for (int i = 0; i < orders.size(); i++) {
+            result.add(toCustomerOrderDetailResponse(orders.get(i), i + 1));
+        }
+        return result;
     }
 
     private OrderDetailResponse toOrderDetailResponse(Order order) {
+        List<OrderDetailResponse.OrderMenuDetail> menuDetails = buildMenuDetails(order);
+        return OrderDetailResponse.from(order, menuDetails);
+    }
+
+    private CustomerOrderDetailResponse toCustomerOrderDetailResponse(Order order, int orderIndex) {
+        List<OrderDetailResponse.OrderMenuDetail> menuDetails = buildMenuDetails(order);
+        return CustomerOrderDetailResponse.from(order, menuDetails, orderIndex);
+    }
+
+    private List<OrderDetailResponse.OrderMenuDetail> buildMenuDetails(Order order) {
         List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(order.getId());
 
-        // 모든 메뉴 ID를 한 번에 조회 (N+1 방지)
         List<Long> menuIds = orderMenus.stream()
             .map(OrderMenu::getMenuId)
             .distinct()
@@ -221,7 +233,7 @@ public class OrderService {
         Map<Long, String> menuNames = menuRepository.findAllByIds(menuIds).stream()
             .collect(Collectors.toMap(Menu::getId, Menu::getName));
 
-        List<OrderDetailResponse.OrderMenuDetail> menuDetails = orderMenus.stream()
+        return orderMenus.stream()
             .map(om -> new OrderDetailResponse.OrderMenuDetail(
                 om.getMenuId(),
                 menuNames.getOrDefault(om.getMenuId(), "삭제된 메뉴"),
@@ -230,8 +242,6 @@ public class OrderService {
                 om.getIsService()
             ))
             .toList();
-
-        return OrderDetailResponse.from(order, menuDetails);
     }
 
     @Transactional
