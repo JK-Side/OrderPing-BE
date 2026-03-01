@@ -17,6 +17,7 @@ import com.orderping.api.order.dto.ServiceOrderCreateRequest;
 import com.orderping.api.table.service.TableResolverService;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
+import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.exception.OutOfStockException;
@@ -58,6 +59,10 @@ public class OrderService {
         for (OrderCreateRequest.OrderMenuRequest menuRequest : request.menus()) {
             Menu menu = menuRepository.findByIdWithLock(menuRequest.menuId())
                 .orElseThrow(() -> new NotFoundException("메뉴 ID " + menuRequest.menuId() + "를 찾을 수 없습니다."));
+
+            if (!menu.getStoreId().equals(request.storeId())) {
+                throw new BadRequestException("메뉴 ID " + menuRequest.menuId() + "는 해당 주점의 메뉴가 아닙니다.");
+            }
 
             if (menu.getStock() < menuRequest.quantity()) {
                 throw new OutOfStockException(
@@ -109,6 +114,10 @@ public class OrderService {
         for (ServiceOrderCreateRequest.ServiceMenuRequest menuRequest : request.menus()) {
             Menu menu = menuRepository.findByIdWithLock(menuRequest.menuId())
                 .orElseThrow(() -> new NotFoundException("메뉴 ID " + menuRequest.menuId() + "를 찾을 수 없습니다."));
+
+            if (!menu.getStoreId().equals(request.storeId())) {
+                throw new BadRequestException("메뉴 ID " + menuRequest.menuId() + "는 해당 주점의 메뉴가 아닙니다.");
+            }
 
             if (menu.getStock() < menuRequest.quantity()) {
                 throw new OutOfStockException(
