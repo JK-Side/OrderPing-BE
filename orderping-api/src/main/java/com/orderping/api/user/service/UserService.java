@@ -66,7 +66,8 @@ public class UserService {
         List<MyPageResponse.StoreInfo> storeInfos = storeRepository.findByUserId(userId).stream()
             .map(store -> {
                 List<StoreAccount> accounts = storeAccountRepository.findActiveByStoreId(store.getId());
-                MyPageResponse.AccountInfo accountInfo = accounts.isEmpty() ? null
+                MyPageResponse.AccountInfo accountInfo = accounts.isEmpty()
+                    ? MyPageResponse.AccountInfo.empty()
                     : new MyPageResponse.AccountInfo(
                         accounts.get(0).getBankCode(),
                         bankNameByCode.getOrDefault(accounts.get(0).getBankCode(), "알 수 없는 은행"),

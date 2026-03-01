@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -214,11 +215,9 @@ public class OrderService {
         StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
         List<Order> orders = orderRepository.findByTableIdOrderById(table.getId());
-        List<CustomerOrderDetailResponse> result = new java.util.ArrayList<>();
-        for (int i = 0; i < orders.size(); i++) {
-            result.add(toCustomerOrderDetailResponse(orders.get(i), i + 1));
-        }
-        return result;
+        return IntStream.range(0, orders.size())
+            .mapToObj(i -> toCustomerOrderDetailResponse(orders.get(i), i + 1))
+            .toList();
     }
 
     private OrderDetailResponse toOrderDetailResponse(Order order) {

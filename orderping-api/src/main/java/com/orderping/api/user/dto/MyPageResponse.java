@@ -18,5 +18,9 @@ public record MyPageResponse(
         String bankName,
         String accountHolder,
         String accountNumber
-    ) {}
+    ) {
+        public static AccountInfo empty() {
+            return new AccountInfo("", "계좌 미등록", "", "");
+        }
+    }
 }
