@@ -259,6 +259,13 @@ public class OrderService {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
         validateStoreOwner(order.getStoreId(), userId);
+
+        // 주문 취소 시 재고 복구
+        List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(id);
+        for (OrderMenu orderMenu : orderMenus) {
+            menuRepository.increaseStock(orderMenu.getMenuId(), orderMenu.getQuantity());
+        }
+
         orderRepository.deleteById(id);
     }
 

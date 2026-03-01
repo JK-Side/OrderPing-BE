@@ -25,5 +25,7 @@ public interface MenuRepository {
 
     int decreaseStock(Long id, Long quantity);
 
+    int increaseStock(Long id, Long quantity);
+
     Optional<Menu> findByIdWithLock(Long id);
 }
