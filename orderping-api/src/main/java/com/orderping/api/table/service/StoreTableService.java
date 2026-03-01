@@ -10,8 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.orderping.api.table.dto.OrderMenuSummary;
-import com.orderping.api.table.dto.TableQrUrlResponse;
-import com.orderping.api.table.dto.TableQrUrlsResponse;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
@@ -19,6 +17,8 @@ import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.api.table.dto.StoreTableUpdateRequest;
+import com.orderping.api.table.dto.TableQrUrlResponse;
+import com.orderping.api.table.dto.TableQrUrlsResponse;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.exception.BadRequestException;

@@ -70,12 +70,12 @@ orderping/
 
 ### 고객용 API (인증 불필요)
 
-| 경로                     | 설명                  |
-|------------------------|---------------------|
-| `/api/customer/orders`        | 고객 주문 (생성, 테이블별 조회)         |
-| `/api/customer/stores/{id}`   | 메뉴 목록 조회 (?tableNum=)         |
-| `/api/customer/qr`            | QR 코드로 테이블 정보 조회            |
-| `/api/customer/banks`         | 은행 목록 조회 (토스 딥링크용)          |
+| 경로                          | 설명                    |
+|-----------------------------|-----------------------|
+| `/api/customer/orders`      | 고객 주문 (생성, 테이블별 조회)   |
+| `/api/customer/stores/{id}` | 메뉴 목록 조회 (?tableNum=) |
+| `/api/customer/qr`          | QR 코드로 테이블 정보 조회      |
+| `/api/customer/banks`       | 은행 목록 조회 (토스 딥링크용)    |
 
 ---
 
