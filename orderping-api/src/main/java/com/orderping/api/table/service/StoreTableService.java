@@ -8,7 +8,6 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.orderping.api.qr.service.QrTokenProvider;
 import com.orderping.api.table.dto.OrderMenuSummary;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
@@ -45,7 +44,6 @@ public class StoreTableService {
     private final OrderRepository orderRepository;
     private final OrderMenuRepository orderMenuRepository;
     private final MenuRepository menuRepository;
-    private final QrTokenProvider qrTokenProvider;
 
     @Transactional
     public StoreTableResponse createStoreTable(Long userId, StoreTableCreateRequest request) {
@@ -61,15 +59,7 @@ public class StoreTableService {
 
         StoreTable saved = storeTableRepository.save(storeTable);
 
-        // QR 토큰 생성
-        String qrToken = qrTokenProvider.createTableToken(
-            saved.getStoreId(),
-            saved.getId(),
-            saved.getTableNum()
-        );
-        String qrUrl = qrTokenProvider.buildTableQrUrl(qrToken);
-
-        return StoreTableResponse.from(saved, qrToken, qrUrl);
+        return StoreTableResponse.from(saved);
     }
 
     public StoreTableResponse getStoreTable(Long id) {
