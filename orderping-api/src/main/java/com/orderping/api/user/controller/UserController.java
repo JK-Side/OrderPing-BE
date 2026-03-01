@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.orderping.api.auth.security.CurrentUser;
+import com.orderping.api.user.dto.MyPageResponse;
 import com.orderping.api.user.dto.UserCreateRequest;
 import com.orderping.api.user.dto.UserResponse;
 import com.orderping.api.user.service.UserService;
@@ -35,6 +37,12 @@ public class UserController implements UserApi {
     public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
         UserResponse response = userService.getUser(id);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/myPage")
+    @Override
+    public ResponseEntity<MyPageResponse> getMyPage(@CurrentUser Long userId) {
+        return ResponseEntity.ok(userService.getMyPage(userId));
     }
 
     @DeleteMapping("/{id}")
