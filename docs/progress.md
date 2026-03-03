@@ -413,13 +413,15 @@ GET /api/tables?storeId=1&status=ACTIVE
 | QR storeId+tableNum 기반 지속성     | ✅ 완료  |
 | TableResolverService           | ✅ 완료  |
 | 테이블 QR URL 일괄 조회               | ✅ 완료  |
+| 마이페이지 API                       | ✅ 완료  |
+| 고객 주문 내역 orderIndex             | ✅ 완료  |
+| 고객 주문 시 메뉴 소속 주점 검증            | ✅ 완료  |
 | 카카오 알림톡                        | ⏳ 미구현 |
 
 ---
 
 ## 다음 작업 예정
 
-- [ ] 카카오 알림톡 연동
 - [ ] 주문 실시간 알림 (WebSocket/SSE)
 - [ ] 테스트 코드 보강
 
@@ -1048,6 +1050,140 @@ GET  /api/customer/stores/{storeId}?tableNum=3
 - 동시 활성 테이블 충돌은 `TableResolverService`에서 자동 정리
 - 재고 복구는 주문 취소(운영자 삭제) 시에만 동작
 - QR PDF 생성은 프론트엔드에서 담당, 백엔드는 URL 배열만 제공
+
+---
+
+### 2026-03-01 (2)
+
+**작업 내용**:
+
+#### 1. 재고 복구 동시성/안전성 개선
+
+- `increaseStock`은 원자적 SQL(`stock + quantity`)이므로 비관적 락 불필요
+- `deleteOrder()`에서 `increaseStock` 반환값(0이면 메뉴 삭제된 것) 확인 후 warn 로그 추가
+- `@Slf4j` 추가
+
+#### 2. 마이페이지 API 추가
+
+- `GET /api/users/myPage` 엔드포인트 추가 (JWT 인증 필요)
+- 운영자의 보유 주점 목록 + 주점별 계좌 정보 반환
+- 계좌 미등록 주점은 `AccountInfo.empty()` 반환 (`"계좌 미등록"`)
+- 은행 목록을 Map으로 변환해 bankCode → bankName 매핑
+
+**응답**:
+
+```json
+{
+  "stores": [
+    {
+      "storeId": 1,
+      "name": "우리 주점",
+      "description": "주점 소개",
+      "account": {
+        "bankCode": "003",
+        "bankName": "기업은행",
+        "accountHolder": "홍길동",
+        "accountNumber": "12345678901234"
+      }
+    }
+  ]
+}
+```
+
+#### 3. 고객 주문 내역 orderIndex 추가
+
+- `GET /api/customer/orders/table` 응답에 테이블 내 주문 순서(`orderIndex`) 추가
+- `findByTableIdOrderByIdAsc()` 추가로 정렬 보장
+- 운영자용 `OrderDetailResponse` / 고객용 `CustomerOrderDetailResponse` 분리
+- `buildMenuDetails()` 공통 메서드로 중복 제거
+- `clearTable` 후 새 테이블이 생기면 1번부터 다시 시작
+
+#### 4. 고객 주문 시 메뉴 소속 주점 검증 추가
+
+- `createOrder`, `createServiceOrder`에서 `menu.getStoreId() != request.storeId()` 시 400 에러
+- 다른 주점 메뉴ID로 재고 차감하는 취약점 차단
+- 검증 순서: 메뉴 존재 → **주점 소속** → 재고
+
+**변경 파일**:
+
+- `OrderService.java` - `deleteOrder` warn 로그, `getOrdersWithMenusByStoreAndTableNum` 반환 타입 변경, `toCustomerOrderDetailResponse`/`buildMenuDetails` 추가, 메뉴 소속 주점 검증 추가
+- `CustomerOrderDetailResponse.java` - 신규 (고객용, `orderIndex` 포함)
+- `OrderJpaRepository.java` - `findByTableIdOrderByIdAsc` 추가
+- `OrderRepository.java` - `findByTableIdOrderById` 추가
+- `OrderRepositoryImpl.java` - 구현체 추가
+- `CustomerOrderController.java` - 반환 타입 `CustomerOrderDetailResponse`로 변경
+- `MyPageResponse.java` - 신규 DTO (`StoreInfo`, `AccountInfo`, `AccountInfo.empty()`)
+- `UserService.java` - `getMyPage()` 추가 (StoreRepository, StoreAccountRepository, BankRepository 주입)
+- `UserController.java` - `GET /api/users/myPage` 추가
+- `UserApi.java` - Swagger 문서 추가
+
+**주요 결정**:
+
+- `increaseStock`은 원자적 SQL이므로 비관적 락 추가하지 않음 (재고 복구는 단순 증가 연산)
+- 운영자/고객 주문 응답 DTO 분리 (null 필드 없는 명확한 타입)
+- 계좌 미등록 시 null 대신 `AccountInfo.empty()` 반환 (클라이언트 NPE 방지)
+- 카카오 알림톡은 유료(건당 7.5원~)라 미구현, Discord 웹훅 활용 예정
+
+---
+
+### 2026-03-03
+
+**작업 내용**:
+
+#### 1. 마이페이지 이메일 제거
+
+- `MyPageResponse`에서 `email` 필드 제거
+- `UserService.getMyPage()`에서 User 조회 로직 제거 (storeId 기반으로만 조회)
+
+#### 2. 고객용 주점 계좌 조회 API 추가
+
+- `GET /api/customer/stores/{storeId}/account` 엔드포인트 추가 (인증 불필요)
+- 고객이 주문 후 토스 송금 시 주점 계좌 정보 조회에 사용
+- 주점 미존재 시 404, 계좌 미등록 시 404 반환
+
+**API**:
+
+```
+GET /api/customer/stores/{storeId}/account
+응답: { "storeId": 1, "bankCode": "003", "bankName": "기업은행", "accountHolder": "홍길동", "accountNumber": "12345678901234" }
+```
+
+**신규 파일**:
+
+- `CustomerStoreAccountController.java` - 고객용 주점 계좌 컨트롤러
+- `CustomerStoreAccountService.java` - 주점 존재 검증 + 활성 계좌 조회 + 은행명 매핑
+- `CustomerStoreAccountResponse.java` - 응답 DTO
+
+#### 3. 마이페이지 imageUrl 추가
+
+- `MyPageResponse.StoreInfo`에 `imageUrl` 필드 추가
+- `Store` 도메인에 이미 `imageUrl`이 있으므로 별도 쿼리 없이 매핑
+
+**응답 변경**:
+
+```json
+{
+  "stores": [
+    {
+      "storeId": 1,
+      "name": "우리 주점",
+      "description": "주점 소개",
+      "imageUrl": "https://...",
+      "account": { ... }
+    }
+  ]
+}
+```
+
+**변경 파일**:
+
+- `MyPageResponse.java` - `email` 제거, `StoreInfo`에 `imageUrl` 추가
+- `UserService.java` - User 조회 로직 제거, `store.getImageUrl()` 매핑 추가
+
+**주요 결정**:
+
+- 마이페이지에서 이메일은 클라이언트가 JWT에서 직접 파싱 (별도 API 불필요)
+- 고객용 계좌 API는 인증 없이 storeId만으로 조회 가능 (공개 정보)
 
 ---
 
