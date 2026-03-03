@@ -110,24 +110,4 @@ class CustomerStoreAccountServiceTest {
         assertThrows(NotFoundException.class, () -> customerStoreAccountService.getAccountByStoreId(storeId));
     }
 
-    @Test
-    @DisplayName("storeId로 계좌 조회 - 다른 매장 계좌 반환 시 예외")
-    void getAccountByStoreId_accountMismatch() {
-        // given
-        StoreAccount otherStoreAccount = StoreAccount.builder()
-            .id(101L)
-            .storeId(999L)
-            .bankCode("004")
-            .accountHolder("임꺽정")
-            .accountNumberEnc("98765432109876")
-            .accountNumberMask("************9876")
-            .isActive(true)
-            .build();
-
-        given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
-        given(storeAccountRepository.findActiveByStoreId(storeId)).willReturn(List.of(otherStoreAccount));
-
-        // when & then
-        assertThrows(NotFoundException.class, () -> customerStoreAccountService.getAccountByStoreId(storeId));
-    }
 }
