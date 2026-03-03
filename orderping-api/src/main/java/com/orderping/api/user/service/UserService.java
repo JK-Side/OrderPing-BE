@@ -68,7 +68,7 @@ public class UserService {
                         accounts.get(0).getAccountHolder(),
                         accounts.get(0).getAccountNumberEnc()
                     );
-                return new MyPageResponse.StoreInfo(store.getId(), store.getName(), store.getDescription(), accountInfo);
+                return new MyPageResponse.StoreInfo(store.getId(), store.getName(), store.getDescription(), store.getImageUrl(), accountInfo);
             })
             .toList();
 
