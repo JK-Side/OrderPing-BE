@@ -9,6 +9,7 @@ public record MyPageResponse(
         Long storeId,
         String name,
         String description,
+        String imageUrl,
         AccountInfo account
     ) {}
 
