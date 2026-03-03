@@ -39,6 +39,7 @@ public class CustomerStoreAccountService {
 
     private StoreAccount findActiveAccount(Long storeId) {
         return storeAccountRepository.findActiveByStoreId(storeId).stream()
+            .filter(account -> storeId.equals(account.getStoreId()))
             .findFirst()
             .orElseThrow(() -> new NotFoundException("등록된 계좌 정보를 찾을 수 없습니다."));
     }
