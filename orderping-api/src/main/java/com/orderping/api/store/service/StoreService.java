@@ -102,6 +102,7 @@ public class StoreService {
         Store store = storeRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("주점을 찾을 수 없습니다."));
         validateOwner(store, userId);
+        storeAccountRepository.deleteByStoreId(id);
         storeRepository.deleteById(id);
     }
 

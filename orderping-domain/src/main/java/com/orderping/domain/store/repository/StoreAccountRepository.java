@@ -16,4 +16,6 @@ public interface StoreAccountRepository {
     List<StoreAccount> findActiveByStoreId(Long storeId);
 
     void deleteById(Long id);
+
+    void deleteByStoreId(Long storeId);
 }
