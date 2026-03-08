@@ -1,7 +1,10 @@
 package com.orderping.api.common.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -79,6 +82,42 @@ public class GlobalExceptionHandler {
             "요청한 리소스를 찾을 수 없습니다."
         );
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        log.debug("Invalid request body: {}", e.getMessage());
+        ErrorResponse response = ErrorResponse.of(
+            HttpStatus.BAD_REQUEST.value(),
+            "BAD_REQUEST",
+            "요청 본문이 올바르지 않습니다."
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+            .findFirst()
+            .map(error -> error.getField() + ": " + error.getDefaultMessage())
+            .orElse("입력값이 올바르지 않습니다.");
+        ErrorResponse response = ErrorResponse.of(
+            HttpStatus.BAD_REQUEST.value(),
+            "BAD_REQUEST",
+            message
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+        log.warn("Data integrity violation: {}", e.getMessage());
+        ErrorResponse response = ErrorResponse.of(
+            HttpStatus.BAD_REQUEST.value(),
+            "BAD_REQUEST",
+            "입력값이 제약 조건을 위반했습니다."
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(MissingRequestCookieException.class)
