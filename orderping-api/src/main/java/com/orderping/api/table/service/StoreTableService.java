@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -97,6 +98,18 @@ public class StoreTableService {
     private StoreTableDetailResponse toDetailResponse(StoreTable storeTable) {
         List<Order> orders = orderRepository.findByTableId(storeTable.getId());
 
+        if (orders.isEmpty()) {
+            return StoreTableDetailResponse.from(storeTable, List.of(), List.of(), 0L, null);
+        }
+
+        // 배치 조회: orderMenu N+1, menu N*M 방지
+        List<Long> orderIds = orders.stream().map(Order::getId).toList();
+        List<OrderMenu> allOrderMenus = orderMenuRepository.findByOrderIds(orderIds);
+
+        List<Long> menuIds = allOrderMenus.stream().map(OrderMenu::getMenuId).distinct().toList();
+        Map<Long, String> menuNameMap = menuRepository.findAllByIds(menuIds).stream()
+            .collect(Collectors.toMap(Menu::getId, Menu::getName));
+
         // 일반 메뉴와 서비스 메뉴 분리 집계
         Map<Long, MenuAggregate> orderMenuAggregateMap = new LinkedHashMap<>();
         Map<Long, MenuAggregate> serviceMenuAggregateMap = new LinkedHashMap<>();
@@ -112,31 +125,28 @@ public class StoreTableService {
             } else if (order.getStatus() == OrderStatus.COOKING && highestPriorityStatus == OrderStatus.COMPLETE) {
                 highestPriorityStatus = OrderStatus.COOKING;
             }
+        }
 
-            List<OrderMenu> menus = orderMenuRepository.findByOrderId(order.getId());
-            for (OrderMenu orderMenu : menus) {
-                Long menuId = orderMenu.getMenuId();
-                Long quantity = orderMenu.getQuantity();
-                Long price = orderMenu.getPrice();
-                boolean isService = Boolean.TRUE.equals(orderMenu.getIsService());
+        for (OrderMenu orderMenu : allOrderMenus) {
+            Long menuId = orderMenu.getMenuId();
+            Long quantity = orderMenu.getQuantity();
+            Long price = orderMenu.getPrice();
+            boolean isService = Boolean.TRUE.equals(orderMenu.getIsService());
 
-                Map<Long, MenuAggregate> targetMap = isService ? serviceMenuAggregateMap : orderMenuAggregateMap;
+            Map<Long, MenuAggregate> targetMap = isService ? serviceMenuAggregateMap : orderMenuAggregateMap;
 
-                targetMap.compute(menuId, (id, existing) -> {
-                    if (existing == null) {
-                        String menuName = menuRepository.findById(menuId)
-                            .map(Menu::getName)
-                            .orElse("삭제된 메뉴");
-                        return new MenuAggregate(menuName, quantity, price);
-                    } else {
-                        return new MenuAggregate(existing.menuName, existing.quantity + quantity, existing.price);
-                    }
-                });
-
-                // 서비스 메뉴는 총액에서 제외
-                if (!isService) {
-                    totalAmount += price * quantity;
+            targetMap.compute(menuId, (id, existing) -> {
+                if (existing == null) {
+                    String menuName = menuNameMap.getOrDefault(menuId, "삭제된 메뉴");
+                    return new MenuAggregate(menuName, quantity, price);
+                } else {
+                    return new MenuAggregate(existing.menuName, existing.quantity + quantity, existing.price);
                 }
+            });
+
+            // 서비스 메뉴는 총액에서 제외
+            if (!isService) {
+                totalAmount += price * quantity;
             }
         }
 
