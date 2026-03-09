@@ -45,10 +45,10 @@ public class UserController implements UserApi {
         return ResponseEntity.ok(userService.getMyPage(userId));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping
     @Override
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+    public ResponseEntity<Void> deleteUser(@CurrentUser Long userId) {
+        userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
 }

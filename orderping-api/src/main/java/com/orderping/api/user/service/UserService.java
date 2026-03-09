@@ -17,6 +17,8 @@ import com.orderping.domain.store.StoreAccount;
 import com.orderping.domain.store.repository.StoreAccountRepository;
 import com.orderping.domain.store.repository.StoreRepository;
 import com.orderping.domain.user.User;
+import com.orderping.domain.user.repository.AuthAccountRepository;
+import com.orderping.domain.user.repository.RefreshTokenRepository;
 import com.orderping.domain.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,8 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final AuthAccountRepository authAccountRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final StoreRepository storeRepository;
     private final StoreAccountRepository storeAccountRepository;
     private final BankRepository bankRepository;
@@ -50,6 +54,7 @@ public class UserService {
 
     @Transactional
     public void deleteUser(Long id) {
+        refreshTokenRepository.deleteByUserId(id);
         authAccountRepository.deleteByUserId(id);
         userRepository.deleteById(id);
     }
