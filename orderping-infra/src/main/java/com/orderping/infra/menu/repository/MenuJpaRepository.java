@@ -28,7 +28,7 @@ public interface MenuJpaRepository extends JpaRepository<MenuEntity, Long> {
     Optional<MenuEntity> findByIdWithLock(@Param("id") Long id);
 
     @Modifying
-    @Query("UPDATE MenuEntity m SET m.stock = m.stock - :quantity WHERE m.id = :id AND m.stock >= :quantity")
+    @Query("UPDATE MenuEntity m SET m.stock = m.stock - :quantity, m.isSoldOut = CASE WHEN m.stock = :quantity THEN true ELSE m.isSoldOut END WHERE m.id = :id AND m.stock >= :quantity")
     int decreaseStock(@Param("id") Long id, @Param("quantity") Long quantity);
 
     @Modifying

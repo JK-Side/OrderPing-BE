@@ -3,6 +3,7 @@ package com.orderping.api.user.dto;
 import java.util.List;
 
 public record MyPageResponse(
+    Long userId,
     List<StoreInfo> stores
 ) {
     public record StoreInfo(

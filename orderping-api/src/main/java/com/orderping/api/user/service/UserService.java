@@ -72,6 +72,6 @@ public class UserService {
             })
             .toList();
 
-        return new MyPageResponse(storeInfos);
+        return new MyPageResponse(userId, storeInfos);
     }
 }
