@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.orderping.api.table.dto.OrderMenuSummary;
+import com.orderping.api.table.dto.StoreTableBulkClearRequest;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
@@ -221,6 +222,14 @@ public class StoreTableService {
         }
     }
 
+    private void validateNoActiveOrders(Long tableId) {
+        boolean hasActiveOrders = orderRepository.findByTableId(tableId).stream()
+            .anyMatch(o -> o.getStatus() == OrderStatus.PENDING || o.getStatus() == OrderStatus.COOKING);
+        if (hasActiveOrders) {
+            throw new BadRequestException("처리 중인 주문이 있는 테이블은 비울 수 없습니다.");
+        }
+    }
+
     @Transactional
     public StoreTableResponse updateStoreTable(Long userId, Long id, StoreTableUpdateRequest request) {
         StoreTable storeTable = storeTableRepository.findById(id)
@@ -244,6 +253,7 @@ public class StoreTableService {
         StoreTable currentTable = storeTableRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
         validateStoreOwner(currentTable.getStoreId(), userId);
+        validateNoActiveOrders(id);
 
         // 기존 테이블 종료 처리
         StoreTable closedTable = StoreTable.builder()
@@ -265,6 +275,44 @@ public class StoreTableService {
         StoreTable saved = storeTableRepository.save(newTable);
 
         return StoreTableResponse.from(saved);
+    }
+
+    @Transactional
+    public List<StoreTableResponse> clearTablesBulk(Long userId, StoreTableBulkClearRequest request) {
+        validateStoreOwner(request.storeId(), userId);
+
+        List<StoreTable> tables = storeTableRepository.findByStoreIdAndStatusNot(request.storeId(), TableStatus.CLOSED)
+            .stream()
+            .filter(table -> request.tableNums().contains(table.getTableNum()))
+            .toList();
+
+        if (tables.isEmpty()) {
+            throw new NotFoundException("비울 테이블을 찾을 수 없습니다.");
+        }
+
+        List<StoreTableResponse> responses = new ArrayList<>();
+        for (StoreTable currentTable : tables) {
+            validateNoActiveOrders(currentTable.getId());
+            StoreTable closedTable = StoreTable.builder()
+                .id(currentTable.getId())
+                .storeId(currentTable.getStoreId())
+                .tableNum(currentTable.getTableNum())
+                .status(TableStatus.CLOSED)
+                .qrImageUrl(currentTable.getQrImageUrl())
+                .build();
+            storeTableRepository.save(closedTable);
+
+            StoreTable newTable = StoreTable.builder()
+                .storeId(currentTable.getStoreId())
+                .tableNum(currentTable.getTableNum())
+                .status(TableStatus.EMPTY)
+                .qrImageUrl(currentTable.getQrImageUrl())
+                .build();
+            StoreTable saved = storeTableRepository.save(newTable);
+            responses.add(StoreTableResponse.from(saved));
+        }
+
+        return responses;
     }
 
     @Transactional
