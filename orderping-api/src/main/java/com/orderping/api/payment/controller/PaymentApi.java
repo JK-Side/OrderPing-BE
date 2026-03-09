@@ -24,45 +24,62 @@ public interface PaymentApi {
     })
     ResponseEntity<PaymentResponse> createPayment(PaymentCreateRequest request);
 
-    @Operation(summary = "결제 조회", description = "ID로 결제를 조회합니다")
+    @Operation(summary = "결제 조회", description = "ID로 결제를 조회합니다 (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
         @ApiResponse(responseCode = "404", description = "결제를 찾을 수 없음")
     })
     ResponseEntity<PaymentResponse> getPayment(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "결제 ID", required = true) Long id
     );
 
-    @Operation(summary = "주문별 결제 목록", description = "주문 ID로 결제 목록을 조회합니다")
-    @ApiResponse(responseCode = "200", description = "조회 성공")
+    @Operation(summary = "주문별 결제 목록", description = "주문 ID로 결제 목록을 조회합니다 (본인 매장만 가능)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님")
+    })
     ResponseEntity<List<PaymentResponse>> getPaymentsByOrderId(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "주문 ID", required = true) Long orderId
     );
 
-    @Operation(summary = "결제 완료", description = "결제를 완료 처리합니다")
+    @Operation(summary = "결제 완료", description = "결제를 완료 처리합니다 (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "결제 완료 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
         @ApiResponse(responseCode = "404", description = "결제를 찾을 수 없음")
     })
     ResponseEntity<PaymentResponse> completePayment(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "결제 ID", required = true) Long id
     );
 
-    @Operation(summary = "결제 실패", description = "결제를 실패 처리합니다")
+    @Operation(summary = "결제 실패", description = "결제를 실패 처리합니다 (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "결제 실패 처리 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
         @ApiResponse(responseCode = "404", description = "결제를 찾을 수 없음")
     })
     ResponseEntity<PaymentResponse> failPayment(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "결제 ID", required = true) Long id
     );
 
-    @Operation(summary = "결제 삭제", description = "ID로 결제를 삭제합니다")
+    @Operation(summary = "결제 삭제", description = "ID로 결제를 삭제합니다 (본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "삭제 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
         @ApiResponse(responseCode = "404", description = "결제를 찾을 수 없음")
     })
     ResponseEntity<Void> deletePayment(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "결제 ID", required = true) Long id
     );
 

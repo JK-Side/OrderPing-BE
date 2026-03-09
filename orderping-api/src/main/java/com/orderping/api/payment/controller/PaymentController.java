@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.payment.dto.DeeplinkResponse;
 import com.orderping.api.payment.dto.PaymentCreateRequest;
 import com.orderping.api.payment.dto.PaymentResponse;
@@ -38,36 +39,36 @@ public class PaymentController implements PaymentApi {
 
     @GetMapping("/{id}")
     @Override
-    public ResponseEntity<PaymentResponse> getPayment(@PathVariable Long id) {
-        PaymentResponse response = paymentService.getPayment(id);
+    public ResponseEntity<PaymentResponse> getPayment(@CurrentUser Long userId, @PathVariable Long id) {
+        PaymentResponse response = paymentService.getPayment(userId, id);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping(params = "orderId")
     @Override
-    public ResponseEntity<List<PaymentResponse>> getPaymentsByOrderId(@RequestParam Long orderId) {
-        List<PaymentResponse> responses = paymentService.getPaymentsByOrderId(orderId);
+    public ResponseEntity<List<PaymentResponse>> getPaymentsByOrderId(@CurrentUser Long userId, @RequestParam Long orderId) {
+        List<PaymentResponse> responses = paymentService.getPaymentsByOrderId(userId, orderId);
         return ResponseEntity.ok(responses);
     }
 
     @PostMapping("/{id}/complete")
     @Override
-    public ResponseEntity<PaymentResponse> completePayment(@PathVariable Long id) {
-        PaymentResponse response = paymentService.completePayment(id);
+    public ResponseEntity<PaymentResponse> completePayment(@CurrentUser Long userId, @PathVariable Long id) {
+        PaymentResponse response = paymentService.completePayment(userId, id);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{id}/fail")
     @Override
-    public ResponseEntity<PaymentResponse> failPayment(@PathVariable Long id) {
-        PaymentResponse response = paymentService.failPayment(id);
+    public ResponseEntity<PaymentResponse> failPayment(@CurrentUser Long userId, @PathVariable Long id) {
+        PaymentResponse response = paymentService.failPayment(userId, id);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     @Override
-    public ResponseEntity<Void> deletePayment(@PathVariable Long id) {
-        paymentService.deletePayment(id);
+    public ResponseEntity<Void> deletePayment(@CurrentUser Long userId, @PathVariable Long id) {
+        paymentService.deletePayment(userId, id);
         return ResponseEntity.noContent().build();
     }
 

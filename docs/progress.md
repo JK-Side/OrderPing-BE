@@ -1187,6 +1187,72 @@ GET /api/customer/stores/{storeId}/account
 
 ---
 
+### 2026-03-09
+
+**작업 내용**:
+
+#### 1. 주점 삭제 시 연관 계좌 미삭제 버그 수정
+
+- `deleteStore()` 에서 `StoreAccount`를 삭제하지 않던 문제 수정
+- `StoreAccountRepository.deleteByStoreId()` 추가 후 `deleteStore()` 에서 호출
+
+#### 2. 주점 정보 수정 500 에러 수정
+
+- `GlobalExceptionHandler`에 누락된 예외 핸들러 3개 추가
+  - `HttpMessageNotReadableException` → 400 (빈 body / 잘못된 JSON)
+  - `MethodArgumentNotValidException` → 400 (Bean Validation 실패)
+  - `DataIntegrityViolationException` → 400 (DB 제약 조건 위반)
+
+#### 3. 주점명 50자 제한
+
+- `StoreCreateRequest`, `StoreUpdateRequest`의 `name` 필드에 `@Size(max = 50)` 추가
+- `StoreController`의 create/update 메서드에 `@Validated` 추가
+
+#### 4. 재고 0 시 isSoldOut 자동 전환 버그 수정
+
+- `decreaseStock` 쿼리에 `CASE WHEN m.stock = :quantity THEN true ELSE m.isSoldOut END` 추가
+- 재고 차감 후 stock이 0이 되면 `isSoldOut = true` 자동 설정
+- 참고: `increaseStock`은 이미 `isSoldOut = false` 처리 중
+
+#### 5. 마이페이지 응답에 userId 추가
+
+- `MyPageResponse`에 `userId` 필드 추가 (회원 탈퇴용)
+- `UserService.getMyPage()`에서 userId 전달
+
+#### 6. 회원 탈퇴 cascade 삭제 + 보안 수정
+
+- `deleteUser()` 에서 `RefreshToken`, `AuthAccount` 미삭제 버그 수정
+  - 탈퇴 후 재가입 시 `AuthAccount`가 남아 로그인 루프 발생하던 문제 해결
+- 삭제 순서: `RefreshToken` → `AuthAccount` → `User`
+- 보안: `DELETE /api/users/{id}` (타인 삭제 가능) → `DELETE /api/users` + `@CurrentUser`로 변경
+- `AuthAccountRepository.deleteByUserId()` 신규 추가
+
+**변경 파일**:
+
+- `StoreAccountRepository.java` - `deleteByStoreId()` 추가
+- `StoreAccountJpaRepository.java` - `deleteByStoreId()` 추가
+- `StoreAccountRepositoryImpl.java` - `deleteByStoreId()` 구현
+- `StoreService.java` - `deleteStore()` 에서 계좌 먼저 삭제
+- `GlobalExceptionHandler.java` - `HttpMessageNotReadableException`, `MethodArgumentNotValidException`, `DataIntegrityViolationException` 핸들러 추가
+- `StoreCreateRequest.java` - `name` 필드 `@Size(max = 50)` 추가
+- `StoreUpdateRequest.java` - `name` 필드 `@Size(max = 50)` 추가
+- `StoreController.java` - create/update에 `@Validated` 추가
+- `MenuJpaRepository.java` - `decreaseStock` 쿼리 수정 (isSoldOut 자동 전환)
+- `MyPageResponse.java` - `userId` 필드 추가
+- `UserService.java` - `getMyPage()` userId 전달, `deleteUser()` cascade 삭제 추가, `AuthAccountRepository`/`RefreshTokenRepository` 주입
+- `UserController.java` - `deleteUser()` `@PathVariable` → `@CurrentUser` 변경
+- `UserApi.java` - `deleteUser()` 시그니처 변경
+- `AuthAccountRepository.java` - `deleteByUserId()` 추가
+- `AuthAccountJpaRepository.java` - `deleteByUserId()` 추가
+- `AuthAccountRepositoryImpl.java` - `deleteByUserId()` 구현
+
+**주요 결정**:
+
+- 회원 탈퇴 시 `Store` 및 하위 데이터(메뉴/테이블/주문/결제)는 DB에 고아 데이터로 남음 (새 계정에서는 보이지 않음) → 완전 cascade 삭제는 추후 구현
+- `soldCount` = `initialStock - stock` (판매된 수량), 남은 재고는 `stock` 필드
+
+---
+
 <!--
 새 작업 추가 시 아래 형식으로 작성:
 

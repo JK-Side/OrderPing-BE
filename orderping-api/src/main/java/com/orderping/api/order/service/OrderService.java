@@ -71,7 +71,11 @@ public class OrderService {
                         menu.getName(), menu.getStock(), menuRequest.quantity()));
             }
 
-            menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
+            int decreased = menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
+            if (decreased == 0) {
+                throw new OutOfStockException(
+                    String.format("'%s' 메뉴의 재고가 부족합니다.", menu.getName()));
+            }
             menuMap.put(menu.getId(), menu);
             totalPrice += menu.getPrice() * menuRequest.quantity();
         }
@@ -126,7 +130,11 @@ public class OrderService {
                         menu.getName(), menu.getStock(), menuRequest.quantity()));
             }
 
-            menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
+            int decreased = menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
+            if (decreased == 0) {
+                throw new OutOfStockException(
+                    String.format("'%s' 메뉴의 재고가 부족합니다.", menu.getName()));
+            }
             menuMap.put(menu.getId(), menu);
         }
 
@@ -157,9 +165,10 @@ public class OrderService {
         return OrderResponse.from(savedOrder);
     }
 
-    public OrderDetailResponse getOrder(Long id) {
+    public OrderDetailResponse getOrder(Long userId, Long id) {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
+        validateStoreOwner(order.getStoreId(), userId);
         return toOrderDetailResponse(order);
     }
 
