@@ -50,6 +50,7 @@ public class UserService {
 
     @Transactional
     public void deleteUser(Long id) {
+        authAccountRepository.deleteByUserId(id);
         userRepository.deleteById(id);
     }
 

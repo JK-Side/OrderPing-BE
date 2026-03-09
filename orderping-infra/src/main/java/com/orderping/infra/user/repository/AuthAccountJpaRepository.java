@@ -12,4 +12,6 @@ public interface AuthAccountJpaRepository extends JpaRepository<AuthAccountEntit
     Optional<AuthAccountEntity> findByProviderAndSocialId(AuthProvider provider, String socialId);
 
     Optional<AuthAccountEntity> findByUserId(Long userId);
+
+    void deleteByUserId(Long userId);
 }
