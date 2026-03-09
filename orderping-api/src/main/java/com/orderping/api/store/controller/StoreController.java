@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,7 +34,7 @@ public class StoreController implements StoreApi {
     @Override
     public ResponseEntity<StoreResponse> createStore(
         @CurrentUser Long userId,
-        @RequestBody StoreCreateRequest request
+        @Validated @RequestBody StoreCreateRequest request
     ) {
         StoreResponse response = storeService.createStore(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -65,7 +66,7 @@ public class StoreController implements StoreApi {
     public ResponseEntity<StoreResponse> updateStore(
         @CurrentUser Long userId,
         @PathVariable Long id,
-        @RequestBody StoreUpdateRequest request
+        @Validated @RequestBody StoreUpdateRequest request
     ) {
         StoreResponse response = storeService.updateStore(id, userId, request);
         return ResponseEntity.ok(response);

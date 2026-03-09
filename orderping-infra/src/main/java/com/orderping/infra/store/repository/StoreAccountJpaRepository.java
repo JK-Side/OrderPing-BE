@@ -11,4 +11,6 @@ public interface StoreAccountJpaRepository extends JpaRepository<StoreAccountEnt
     List<StoreAccountEntity> findByStoreId(Long storeId);
 
     List<StoreAccountEntity> findByStoreIdAndIsActiveTrue(Long storeId);
+
+    void deleteByStoreId(Long storeId);
 }
