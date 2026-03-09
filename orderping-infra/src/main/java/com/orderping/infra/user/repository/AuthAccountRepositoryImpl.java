@@ -46,4 +46,9 @@ public class AuthAccountRepositoryImpl implements AuthAccountRepository {
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
     }
+
+    @Override
+    public void deleteByUserId(Long userId) {
+        jpaRepository.deleteByUserId(userId);
+    }
 }

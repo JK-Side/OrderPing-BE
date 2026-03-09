@@ -16,4 +16,6 @@ public interface AuthAccountRepository {
     Optional<AuthAccount> findByUserId(Long userId);
 
     void deleteById(Long id);
+
+    void deleteByUserId(Long userId);
 }
