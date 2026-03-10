@@ -68,13 +68,17 @@ public class OrderService {
             if (menu.getStock() < menuRequest.quantity()) {
                 throw new OutOfStockException(
                     String.format("'%s' 메뉴의 재고가 부족합니다. (현재: %d, 요청: %d)",
-                        menu.getName(), menu.getStock(), menuRequest.quantity()));
+                        menu.getName(), menu.getStock(), menuRequest.quantity()),
+                    menu.getStock());
             }
 
             int decreased = menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
             if (decreased == 0) {
+                long currentStock = menuRepository.findById(menuRequest.menuId())
+                    .map(Menu::getStock).orElse(0L);
                 throw new OutOfStockException(
-                    String.format("'%s' 메뉴의 재고가 부족합니다.", menu.getName()));
+                    String.format("'%s' 메뉴의 재고가 부족합니다.", menu.getName()),
+                    currentStock);
             }
             menuMap.put(menu.getId(), menu);
             totalPrice += menu.getPrice() * menuRequest.quantity();
@@ -127,13 +131,17 @@ public class OrderService {
             if (menu.getStock() < menuRequest.quantity()) {
                 throw new OutOfStockException(
                     String.format("'%s' 메뉴의 재고가 부족합니다. (현재: %d, 요청: %d)",
-                        menu.getName(), menu.getStock(), menuRequest.quantity()));
+                        menu.getName(), menu.getStock(), menuRequest.quantity()),
+                    menu.getStock());
             }
 
             int decreased = menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
             if (decreased == 0) {
+                long currentStock = menuRepository.findById(menuRequest.menuId())
+                    .map(Menu::getStock).orElse(0L);
                 throw new OutOfStockException(
-                    String.format("'%s' 메뉴의 재고가 부족합니다.", menu.getName()));
+                    String.format("'%s' 메뉴의 재고가 부족합니다.", menu.getName()),
+                    currentStock);
             }
             menuMap.put(menu.getId(), menu);
         }
