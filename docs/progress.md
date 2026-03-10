@@ -416,6 +416,11 @@ GET /api/tables?storeId=1&status=ACTIVE
 | 마이페이지 API                       | ✅ 완료  |
 | 고객 주문 내역 orderIndex             | ✅ 완료  |
 | 고객 주문 시 메뉴 소속 주점 검증            | ✅ 완료  |
+| 테이블 일괄 비우기 API                  | ✅ 완료  |
+| 주문/결제 소유권 검증                    | ✅ 완료  |
+| 주문 상태 역전 방지                      | ✅ 완료  |
+| N+1 쿼리 최적화 (테이블 상세 조회)          | ✅ 완료  |
+| StoreAccount DB unique constraint | ✅ 완료  |
 | 카카오 알림톡                        | ⏳ 미구현 |
 
 ---
@@ -1250,6 +1255,125 @@ GET /api/customer/stores/{storeId}/account
 
 - 회원 탈퇴 시 `Store` 및 하위 데이터(메뉴/테이블/주문/결제)는 DB에 고아 데이터로 남음 (새 계정에서는 보이지 않음) → 완전 cascade 삭제는 추후 구현
 - `soldCount` = `initialStock - stock` (판매된 수량), 남은 재고는 `stock` 필드
+
+---
+
+### 2026-03-10
+
+**작업 내용**:
+
+#### 1. 테이블 일괄 비우기 API 추가 (bulk 삭제와 동일 스펙)
+
+- `POST /api/tables/bulk/clear` 엔드포인트 추가
+- 요청 형식을 단건(`/{id}/clear`) 대신 bulk 삭제와 동일한 `{ storeId, tableNums[] }` 형식으로 변경
+- `StoreTableBulkClearRequest.java` 신규 DTO 추가
+
+**API**:
+
+```json
+POST /api/tables/bulk/clear
+{
+  "storeId": 1,
+  "tableNums": [1, 2, 3]
+}
+```
+
+#### 2. 테이블 비우기 시 활성 주문 검증
+
+- `clearTable`, `clearTablesBulk` 에서 PENDING 또는 COOKING 상태 주문이 있으면 400 에러 반환
+- COMPLETE 주문만 있는 테이블은 정상 비우기 가능
+
+#### 3. 전체 코드 보안/버그 점검 및 수정
+
+**[Critical] GET /api/orders/{id} 소유권 검증 추가**
+- 타 매장 주문 상세 조회 가능하던 취약점 수정
+- `OrderService.getOrder(Long userId, Long id)` 파라미터 추가 및 `validateStoreOwner` 호출
+
+**[Critical] Payment 엔드포인트 소유권 검증 추가**
+- 모든 결제 관련 API(조회/완료/실패/삭제)에 소유권 검증 없던 취약점 수정
+- `PaymentService`에 `OrderRepository`, `StoreRepository` 주입
+- `validatePaymentOwner()` → `validateOrderOwner()` 구현 (Payment → Order → Store 체인)
+- `getPayment`, `getPaymentsByOrderId`, `completePayment`, `failPayment`, `deletePayment` 모두 `userId` 파라미터 추가
+
+**[Critical] decreaseStock 반환값 체크**
+- `createOrder`, `createServiceOrder`에서 `decreaseStock()` 반환 0이면 `OutOfStockException` 발생
+- 비관적 락 사이의 TOCTOU 간극을 방어적으로 처리
+
+**[Medium] 주문 상태 역전 방지**
+- `updateOrderStatus`에 `validateStatusTransition()` 추가
+- COMPLETE → 어떤 상태든 변경 불가
+- COOKING → PENDING 역방향 전이 불가
+
+**[Medium] StoreTableService.toDetailResponse N+1 수정**
+- 기존: 주문마다 orderMenu 조회(N) + 메뉴마다 name 조회(N*M)
+- 수정: `orderMenuRepository.findByOrderIds(orderIds)` 배치 조회 1번 + `menuRepository.findAllByIds(menuIds)` 배치 조회 1번
+- `OrderMenuRepository`, `OrderMenuJpaRepository`, `OrderMenuRepositoryImpl`에 `findByOrderIds` 추가
+
+**[Medium] deleteOrder 재고 복구 - 삭제된 메뉴 명시적 처리**
+- 기존: `increaseStock` 0 반환 시 warn 로그만
+- 수정: `menuRepository.findAllByIds()`로 존재 여부 먼저 확인 → 삭제된 메뉴는 skip, 존재하는 메뉴만 재고 복구
+
+**[Medium] StoreAccount 중복 등록 레이스컨디션 수정**
+- `StoreAccountEntity`에 `@UniqueConstraint(store_id)` 추가
+- `ddl-auto: update` 설정으로 DB에 자동 반영
+- 기존 `DataIntegrityViolationException` 핸들러(400)가 중복 등록 요청을 처리
+
+**변경 파일**:
+
+- `StoreTableBulkClearRequest.java` - 신규 DTO
+- `StoreTableService.java` - `clearTablesBulk()` 추가, `validateNoActiveOrders()` 추가, `toDetailResponse()` N+1 수정
+- `StoreTableController.java` - `POST /api/tables/bulk/clear` 추가
+- `StoreTableApi.java` - `clearTablesBulk()` 시그니처 + Swagger 추가
+- `OrderService.java` - `getOrder(userId, id)` 소유권 검증 추가, `validateStatusTransition()` 추가, `decreaseStock` 반환값 체크, `deleteOrder` 재고 복구 개선
+- `OrderController.java` - `getOrder`에 `@CurrentUser` 추가
+- `OrderApi.java` - `getOrder` 시그니처 변경, Swagger 업데이트
+- `PaymentService.java` - `OrderRepository`/`StoreRepository` 주입, `validatePaymentOwner()` 추가, 5개 메서드 `userId` 파라미터 추가
+- `PaymentController.java` - 5개 메서드 `@CurrentUser` 추가
+- `PaymentApi.java` - 시그니처 및 Swagger 업데이트
+- `OrderMenuRepository.java` - `findByOrderIds()` 추가
+- `OrderMenuJpaRepository.java` - `findByOrderIdIn()` 추가
+- `OrderMenuRepositoryImpl.java` - `findByOrderIds()` 구현
+- `StoreAccountEntity.java` - `@UniqueConstraint(store_id)` 추가
+
+**주요 결정**:
+
+- 결제 API는 Payment → Order → Store 체인으로 소유권 검증 (Payment에 userId 필드 없음)
+- COMPLETE 상태 주문이 있는 테이블은 비우기 가능 (손님이 계산 완료한 상태)
+- 삭제된 메뉴는 재고 복구 불가 → skip 후 계속 진행 (주문 삭제는 허용)
+- StoreAccount unique constraint는 DB 레벨에서 보장 (애플리케이션 체크는 UX 메시지용)
+
+---
+
+### 2026-03-10 (2)
+
+**작업 내용**:
+
+#### 1. 주문 생성 409 응답에 현재 재고 수 추가
+
+- `OutOfStockException`에 `currentStock` 필드 추가
+- `OutOfStockErrorResponse` DTO 신규 생성 (`currentStock` 포함)
+- `GlobalExceptionHandler`에서 `OutOfStockErrorResponse` 반환
+- `OrderService.createOrder`, `createServiceOrder`에서 throw 시 현재 재고 전달
+- 동시성으로 인한 `decreaseStock` 실패 시에도 재조회 후 현재 재고 포함
+
+**409 응답 형식**:
+
+```json
+{
+  "status": 409,
+  "code": "OUT_OF_STOCK",
+  "message": "'소주' 메뉴의 재고가 부족합니다. (현재: 2, 요청: 5)",
+  "currentStock": 2,
+  "timestamp": "2026-03-10T12:34:56"
+}
+```
+
+**변경 파일**:
+
+- `OutOfStockException.java` - `currentStock` 필드 추가
+- `OutOfStockErrorResponse.java` - 신규 DTO (`currentStock` 포함)
+- `GlobalExceptionHandler.java` - `OutOfStockException` 핸들러 반환 타입 변경
+- `OrderService.java` - `createOrder`, `createServiceOrder` throw 시 stock 전달
 
 ---
 
