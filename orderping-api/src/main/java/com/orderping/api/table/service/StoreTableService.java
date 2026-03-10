@@ -5,11 +5,13 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.orderping.api.table.dto.OrderMenuSummary;
+import com.orderping.api.table.dto.StoreTableBulkClearRequest;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
 import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
@@ -96,6 +98,18 @@ public class StoreTableService {
     private StoreTableDetailResponse toDetailResponse(StoreTable storeTable) {
         List<Order> orders = orderRepository.findByTableId(storeTable.getId());
 
+        if (orders.isEmpty()) {
+            return StoreTableDetailResponse.from(storeTable, List.of(), List.of(), 0L, null);
+        }
+
+        // 배치 조회: orderMenu N+1, menu N*M 방지
+        List<Long> orderIds = orders.stream().map(Order::getId).toList();
+        List<OrderMenu> allOrderMenus = orderMenuRepository.findByOrderIds(orderIds);
+
+        List<Long> menuIds = allOrderMenus.stream().map(OrderMenu::getMenuId).distinct().toList();
+        Map<Long, String> menuNameMap = menuRepository.findAllByIds(menuIds).stream()
+            .collect(Collectors.toMap(Menu::getId, Menu::getName));
+
         // 일반 메뉴와 서비스 메뉴 분리 집계
         Map<Long, MenuAggregate> orderMenuAggregateMap = new LinkedHashMap<>();
         Map<Long, MenuAggregate> serviceMenuAggregateMap = new LinkedHashMap<>();
@@ -111,31 +125,28 @@ public class StoreTableService {
             } else if (order.getStatus() == OrderStatus.COOKING && highestPriorityStatus == OrderStatus.COMPLETE) {
                 highestPriorityStatus = OrderStatus.COOKING;
             }
+        }
 
-            List<OrderMenu> menus = orderMenuRepository.findByOrderId(order.getId());
-            for (OrderMenu orderMenu : menus) {
-                Long menuId = orderMenu.getMenuId();
-                Long quantity = orderMenu.getQuantity();
-                Long price = orderMenu.getPrice();
-                boolean isService = Boolean.TRUE.equals(orderMenu.getIsService());
+        for (OrderMenu orderMenu : allOrderMenus) {
+            Long menuId = orderMenu.getMenuId();
+            Long quantity = orderMenu.getQuantity();
+            Long price = orderMenu.getPrice();
+            boolean isService = Boolean.TRUE.equals(orderMenu.getIsService());
 
-                Map<Long, MenuAggregate> targetMap = isService ? serviceMenuAggregateMap : orderMenuAggregateMap;
+            Map<Long, MenuAggregate> targetMap = isService ? serviceMenuAggregateMap : orderMenuAggregateMap;
 
-                targetMap.compute(menuId, (id, existing) -> {
-                    if (existing == null) {
-                        String menuName = menuRepository.findById(menuId)
-                            .map(Menu::getName)
-                            .orElse("삭제된 메뉴");
-                        return new MenuAggregate(menuName, quantity, price);
-                    } else {
-                        return new MenuAggregate(existing.menuName, existing.quantity + quantity, existing.price);
-                    }
-                });
-
-                // 서비스 메뉴는 총액에서 제외
-                if (!isService) {
-                    totalAmount += price * quantity;
+            targetMap.compute(menuId, (id, existing) -> {
+                if (existing == null) {
+                    String menuName = menuNameMap.getOrDefault(menuId, "삭제된 메뉴");
+                    return new MenuAggregate(menuName, quantity, price);
+                } else {
+                    return new MenuAggregate(existing.menuName, existing.quantity + quantity, existing.price);
                 }
+            });
+
+            // 서비스 메뉴는 총액에서 제외
+            if (!isService) {
+                totalAmount += price * quantity;
             }
         }
 
@@ -221,6 +232,14 @@ public class StoreTableService {
         }
     }
 
+    private void validateNoActiveOrders(Long tableId) {
+        boolean hasActiveOrders = orderRepository.findByTableId(tableId).stream()
+            .anyMatch(o -> o.getStatus() == OrderStatus.PENDING || o.getStatus() == OrderStatus.COOKING);
+        if (hasActiveOrders) {
+            throw new BadRequestException("처리 중인 주문이 있는 테이블은 비울 수 없습니다.");
+        }
+    }
+
     @Transactional
     public StoreTableResponse updateStoreTable(Long userId, Long id, StoreTableUpdateRequest request) {
         StoreTable storeTable = storeTableRepository.findById(id)
@@ -244,6 +263,7 @@ public class StoreTableService {
         StoreTable currentTable = storeTableRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
         validateStoreOwner(currentTable.getStoreId(), userId);
+        validateNoActiveOrders(id);
 
         // 기존 테이블 종료 처리
         StoreTable closedTable = StoreTable.builder()
@@ -265,6 +285,44 @@ public class StoreTableService {
         StoreTable saved = storeTableRepository.save(newTable);
 
         return StoreTableResponse.from(saved);
+    }
+
+    @Transactional
+    public List<StoreTableResponse> clearTablesBulk(Long userId, StoreTableBulkClearRequest request) {
+        validateStoreOwner(request.storeId(), userId);
+
+        List<StoreTable> tables = storeTableRepository.findByStoreIdAndStatusNot(request.storeId(), TableStatus.CLOSED)
+            .stream()
+            .filter(table -> request.tableNums().contains(table.getTableNum()))
+            .toList();
+
+        if (tables.isEmpty()) {
+            throw new NotFoundException("비울 테이블을 찾을 수 없습니다.");
+        }
+
+        List<StoreTableResponse> responses = new ArrayList<>();
+        for (StoreTable currentTable : tables) {
+            validateNoActiveOrders(currentTable.getId());
+            StoreTable closedTable = StoreTable.builder()
+                .id(currentTable.getId())
+                .storeId(currentTable.getStoreId())
+                .tableNum(currentTable.getTableNum())
+                .status(TableStatus.CLOSED)
+                .qrImageUrl(currentTable.getQrImageUrl())
+                .build();
+            storeTableRepository.save(closedTable);
+
+            StoreTable newTable = StoreTable.builder()
+                .storeId(currentTable.getStoreId())
+                .tableNum(currentTable.getTableNum())
+                .status(TableStatus.EMPTY)
+                .qrImageUrl(currentTable.getQrImageUrl())
+                .build();
+            StoreTable saved = storeTableRepository.save(newTable);
+            responses.add(StoreTableResponse.from(saved));
+        }
+
+        return responses;
     }
 
     @Transactional

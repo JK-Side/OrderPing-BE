@@ -8,9 +8,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.orderping.api.payment.dto.PaymentCreateRequest;
 import com.orderping.api.payment.dto.PaymentResponse;
 import com.orderping.domain.enums.PaymentStatus;
+import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
+import com.orderping.domain.order.Order;
+import com.orderping.domain.order.repository.OrderRepository;
 import com.orderping.domain.payment.Payment;
 import com.orderping.domain.payment.repository.PaymentRepository;
+import com.orderping.domain.store.Store;
+import com.orderping.domain.store.repository.StoreRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +25,8 @@ import lombok.RequiredArgsConstructor;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final OrderRepository orderRepository;
+    private final StoreRepository storeRepository;
 
     @Transactional
     public PaymentResponse createPayment(PaymentCreateRequest request) {
@@ -34,22 +41,25 @@ public class PaymentService {
         return PaymentResponse.from(saved);
     }
 
-    public PaymentResponse getPayment(Long id) {
+    public PaymentResponse getPayment(Long userId, Long id) {
         Payment payment = paymentRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
+        validatePaymentOwner(userId, payment);
         return PaymentResponse.from(payment);
     }
 
-    public List<PaymentResponse> getPaymentsByOrderId(Long orderId) {
+    public List<PaymentResponse> getPaymentsByOrderId(Long userId, Long orderId) {
+        validateOrderOwner(userId, orderId);
         return paymentRepository.findByOrderId(orderId).stream()
             .map(PaymentResponse::from)
             .toList();
     }
 
     @Transactional
-    public PaymentResponse completePayment(Long id) {
+    public PaymentResponse completePayment(Long userId, Long id) {
         Payment payment = paymentRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
+        validatePaymentOwner(userId, payment);
 
         Payment updated = Payment.builder()
             .id(payment.getId())
@@ -65,9 +75,10 @@ public class PaymentService {
     }
 
     @Transactional
-    public PaymentResponse failPayment(Long id) {
+    public PaymentResponse failPayment(Long userId, Long id) {
         Payment payment = paymentRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
+        validatePaymentOwner(userId, payment);
 
         Payment updated = Payment.builder()
             .id(payment.getId())
@@ -83,7 +94,24 @@ public class PaymentService {
     }
 
     @Transactional
-    public void deletePayment(Long id) {
+    public void deletePayment(Long userId, Long id) {
+        Payment payment = paymentRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("결제 정보를 찾을 수 없습니다."));
+        validatePaymentOwner(userId, payment);
         paymentRepository.deleteById(id);
+    }
+
+    private void validatePaymentOwner(Long userId, Payment payment) {
+        validateOrderOwner(userId, payment.getOrderId());
+    }
+
+    private void validateOrderOwner(Long userId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
+        Store store = storeRepository.findById(order.getStoreId())
+            .orElseThrow(() -> new NotFoundException("매장을 찾을 수 없습니다."));
+        if (!store.getUserId().equals(userId)) {
+            throw new ForbiddenException("본인 매장의 결제만 관리할 수 있습니다.");
+        }
     }
 }

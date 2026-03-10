@@ -40,8 +40,8 @@ public class OrderController implements OrderApi {
 
     @GetMapping("/{id}")
     @Override
-    public ResponseEntity<OrderDetailResponse> getOrder(@PathVariable Long id) {
-        OrderDetailResponse response = orderService.getOrder(id);
+    public ResponseEntity<OrderDetailResponse> getOrder(@CurrentUser Long userId, @PathVariable Long id) {
+        OrderDetailResponse response = orderService.getOrder(userId, id);
         return ResponseEntity.ok(response);
     }
 

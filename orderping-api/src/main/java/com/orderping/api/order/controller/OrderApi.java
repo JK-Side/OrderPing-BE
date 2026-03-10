@@ -26,12 +26,15 @@ public interface OrderApi {
     })
     ResponseEntity<OrderResponse> createOrder(OrderCreateRequest request);
 
-    @Operation(summary = "주문 조회", description = "ID로 주문을 조회합니다 (메뉴 정보 포함)")
+    @Operation(summary = "주문 조회", description = "ID로 주문을 조회합니다 (메뉴 정보 포함, 본인 매장만 가능)")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
         @ApiResponse(responseCode = "404", description = "주문을 찾을 수 없음")
     })
     ResponseEntity<OrderDetailResponse> getOrder(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "주문 ID", required = true) Long id
     );
 

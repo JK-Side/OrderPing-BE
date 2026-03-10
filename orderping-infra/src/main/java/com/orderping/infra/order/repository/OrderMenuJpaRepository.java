@@ -9,4 +9,6 @@ import com.orderping.infra.order.entity.OrderMenuEntity;
 public interface OrderMenuJpaRepository extends JpaRepository<OrderMenuEntity, Long> {
 
     List<OrderMenuEntity> findByOrderId(Long orderId);
+
+    List<OrderMenuEntity> findByOrderIdIn(List<Long> orderIds);
 }

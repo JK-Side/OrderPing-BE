@@ -23,7 +23,7 @@ public record CustomerOrderDetailResponse(
     String depositorName,
 
     @Schema(description = "주문 상태")
-    OrderStatus status,
+    OrderStatus orderStatus,
 
     @Schema(description = "총 금액")
     Long totalPrice,

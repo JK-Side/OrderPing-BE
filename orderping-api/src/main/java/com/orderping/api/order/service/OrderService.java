@@ -68,10 +68,18 @@ public class OrderService {
             if (menu.getStock() < menuRequest.quantity()) {
                 throw new OutOfStockException(
                     String.format("'%s' 메뉴의 재고가 부족합니다. (현재: %d, 요청: %d)",
-                        menu.getName(), menu.getStock(), menuRequest.quantity()));
+                        menu.getName(), menu.getStock(), menuRequest.quantity()),
+                    menu.getStock());
             }
 
-            menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
+            int decreased = menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
+            if (decreased == 0) {
+                long currentStock = menuRepository.findById(menuRequest.menuId())
+                    .map(Menu::getStock).orElse(0L);
+                throw new OutOfStockException(
+                    String.format("'%s' 메뉴의 재고가 부족합니다.", menu.getName()),
+                    currentStock);
+            }
             menuMap.put(menu.getId(), menu);
             totalPrice += menu.getPrice() * menuRequest.quantity();
         }
@@ -123,10 +131,18 @@ public class OrderService {
             if (menu.getStock() < menuRequest.quantity()) {
                 throw new OutOfStockException(
                     String.format("'%s' 메뉴의 재고가 부족합니다. (현재: %d, 요청: %d)",
-                        menu.getName(), menu.getStock(), menuRequest.quantity()));
+                        menu.getName(), menu.getStock(), menuRequest.quantity()),
+                    menu.getStock());
             }
 
-            menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
+            int decreased = menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
+            if (decreased == 0) {
+                long currentStock = menuRepository.findById(menuRequest.menuId())
+                    .map(Menu::getStock).orElse(0L);
+                throw new OutOfStockException(
+                    String.format("'%s' 메뉴의 재고가 부족합니다.", menu.getName()),
+                    currentStock);
+            }
             menuMap.put(menu.getId(), menu);
         }
 
@@ -157,9 +173,10 @@ public class OrderService {
         return OrderResponse.from(savedOrder);
     }
 
-    public OrderDetailResponse getOrder(Long id) {
+    public OrderDetailResponse getOrder(Long userId, Long id) {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
+        validateStoreOwner(order.getStoreId(), userId);
         return toOrderDetailResponse(order);
     }
 
@@ -257,6 +274,7 @@ public class OrderService {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
         validateStoreOwner(order.getStoreId(), userId);
+        validateStatusTransition(order.getStatus(), request.status());
 
         Order updated = Order.builder()
             .id(order.getId())
@@ -280,17 +298,31 @@ public class OrderService {
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
         validateStoreOwner(order.getStoreId(), userId);
 
-        // 주문 취소 시 재고 복구
+        // 주문 취소 시 재고 복구 (삭제된 메뉴는 복구 불가 - 건너뜀)
         List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(id);
+        List<Long> menuIds = orderMenus.stream().map(OrderMenu::getMenuId).distinct().toList();
+        Set<Long> existingMenuIds = menuRepository.findAllByIds(menuIds).stream()
+            .map(Menu::getId)
+            .collect(Collectors.toSet());
+
         for (OrderMenu orderMenu : orderMenus) {
-            int updated = menuRepository.increaseStock(orderMenu.getMenuId(), orderMenu.getQuantity());
-            if (updated == 0) {
-                log.warn("재고 복구 실패 - 메뉴가 존재하지 않습니다: menuId={}, quantity={}, orderId={}",
-                    orderMenu.getMenuId(), orderMenu.getQuantity(), id);
+            if (!existingMenuIds.contains(orderMenu.getMenuId())) {
+                log.warn("삭제된 메뉴의 재고를 복구할 수 없습니다: menuId={}, orderId={}", orderMenu.getMenuId(), id);
+                continue;
             }
+            menuRepository.increaseStock(orderMenu.getMenuId(), orderMenu.getQuantity());
         }
 
         orderRepository.deleteById(id);
+    }
+
+    private void validateStatusTransition(OrderStatus current, OrderStatus next) {
+        if (current == OrderStatus.COMPLETE) {
+            throw new BadRequestException("완료된 주문의 상태는 변경할 수 없습니다.");
+        }
+        if (current == OrderStatus.COOKING && next == OrderStatus.PENDING) {
+            throw new BadRequestException("조리 중인 주문을 접수 상태로 되돌릴 수 없습니다.");
+        }
     }
 
     private void validateStoreOwner(Long storeId, Long userId) {

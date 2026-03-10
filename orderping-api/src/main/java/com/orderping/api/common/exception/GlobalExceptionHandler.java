@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.orderping.api.common.dto.ErrorResponse;
+import com.orderping.api.common.dto.OutOfStockErrorResponse;
 import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
@@ -64,11 +65,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(OutOfStockException.class)
-    public ResponseEntity<ErrorResponse> handleOutOfStockException(OutOfStockException e) {
-        ErrorResponse response = ErrorResponse.of(
+    public ResponseEntity<OutOfStockErrorResponse> handleOutOfStockException(OutOfStockException e) {
+        OutOfStockErrorResponse response = OutOfStockErrorResponse.of(
             HttpStatus.CONFLICT.value(),
             "OUT_OF_STOCK",
-            e.getMessage()
+            e.getMessage(),
+            e.getCurrentStock()
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }

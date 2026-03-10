@@ -38,6 +38,13 @@ public class OrderMenuRepositoryImpl implements OrderMenuRepository {
     }
 
     @Override
+    public List<OrderMenu> findByOrderIds(List<Long> orderIds) {
+        return jpaRepository.findByOrderIdIn(orderIds).stream()
+            .map(OrderMenuEntity::toDomain)
+            .toList();
+    }
+
+    @Override
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
     }
