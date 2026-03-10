@@ -421,6 +421,8 @@ GET /api/tables?storeId=1&status=ACTIVE
 | 주문 상태 역전 방지                      | ✅ 완료  |
 | N+1 쿼리 최적화 (테이블 상세 조회)          | ✅ 완료  |
 | StoreAccount DB unique constraint | ✅ 완료  |
+| 테이블 메모 기능                        | ✅ 완료  |
+| 품절 처리 Java 코드로 변경               | ✅ 완료  |
 | 카카오 알림톡                        | ⏳ 미구현 |
 
 ---
@@ -1374,6 +1376,69 @@ POST /api/tables/bulk/clear
 - `OutOfStockErrorResponse.java` - 신규 DTO (`currentStock` 포함)
 - `GlobalExceptionHandler.java` - `OutOfStockException` 핸들러 반환 타입 변경
 - `OrderService.java` - `createOrder`, `createServiceOrder` throw 시 stock 전달
+
+---
+
+### 2026-03-10 (3)
+
+**작업 내용**:
+
+#### 1. 테이블 메모 기능 추가
+
+- `StoreTable` 도메인에 `memo` 필드 추가 (`@Builder.Default = ""`)
+- `StoreTableEntity`에 `memo` 컬럼 추가 (`VARCHAR(300) NOT NULL DEFAULT ''`)
+- `StoreTableDetailResponse`, `StoreTableResponse`에 `memo` 필드 포함
+- `PUT /api/tables/{tableId}/memo` 엔드포인트 추가 (운영자 전용)
+- 한글 100자 제한 (`@Size(max=100)`)
+- 빈 문자열로 초기화 가능, `clearTable` 시 새 레코드 생성으로 자동 초기화
+
+**API**:
+
+```json
+PUT /api/tables/{tableId}/memo
+{
+  "memo": "손님 요청: 얼음 빼주세요"
+}
+```
+
+**변경 파일**:
+
+- `StoreTable.java` - `memo` 필드 추가 (`@Builder.Default = ""`)
+- `StoreTableEntity.java` - `memo` 컬럼 추가
+- `StoreTableDetailResponse.java` - `memo` 필드 추가
+- `StoreTableResponse.java` - `memo` 필드 추가
+- `StoreTableMemoUpdateRequest.java` - 신규 DTO (`@Size(max=100)`)
+- `StoreTableService.java` - `updateMemo()` 추가
+- `StoreTableController.java` - `PUT /{tableId}/memo` 추가
+- `StoreTableApi.java` - Swagger 문서 추가
+
+**배포 시 주의사항**:
+
+- `ddl-auto: update`가 컬럼을 추가하더라도 `NOT NULL`이라 기존 데이터가 있으면 실패 가능
+- 배포 전 수동 실행 필요: `ALTER TABLE store_tables ADD COLUMN memo VARCHAR(300) NOT NULL DEFAULT '';`
+
+#### 2. 품절 처리 SQL → Java 코드로 변경
+
+- 기존 `decreaseStock` JPQL 쿼리의 `CASE WHEN` 버그 제거
+  - 버그: MySQL SET 절 좌→우 평가로 `CASE WHEN m.stock = 0`이 이미 감소된 stock을 체크해 isSoldOut 항상 false 유지
+- `decreaseStock` 메서드 완전 제거 (`MenuRepository`, `MenuJpaRepository`, `MenuRepositoryImpl`)
+- `createOrder`, `createServiceOrder`에서 `findByIdWithLock` 후 Java 코드로 처리:
+  - `newStock = stock - quantity`
+  - `isSoldOut = newStock == 0`
+  - `menuRepository.save(updatedMenu)` 호출
+- 비관적 락(`PESSIMISTIC_WRITE`)이 재고 음수/품절 누락을 방지
+
+**변경 파일**:
+
+- `MenuJpaRepository.java` - `decreaseStock` 쿼리 제거
+- `MenuRepository.java` - `decreaseStock` 인터페이스 제거
+- `MenuRepositoryImpl.java` - `decreaseStock` 구현 제거
+- `OrderService.java` - `decreaseStock` 호출 제거, Java 코드로 재고/품절 처리
+
+**주요 결정**:
+
+- `isSoldOut`은 `newStock == 0`일 때만 true (수동 품절 처리는 별도 API 통해 관리)
+- `increaseStock`은 원자적 SQL이므로 그대로 유지 (단순 증가, isSoldOut=false 리셋)
 
 ---
 
