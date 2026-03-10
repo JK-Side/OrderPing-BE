@@ -74,11 +74,6 @@ public class MenuRepositoryImpl implements MenuRepository {
     }
 
     @Override
-    public int decreaseStock(Long id, Long quantity) {
-        return jpaRepository.decreaseStock(id, quantity);
-    }
-
-    @Override
     public int increaseStock(Long id, Long quantity) {
         return jpaRepository.increaseStock(id, quantity);
     }

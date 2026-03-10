@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.table.dto.StoreTableBulkClearRequest;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
+import com.orderping.api.table.dto.StoreTableMemoUpdateRequest;
 import com.orderping.api.table.dto.StoreTableBulkDeleteRequest;
 import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
@@ -92,6 +93,17 @@ public class StoreTableController implements StoreTableApi {
         @RequestBody StoreTableUpdateRequest request
     ) {
         StoreTableResponse response = storeTableService.updateStoreTable(userId, id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{tableId}/memo")
+    @Override
+    public ResponseEntity<StoreTableResponse> updateMemo(
+        @CurrentUser Long userId,
+        @PathVariable Long tableId,
+        @Valid @RequestBody StoreTableMemoUpdateRequest request
+    ) {
+        StoreTableResponse response = storeTableService.updateMemo(userId, tableId, request);
         return ResponseEntity.ok(response);
     }
 
