@@ -72,14 +72,14 @@ public class OrderService {
                     menu.getStock());
             }
 
-            int decreased = menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
-            if (decreased == 0) {
-                long currentStock = menuRepository.findById(menuRequest.menuId())
-                    .map(Menu::getStock).orElse(0L);
-                throw new OutOfStockException(
-                    String.format("'%s' 메뉴의 재고가 부족합니다.", menu.getName()),
-                    currentStock);
-            }
+            long newStock = menu.getStock() - menuRequest.quantity();
+            menuRepository.save(Menu.builder()
+                .id(menu.getId()).storeId(menu.getStoreId()).categoryId(menu.getCategoryId())
+                .name(menu.getName()).price(menu.getPrice()).description(menu.getDescription())
+                .imageUrl(menu.getImageUrl()).initialStock(menu.getInitialStock())
+                .stock(newStock).isSoldOut(newStock == 0)
+                .version(menu.getVersion())
+                .build());
             menuMap.put(menu.getId(), menu);
             totalPrice += menu.getPrice() * menuRequest.quantity();
         }
@@ -135,14 +135,14 @@ public class OrderService {
                     menu.getStock());
             }
 
-            int decreased = menuRepository.decreaseStock(menuRequest.menuId(), menuRequest.quantity());
-            if (decreased == 0) {
-                long currentStock = menuRepository.findById(menuRequest.menuId())
-                    .map(Menu::getStock).orElse(0L);
-                throw new OutOfStockException(
-                    String.format("'%s' 메뉴의 재고가 부족합니다.", menu.getName()),
-                    currentStock);
-            }
+            long newStock = menu.getStock() - menuRequest.quantity();
+            menuRepository.save(Menu.builder()
+                .id(menu.getId()).storeId(menu.getStoreId()).categoryId(menu.getCategoryId())
+                .name(menu.getName()).price(menu.getPrice()).description(menu.getDescription())
+                .imageUrl(menu.getImageUrl()).initialStock(menu.getInitialStock())
+                .stock(newStock).isSoldOut(newStock == 0)
+                .version(menu.getVersion())
+                .build());
             menuMap.put(menu.getId(), menu);
         }
 
