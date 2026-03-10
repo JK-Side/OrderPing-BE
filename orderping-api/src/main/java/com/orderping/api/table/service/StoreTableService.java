@@ -17,6 +17,7 @@ import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableDetailResponse;
 import com.orderping.api.table.dto.StoreTableResponse;
+import com.orderping.api.table.dto.StoreTableMemoUpdateRequest;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.api.table.dto.StoreTableUpdateRequest;
 import com.orderping.api.table.dto.TableQrUrlResponse;
@@ -238,6 +239,25 @@ public class StoreTableService {
         if (hasActiveOrders) {
             throw new BadRequestException("처리 중인 주문이 있는 테이블은 비울 수 없습니다.");
         }
+    }
+
+    @Transactional
+    public StoreTableResponse updateMemo(Long userId, Long id, StoreTableMemoUpdateRequest request) {
+        StoreTable storeTable = storeTableRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
+        validateStoreOwner(storeTable.getStoreId(), userId);
+
+        StoreTable updated = StoreTable.builder()
+            .id(storeTable.getId())
+            .storeId(storeTable.getStoreId())
+            .tableNum(storeTable.getTableNum())
+            .status(storeTable.getStatus())
+            .qrImageUrl(storeTable.getQrImageUrl())
+            .memo(request.memoOrEmpty())
+            .build();
+
+        StoreTable saved = storeTableRepository.save(updated);
+        return StoreTableResponse.from(saved);
     }
 
     @Transactional

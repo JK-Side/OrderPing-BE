@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.orderping.api.table.dto.StoreTableBulkClearRequest;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
+import com.orderping.api.table.dto.StoreTableMemoUpdateRequest;
 import com.orderping.api.table.dto.StoreTableBulkDeleteRequest;
 import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
@@ -94,6 +95,20 @@ public interface StoreTableApi {
         @Parameter(hidden = true) Long userId,
         @Parameter(description = "테이블 ID", required = true) Long id,
         StoreTableUpdateRequest request
+    );
+
+    @Operation(summary = "테이블 메모 수정", description = "테이블 메모를 수정합니다. 빈 문자열로 초기화 가능 (본인 매장만 가능, 한글 100자 제한)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "메모 수정 성공"),
+        @ApiResponse(responseCode = "400", description = "메모 100자 초과"),
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "본인 매장이 아님"),
+        @ApiResponse(responseCode = "404", description = "테이블을 찾을 수 없음")
+    })
+    ResponseEntity<StoreTableResponse> updateMemo(
+        @Parameter(hidden = true) Long userId,
+        @Parameter(description = "테이블 ID", required = true) Long tableId,
+        StoreTableMemoUpdateRequest request
     );
 
     @Operation(summary = "테이블 비우기", description = "현재 테이블을 종료하고 같은 번호의 새 테이블을 생성합니다 (본인 매장만 가능)")

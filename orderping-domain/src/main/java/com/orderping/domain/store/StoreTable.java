@@ -13,4 +13,6 @@ public class StoreTable {
     private final Integer tableNum;
     private final TableStatus status;
     private final String qrImageUrl;
+    @Builder.Default
+    private final String memo = "";
 }

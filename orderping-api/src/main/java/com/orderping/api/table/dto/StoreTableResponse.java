@@ -8,7 +8,8 @@ public record StoreTableResponse(
     Long storeId,
     Integer tableNum,
     TableStatus status,
-    String qrImageUrl
+    String qrImageUrl,
+    String memo
 ) {
     public static StoreTableResponse from(StoreTable storeTable) {
         return new StoreTableResponse(
@@ -16,7 +17,8 @@ public record StoreTableResponse(
             storeTable.getStoreId(),
             storeTable.getTableNum(),
             storeTable.getStatus(),
-            storeTable.getQrImageUrl()
+            storeTable.getQrImageUrl(),
+            storeTable.getMemo()
         );
     }
 }

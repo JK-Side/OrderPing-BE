@@ -41,13 +41,17 @@ public class StoreTableEntity {
     @Column(name = "qr_image_url", length = 512)
     private String qrImageUrl;
 
+    @Column(name = "memo", nullable = false, length = 300, columnDefinition = "VARCHAR(300) DEFAULT ''")
+    private String memo;
+
     @Builder
-    public StoreTableEntity(Long id, Long storeId, Integer tableNum, TableStatus status, String qrImageUrl) {
+    public StoreTableEntity(Long id, Long storeId, Integer tableNum, TableStatus status, String qrImageUrl, String memo) {
         this.id = id;
         this.storeId = storeId;
         this.tableNum = tableNum;
         this.status = status;
         this.qrImageUrl = qrImageUrl;
+        this.memo = memo;
     }
 
     // Domain -> Entity
@@ -58,6 +62,7 @@ public class StoreTableEntity {
             .tableNum(storeTable.getTableNum())
             .status(storeTable.getStatus())
             .qrImageUrl(storeTable.getQrImageUrl())
+            .memo(storeTable.getMemo())
             .build();
     }
 
@@ -65,6 +70,9 @@ public class StoreTableEntity {
     protected void onCreate() {
         if (this.status == null) {
             this.status = TableStatus.EMPTY;
+        }
+        if (this.memo == null) {
+            this.memo = "";
         }
     }
 
@@ -76,6 +84,7 @@ public class StoreTableEntity {
             .tableNum(this.tableNum)
             .status(this.status)
             .qrImageUrl(this.qrImageUrl)
+            .memo(this.memo != null ? this.memo : "")
             .build();
     }
 }
