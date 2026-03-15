@@ -1,5 +1,6 @@
 package com.orderping.infra.order.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,6 +56,13 @@ public class OrderRepositoryImpl implements OrderRepository {
     @Override
     public List<Order> findByStoreIdAndStatus(Long storeId, OrderStatus status) {
         return jpaRepository.findByStoreIdAndStatus(storeId, status).stream()
+            .map(OrderEntity::toDomain)
+            .toList();
+    }
+
+    @Override
+    public List<Order> findByStoreIdAndCreatedAtBetween(Long storeId, LocalDateTime from, LocalDateTime to) {
+        return jpaRepository.findByStoreIdAndCreatedAtBetween(storeId, from, to).stream()
             .map(OrderEntity::toDomain)
             .toList();
     }
