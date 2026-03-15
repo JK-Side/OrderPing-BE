@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.orderping.api.common.dto.ErrorResponse;
@@ -119,6 +120,19 @@ public class GlobalExceptionHandler {
             "BAD_REQUEST",
             "입력값이 제약 조건을 위반했습니다."
         );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        Throwable cause = e.getCause();
+        while (cause != null && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        String message = (cause != null && cause.getMessage() != null)
+            ? cause.getMessage()
+            : "요청 파라미터 형식이 올바르지 않습니다.";
+        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), "BAD_REQUEST", message);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
