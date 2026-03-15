@@ -1,5 +1,6 @@
 package com.orderping.domain.order.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,8 @@ public interface OrderRepository {
     List<Order> findByTableIdOrderById(Long tableId);
 
     List<Order> findByStoreIdAndStatus(Long storeId, OrderStatus status);
+
+    List<Order> findByStoreIdAndCreatedAtBetween(Long storeId, LocalDateTime from, LocalDateTime to);
 
     void deleteById(Long id);
 }

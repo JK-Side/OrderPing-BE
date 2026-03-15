@@ -1,5 +1,6 @@
 package com.orderping.infra.order.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,4 +17,6 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Long> {
     List<OrderEntity> findByTableIdOrderByIdAsc(Long tableId);
 
     List<OrderEntity> findByStoreIdAndStatus(Long storeId, OrderStatus status);
+
+    List<OrderEntity> findByStoreIdAndCreatedAtBetween(Long storeId, LocalDateTime from, LocalDateTime to);
 }
