@@ -111,6 +111,7 @@ class StatisticsServiceTest {
             given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
             given(orderRepository.findByStoreIdAndCreatedAtBetween(eq(storeId), any(), any()))
                 .willReturn(List.of(o1, o2));
+            given(orderRepository.findByStoreId(storeId)).willReturn(List.of(o1, o2));
             given(orderMenuRepository.findByOrderIds(List.of(1L, 2L))).willReturn(List.of());
             given(menuRepository.findAllByIds(List.of())).willReturn(List.of());
 
@@ -124,9 +125,14 @@ class StatisticsServiceTest {
         @Test
         @DisplayName("총 주문 수를 올바르게 반환한다")
         void getStatistics_OrderCountCorrect() {
+            Order o1 = order(1L, 10000L, 0L);
+            Order o2 = order(2L, 20000L, 0L);
+            Order o3 = order(3L, 5000L, 0L);
+
             given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
             given(orderRepository.findByStoreIdAndCreatedAtBetween(eq(storeId), any(), any()))
-                .willReturn(List.of(order(1L, 10000L, 0L), order(2L, 20000L, 0L), order(3L, 5000L, 0L)));
+                .willReturn(List.of(o1, o2, o3));
+            given(orderRepository.findByStoreId(storeId)).willReturn(List.of(o1, o2, o3));
             given(orderMenuRepository.findByOrderIds(any())).willReturn(List.of());
             given(menuRepository.findAllByIds(any())).willReturn(List.of());
 
@@ -145,6 +151,7 @@ class StatisticsServiceTest {
             given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
             given(orderRepository.findByStoreIdAndCreatedAtBetween(eq(storeId), any(), any()))
                 .willReturn(List.of(o1));
+            given(orderRepository.findByStoreId(storeId)).willReturn(List.of(o1));
             given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(om));
             given(menuRepository.findAllByIds(List.of(100L))).willReturn(List.of(m));
 
@@ -152,7 +159,7 @@ class StatisticsServiceTest {
 
             assertEquals(1, result.orders().size());
             StatisticsResponse.OrderSummary summary = result.orders().get(0);
-            assertEquals(1L, summary.orderId());
+            assertEquals(1, summary.orderNumber());
             assertEquals(1, summary.tableNum());
             assertEquals(1, summary.menus().size());
 
@@ -173,6 +180,7 @@ class StatisticsServiceTest {
             given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
             given(orderRepository.findByStoreIdAndCreatedAtBetween(eq(storeId), any(), any()))
                 .willReturn(List.of(o1));
+            given(orderRepository.findByStoreId(storeId)).willReturn(List.of(o1));
             given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(serviceOm));
             given(menuRepository.findAllByIds(List.of(100L))).willReturn(List.of(m));
 
@@ -191,6 +199,7 @@ class StatisticsServiceTest {
             given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
             given(orderRepository.findByStoreIdAndCreatedAtBetween(eq(storeId), any(), any()))
                 .willReturn(List.of(o1));
+            given(orderRepository.findByStoreId(storeId)).willReturn(List.of(o1));
             given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(om));
             given(menuRepository.findAllByIds(List.of(999L))).willReturn(List.of());
 
@@ -205,6 +214,7 @@ class StatisticsServiceTest {
             given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
             given(orderRepository.findByStoreIdAndCreatedAtBetween(eq(storeId), any(), any()))
                 .willReturn(List.of());
+            given(orderRepository.findByStoreId(storeId)).willReturn(List.of());
 
             StatisticsResponse result = statisticsService.getStatistics(userId, storeId, from, to);
 
@@ -213,6 +223,29 @@ class StatisticsServiceTest {
             assertEquals(0L, result.couponRevenue());
             assertEquals(0, result.orderCount());
             assertTrue(result.orders().isEmpty());
+        }
+
+        @Test
+        @DisplayName("orderNumber는 주점 전체 주문 기준 순번이다")
+        void getStatistics_OrderNumber_IsStoreWideSequence() {
+            // 주점 전체 주문: 1~5번 존재, 기간 내에는 3번, 5번만 조회됨
+            Order o3 = order(3L, 10000L, 0L);
+            Order o5 = order(5L, 20000L, 0L);
+            List<Order> allOrders = List.of(
+                order(1L, 0L, 0L), order(2L, 0L, 0L), o3, order(4L, 0L, 0L), o5
+            );
+
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
+            given(orderRepository.findByStoreIdAndCreatedAtBetween(eq(storeId), any(), any()))
+                .willReturn(List.of(o3, o5));
+            given(orderRepository.findByStoreId(storeId)).willReturn(allOrders);
+            given(orderMenuRepository.findByOrderIds(List.of(3L, 5L))).willReturn(List.of());
+            given(menuRepository.findAllByIds(List.of())).willReturn(List.of());
+
+            StatisticsResponse result = statisticsService.getStatistics(userId, storeId, from, to);
+
+            assertEquals(3, result.orders().get(0).orderNumber()); // 3번째 주문
+            assertEquals(5, result.orders().get(1).orderNumber()); // 5번째 주문
         }
 
         @Test

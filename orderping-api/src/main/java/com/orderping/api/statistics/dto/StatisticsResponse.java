@@ -11,7 +11,7 @@ public record StatisticsResponse(
     List<OrderSummary> orders
 ) {
     public record OrderSummary(
-        Long orderId,
+        int orderNumber,
         Integer tableNum,
         LocalDateTime orderedAt,
         List<MenuDetail> menus,

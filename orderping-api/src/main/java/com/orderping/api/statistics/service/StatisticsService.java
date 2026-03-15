@@ -47,6 +47,16 @@ public class StatisticsService {
         long couponRevenue = orders.stream().mapToLong(Order::getCouponAmount).sum();
         long transferRevenue = totalRevenue - couponRevenue;
 
+        // 주점 전체 주문을 id 오름차순으로 정렬해 순번 계산
+        List<Long> allStoreOrderIds = orderRepository.findByStoreId(storeId).stream()
+            .map(Order::getId)
+            .sorted()
+            .toList();
+        Map<Long, Integer> orderNumberMap = new java.util.HashMap<>();
+        for (int i = 0; i < allStoreOrderIds.size(); i++) {
+            orderNumberMap.put(allStoreOrderIds.get(i), i + 1);
+        }
+
         List<Long> orderIds = orders.stream().map(Order::getId).toList();
         List<OrderMenu> allOrderMenus = orderIds.isEmpty() ? List.of() : orderMenuRepository.findByOrderIds(orderIds);
 
@@ -69,7 +79,7 @@ public class StatisticsService {
                     ))
                     .toList();
                 return new StatisticsResponse.OrderSummary(
-                    order.getId(),
+                    orderNumberMap.getOrDefault(order.getId(), 0),
                     order.getTableNum(),
                     order.getCreatedAt(),
                     menuDetails,
