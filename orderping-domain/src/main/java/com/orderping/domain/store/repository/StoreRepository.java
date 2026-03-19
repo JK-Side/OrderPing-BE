@@ -14,4 +14,6 @@ public interface StoreRepository {
     List<Store> findByUserId(Long userId);
 
     void deleteById(Long id);
+
+    void deleteByUserId(Long userId);
 }

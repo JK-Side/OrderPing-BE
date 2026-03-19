@@ -54,6 +54,10 @@ public class UserService {
 
     @Transactional
     public void deleteUser(Long id) {
+        // 주점 계좌 → 주점 → 인증 정보 → 유저 순으로 삭제
+        storeRepository.findByUserId(id)
+            .forEach(store -> storeAccountRepository.deleteByStoreId(store.getId()));
+        storeRepository.deleteByUserId(id);
         refreshTokenRepository.deleteByUserId(id);
         authAccountRepository.deleteByUserId(id);
         userRepository.deleteById(id);

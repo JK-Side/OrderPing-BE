@@ -9,4 +9,6 @@ import com.orderping.infra.store.entity.StoreEntity;
 public interface StoreJpaRepository extends JpaRepository<StoreEntity, Long> {
 
     List<StoreEntity> findByUserId(Long userId);
+
+    void deleteByUserId(Long userId);
 }
