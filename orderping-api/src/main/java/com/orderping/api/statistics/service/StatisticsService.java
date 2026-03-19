@@ -111,7 +111,7 @@ public class StatisticsService {
             .map(menu -> new MenuStatisticsResponse.MenuStat(
                 menu.getId(),
                 menu.getName(),
-                menu.getStock(),
+                menu.getInitialStock(),
                 soldMap.getOrDefault(menu.getId(), 0L)
             ))
             .toList();
