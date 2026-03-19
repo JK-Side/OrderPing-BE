@@ -85,6 +85,9 @@ public class OrderService {
         }
 
         Long couponAmount = request.couponAmount() != null ? request.couponAmount() : 0L;
+        if (couponAmount > totalPrice) {
+            throw new BadRequestException("쿠폰 금액이 주문 금액을 초과할 수 없습니다.");
+        }
 
         Order order = Order.builder()
             .tableId(table.getId())

@@ -27,6 +27,7 @@ import com.orderping.api.order.dto.ServiceOrderCreateRequest.ServiceMenuRequest;
 import com.orderping.api.table.service.TableResolverService;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
+import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.menu.Menu;
 import com.orderping.domain.menu.repository.MenuRepository;
@@ -156,6 +157,20 @@ class OrderServiceTest {
             ArgumentCaptor<Order> captor = forClass(Order.class);
             verify(orderRepository).save(captor.capture());
             assertEquals(0L, captor.getValue().getCouponAmount());
+        }
+
+        @Test
+        @DisplayName("쿠폰 금액이 주문 금액을 초과하면 BadRequestException 발생")
+        void createOrder_CouponExceedsTotalPrice_ThrowsBadRequestException() {
+            // testMenu 가격 5000, 수량 1 → totalPrice = 5000, couponAmount = 6000
+            OrderCreateRequest request = new OrderCreateRequest(
+                tableNum, storeId, "홍길동", 6000L, List.of(new OrderMenuRequest(menuId, 1L))
+            );
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(menuRepository.findByIdWithLock(menuId)).willReturn(Optional.of(testMenu));
+
+            assertThrows(BadRequestException.class, () -> orderService.createOrder(request));
         }
 
         @Test
