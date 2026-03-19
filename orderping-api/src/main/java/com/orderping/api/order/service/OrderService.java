@@ -85,6 +85,9 @@ public class OrderService {
         }
 
         Long couponAmount = request.couponAmount() != null ? request.couponAmount() : 0L;
+        if (couponAmount > totalPrice) {
+            throw new BadRequestException("쿠폰 금액이 주문 금액을 초과할 수 없습니다.");
+        }
 
         Order order = Order.builder()
             .tableId(table.getId())
@@ -274,7 +277,6 @@ public class OrderService {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
         validateStoreOwner(order.getStoreId(), userId);
-        validateStatusTransition(order.getStatus(), request.status());
 
         Order updated = Order.builder()
             .id(order.getId())
@@ -314,15 +316,6 @@ public class OrderService {
         }
 
         orderRepository.deleteById(id);
-    }
-
-    private void validateStatusTransition(OrderStatus current, OrderStatus next) {
-        if (current == OrderStatus.COMPLETE) {
-            throw new BadRequestException("완료된 주문의 상태는 변경할 수 없습니다.");
-        }
-        if (current == OrderStatus.COOKING && next == OrderStatus.PENDING) {
-            throw new BadRequestException("조리 중인 주문을 접수 상태로 되돌릴 수 없습니다.");
-        }
     }
 
     private void validateStoreOwner(Long storeId, Long userId) {

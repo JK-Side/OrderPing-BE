@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,7 +34,7 @@ public class StoreAccountController implements StoreAccountApi {
     @Override
     public ResponseEntity<StoreAccountResponse> createStoreAccount(
         @CurrentUser Long userId,
-        @RequestBody StoreAccountCreateRequest request
+        @Valid @RequestBody StoreAccountCreateRequest request
     ) {
         StoreAccountResponse response = storeAccountService.createStoreAccount(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -61,7 +62,7 @@ public class StoreAccountController implements StoreAccountApi {
     public ResponseEntity<StoreAccountResponse> updateStoreAccount(
         @CurrentUser Long userId,
         @PathVariable Long id,
-        @RequestBody StoreAccountUpdateRequest request
+        @Valid @RequestBody StoreAccountUpdateRequest request
     ) {
         StoreAccountResponse response = storeAccountService.updateStoreAccount(userId, id, request);
         return ResponseEntity.ok(response);

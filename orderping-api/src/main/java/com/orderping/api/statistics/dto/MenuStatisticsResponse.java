@@ -8,7 +8,7 @@ public record MenuStatisticsResponse(
     public record MenuStat(
         Long menuId,
         String menuName,
-        Long stock,
+        Long initialStock,
         Long soldQuantity
     ) {}
 }

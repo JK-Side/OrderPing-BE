@@ -3,6 +3,7 @@ package com.orderping.api.order.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,7 +33,7 @@ public class ServiceOrderController {
         @ApiResponse(responseCode = "409", description = "재고 부족")
     })
     @PostMapping
-    public ResponseEntity<OrderResponse> createServiceOrder(@RequestBody ServiceOrderCreateRequest request) {
+    public ResponseEntity<OrderResponse> createServiceOrder(@Valid @RequestBody ServiceOrderCreateRequest request) {
         OrderResponse response = orderService.createServiceOrder(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

@@ -418,11 +418,16 @@ GET /api/tables?storeId=1&status=ACTIVE
 | 고객 주문 시 메뉴 소속 주점 검증            | ✅ 완료  |
 | 테이블 일괄 비우기 API                  | ✅ 완료  |
 | 주문/결제 소유권 검증                    | ✅ 완료  |
-| 주문 상태 역전 방지                      | ✅ 완료  |
+| 주문 상태 자유 전이 (역전 허용)              | ✅ 완료  |
 | N+1 쿼리 최적화 (테이블 상세 조회)          | ✅ 완료  |
 | StoreAccount DB unique constraint | ✅ 완료  |
 | 테이블 메모 기능                        | ✅ 완료  |
 | 품절 처리 Java 코드로 변경               | ✅ 완료  |
+| 통계 API (매출/주문/메뉴별)              | ✅ 완료  |
+| 쿠폰 금액 주문 금액 초과 방지              | ✅ 완료  |
+| 글자수 제한 (주점/계좌/메뉴)              | ✅ 완료  |
+| 주점 있어도 회원 탈퇴 가능                | ✅ 완료  |
+| 통계 재고량 초기 재고 기준                | ✅ 완료  |
 | 카카오 알림톡                        | ⏳ 미구현 |
 
 ---
@@ -1441,6 +1446,162 @@ PUT /api/tables/{tableId}/memo
 - `increaseStock`은 원자적 SQL이므로 그대로 유지 (단순 증가, isSoldOut=false 리셋)
 
 ---
+
+### 2026-03-15
+
+**작업 내용**:
+
+#### 1. 통계 API 추가
+
+- 운영자 전용 (JWT 인증), 일 단위 날짜 범위 지정 가능
+- 주문 통계와 메뉴별 통계를 별도 탭 구조에 맞춰 2개 엔드포인트로 분리
+
+**API**:
+
+```
+GET /api/statistics?storeId=1&from=20260303&to=20260303
+→ 매출 요약 (총매출/입금매출/쿠폰매출/주문수) + 전체 주문 목록
+
+GET /api/statistics/menus?storeId=1&from=20260303&to=20260303
+→ 메뉴별 현재 재고량 + 기간 내 판매량
+```
+
+**주문 통계 응답**:
+
+```json
+{
+  "totalRevenue": 50000,
+  "transferRevenue": 45000,
+  "couponRevenue": 5000,
+  "orderCount": 3,
+  "orders": [
+    {
+      "orderNumber": 15,
+      "tableNum": 3,
+      "orderedAt": "2026-03-03T18:30:00",
+      "menus": [
+        { "menuName": "소주", "quantity": 2, "price": 5000, "isService": false }
+      ],
+      "totalPrice": 10000,
+      "depositorName": "홍길동"
+    }
+  ]
+}
+```
+
+**메뉴 통계 응답**:
+
+```json
+{
+  "menus": [
+    { "menuId": 1, "menuName": "소주", "stock": 50, "soldQuantity": 30 },
+    { "menuId": 2, "menuName": "맥주", "stock": 20, "soldQuantity": 0 }
+  ]
+}
+```
+
+**주요 사항**:
+
+- `orderNumber`: 전역 DB ID가 아닌 해당 주점에서 생성된 N번째 주문 순번
+- 모든 상태(PENDING/COOKING/COMPLETE) 주문 집계
+- 서비스 주문(isService=true)도 포함
+- 삭제된 메뉴는 "삭제된 메뉴"로 표시
+- 기간 내 주문 없으면: 주문 통계는 0/빈 리스트, 메뉴 통계는 전체 메뉴 `soldQuantity: 0`으로 반환
+
+#### 2. 날짜 파라미터 두 가지 형식 허용
+
+- `yyyyMMdd` (예: `20260303`)와 `yyyy-MM-dd` (예: `2026-03-03`) 모두 허용
+- 잘못된 형식 입력 시 기존 500 → 400으로 처리, 안내 메시지 포함
+
+**변경 파일**:
+
+- `StatisticsResponse.java` - 신규 DTO (매출 요약 + 주문 목록)
+- `MenuStatisticsResponse.java` - 신규 DTO (메뉴별 재고/판매량)
+- `StatisticsService.java` - 신규 서비스
+- `StatisticsController.java` - 신규 컨트롤러
+- `StatisticsApi.java` - 신규 Swagger 인터페이스
+- `LocalDateConverter.java` - 신규 (두 날짜 형식 파싱)
+- `GlobalExceptionHandler.java` - `MethodArgumentTypeMismatchException` 핸들러 추가
+- `OrderRepository.java` / `OrderJpaRepository.java` / `OrderRepositoryImpl.java` - `findByStoreIdAndCreatedAtBetween` 추가
+- `StatisticsServiceTest.java` - 신규 (14개 테스트 케이스)
+
+**주요 결정**:
+
+- 주문 통계 / 메뉴 통계 2개 엔드포인트 분리 (다른 탭, 필요 시에만 호출)
+- orderNumber는 주점 전체 주문 이력 기준 순번 (날짜 범위와 무관하게 고정)
+- 메뉴 통계의 재고량은 현재 실시간 재고, 판매량은 기간 내 OrderMenu 수량 합산
+
+---
+
+### 2026-03-19
+
+**작업 내용**:
+
+#### 1. QA 4차 수정
+
+##### 1-1. 주문 상태 되돌리기 허용
+
+- `validateStatusTransition()` 메서드 및 호출 코드 제거
+- 모든 주문 상태 전이 허용 (COMPLETE → PENDING 등)
+
+##### 1-2. 통계 재고량 초기 재고로 변경
+
+- 메뉴 통계 응답의 `stock` → `initialStock`으로 변경
+- `StatisticsService`에서 `menu.getStock()` → `menu.getInitialStock()`으로 변경
+
+##### 1-3. 주점이 있어도 회원 탈퇴 가능
+
+- `deleteUser()` 에서 주점 계좌 → 주점 순으로 먼저 삭제 후 유저 삭제
+- `StoreRepository.deleteByUserId()`, `StoreJpaRepository.deleteByUserId()`, `StoreRepositoryImpl.deleteByUserId()` 추가
+
+##### 1-4. 글자수 제한 추가
+
+- 주점명 10자, 주점 설명 100자 (`StoreCreateRequest`, `StoreUpdateRequest`)
+- 예금주명 6자, 계좌번호 20자 (`StoreAccountCreateRequest`, `StoreAccountUpdateRequest`)
+- 메뉴명 20자, 메뉴 설명 30자 (`MenuCreateRequest`, `MenuUpdateRequest`)
+- `StoreAccountController`에 `@Valid` 추가 (누락 수정)
+
+##### 1-5. StoreTableServiceTest 수정
+
+- N+1 배치 쿼리 변경(`findByOrderIds`, `findAllByIds`)으로 깨진 9개 테스트 전면 수정
+
+#### 2. 쿠폰 금액 주문 금액 초과 방지
+
+- `OrderService.createOrder()`에서 `couponAmount > totalPrice` 시 `BadRequestException` 발생
+- `OrderServiceTest`에 해당 케이스 추가
+
+#### 3. 입력값 검증(@Valid) 누락 수정
+
+- `OrderCreateRequest` - `tableNum`, `storeId`, `depositorName` `@NotNull`, `menus` `@NotEmpty`, `couponAmount` `@Min(0)`, 중첩 `OrderMenuRequest`에 `@NotNull` + `@Min(1)` 추가
+- `ServiceOrderCreateRequest` - 동일 패턴 적용
+- `PaymentCreateRequest` - `orderId`, `method` `@NotNull`, `amount` `@Min(0)` 추가
+- `OrderController`, `CustomerOrderController`, `ServiceOrderController`, `PaymentController`에 `@Valid` 추가
+
+**변경 파일**:
+
+- `OrderService.java` - `validateStatusTransition()` 제거, 쿠폰 초과 검증 추가
+- `MenuStatisticsResponse.java` - `stock` → `initialStock` 필드명 변경
+- `StatisticsService.java` - `getStock()` → `getInitialStock()` 변경
+- `StatisticsServiceTest.java` - `initialStock` 필드 반영
+- `StoreRepository.java` / `StoreJpaRepository.java` / `StoreRepositoryImpl.java` - `deleteByUserId()` 추가
+- `UserService.java` - `deleteUser()` 주점 계좌/주점 먼저 삭제 순서 추가
+- `StoreCreateRequest.java` / `StoreUpdateRequest.java` - 주점명 10자, 설명 100자 제한
+- `StoreAccountCreateRequest.java` / `StoreAccountUpdateRequest.java` - 예금주명 6자, 계좌번호 20자 제한
+- `StoreAccountController.java` - `@Valid` 추가
+- `MenuCreateRequest.java` / `MenuUpdateRequest.java` - 메뉴명 20자, 설명 30자 제한
+- `MenuController.java` - `@Valid` import 확인
+- `StoreTableServiceTest.java` - 배치 쿼리 방식으로 전면 수정
+- `OrderCreateRequest.java` - 검증 애너테이션 추가
+- `ServiceOrderCreateRequest.java` - 검증 애너테이션 추가
+- `PaymentCreateRequest.java` - 검증 애너테이션 추가
+- `OrderController.java` / `CustomerOrderController.java` / `ServiceOrderController.java` / `PaymentController.java` - `@Valid` 추가
+
+**주요 결정**:
+
+- 주문 상태 역전 방지 로직 제거 → 운영자가 자유롭게 상태 조정 가능
+- 통계 재고량은 초기 재고(`initialStock`) 기준 (판매량과 대비하기 위함)
+- 회원 탈퇴 시 주점/계좌는 하드 딜리트, 주문/결제 데이터는 고아로 유지
+- 글자수 제한은 DB DDL이 아닌 Bean Validation 코드 레벨에서 처리
 
 <!--
 새 작업 추가 시 아래 형식으로 작성:

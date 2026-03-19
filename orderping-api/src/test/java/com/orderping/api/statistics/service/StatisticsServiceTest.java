@@ -87,13 +87,14 @@ class StatisticsServiceTest {
             .build();
     }
 
-    private Menu menu(Long menuId, String name, Long stock) {
+    private Menu menu(Long menuId, String name, Long initialStock) {
         return Menu.builder()
             .id(menuId)
             .storeId(storeId)
             .name(name)
             .price(5000L)
-            .stock(stock)
+            .initialStock(initialStock)
+            .stock(initialStock)
             .isSoldOut(false)
             .build();
     }
@@ -292,7 +293,7 @@ class StatisticsServiceTest {
             MenuStatisticsResponse.MenuStat stat = result.menus().get(0);
             assertEquals(100L, stat.menuId());
             assertEquals("소주", stat.menuName());
-            assertEquals(45L, stat.stock());
+            assertEquals(45L, stat.initialStock());
             assertEquals(5L, stat.soldQuantity()); // 2 + 3
         }
 

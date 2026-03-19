@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,7 +34,7 @@ public class MenuController implements MenuApi {
     @Override
     public ResponseEntity<MenuResponse> createMenu(
         @CurrentUser Long userId,
-        @RequestBody MenuCreateRequest request
+        @Valid @RequestBody MenuCreateRequest request
     ) {
         MenuResponse response = menuService.createMenu(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -75,7 +76,7 @@ public class MenuController implements MenuApi {
     public ResponseEntity<MenuResponse> updateMenu(
         @CurrentUser Long userId,
         @PathVariable Long id,
-        @RequestBody MenuUpdateRequest request
+        @Valid @RequestBody MenuUpdateRequest request
     ) {
         MenuResponse response = menuService.updateMenu(userId, id, request);
         return ResponseEntity.ok(response);
