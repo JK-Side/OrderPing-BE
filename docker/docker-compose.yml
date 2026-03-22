@@ -19,7 +19,6 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: "true"
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
       AWS_SECRET_KEY: ${AWS_SECRET_KEY}
@@ -31,6 +30,14 @@ services:
       - orderping-logs:/var/log/orderping
     networks:
       - orderping-network
+    deploy:
+      resources:
+        limits:
+          memory: 4096M
+          cpus: '6.0'
+        reservations:
+          memory: 1024M
+          cpus: '2.0'
 
   # ===== Log Collection (모니터링 서버로 전송) =====
   promtail:
