@@ -100,6 +100,15 @@ public class MenuService {
             .orElseThrow(() -> new NotFoundException("메뉴를 찾을 수 없습니다."));
         validateStoreOwner(existing.getStoreId(), userId);
 
+        long newStock = request.stock() != null ? request.stock() : existing.getStock();
+        long stockDiff = newStock - existing.getStock();
+        long newInitialStock;
+        if (request.initialStock() != null) {
+            newInitialStock = request.initialStock();
+        } else {
+            newInitialStock = existing.getInitialStock() + stockDiff;
+        }
+
         Menu updated = Menu.builder()
             .id(existing.getId())
             .storeId(existing.getStoreId())
@@ -108,8 +117,8 @@ public class MenuService {
             .price(request.price() != null ? request.price() : existing.getPrice())
             .description(request.description() != null ? request.description() : existing.getDescription())
             .imageUrl(request.imageUrl() != null ? request.imageUrl() : existing.getImageUrl())
-            .initialStock(request.initialStock() != null ? request.initialStock() : existing.getInitialStock())
-            .stock(request.stock() != null ? request.stock() : existing.getStock())
+            .initialStock(newInitialStock)
+            .stock(newStock)
             .isSoldOut(request.isSoldOut() != null ? request.isSoldOut() : existing.getIsSoldOut())
             .version(existing.getVersion())
             .build();
