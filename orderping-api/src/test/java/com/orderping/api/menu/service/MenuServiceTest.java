@@ -158,6 +158,82 @@ class MenuServiceTest {
     }
 
     @Test
+    @DisplayName("stock 증가 시 initialStock이 차이만큼 자동 보정되어 soldCount가 유지된다")
+    void updateMenu_StockIncrease_InitialStockAdjusted() {
+        // given: initialStock=100, stock=50 → soldCount=50
+        // stock을 200으로 증가 → newInitialStock = 100 + (200-50) = 250, soldCount = 50 유지
+        MenuUpdateRequest request = new MenuUpdateRequest(
+            null, null, null, null, null, null, 200L, null
+        );
+
+        given(menuRepository.findById(menuId)).willReturn(Optional.of(existingMenu));
+        given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
+        given(menuRepository.save(any(Menu.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        menuService.updateMenu(userId, menuId, request);
+
+        // then
+        ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
+        verify(menuRepository).save(menuCaptor.capture());
+
+        Menu savedMenu = menuCaptor.getValue();
+        assertEquals(200L, savedMenu.getStock());
+        assertEquals(250L, savedMenu.getInitialStock(), "initialStock은 stock 증가분만큼 자동 보정되어야 함");
+        assertEquals(50L, savedMenu.getSoldCount(), "soldCount는 변경되지 않아야 함");
+    }
+
+    @Test
+    @DisplayName("stock 감소 시 initialStock이 차이만큼 자동 보정되어 soldCount가 유지된다")
+    void updateMenu_StockDecrease_InitialStockAdjusted() {
+        // given: initialStock=100, stock=50 → soldCount=50
+        // stock을 30으로 감소 → newInitialStock = 100 + (30-50) = 80, soldCount = 50 유지
+        MenuUpdateRequest request = new MenuUpdateRequest(
+            null, null, null, null, null, null, 30L, null
+        );
+
+        given(menuRepository.findById(menuId)).willReturn(Optional.of(existingMenu));
+        given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
+        given(menuRepository.save(any(Menu.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        menuService.updateMenu(userId, menuId, request);
+
+        // then
+        ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
+        verify(menuRepository).save(menuCaptor.capture());
+
+        Menu savedMenu = menuCaptor.getValue();
+        assertEquals(30L, savedMenu.getStock());
+        assertEquals(80L, savedMenu.getInitialStock(), "initialStock은 stock 감소분만큼 자동 보정되어야 함");
+        assertEquals(50L, savedMenu.getSoldCount(), "soldCount는 변경되지 않아야 함");
+    }
+
+    @Test
+    @DisplayName("initialStock을 직접 명시하면 자동 보정 없이 해당 값이 사용된다")
+    void updateMenu_ExplicitInitialStock_UsedDirectly() {
+        // given: stock도 함께 변경하면서 initialStock을 명시적으로 지정
+        MenuUpdateRequest request = new MenuUpdateRequest(
+            null, null, null, null, null, 300L, 200L, null
+        );
+
+        given(menuRepository.findById(menuId)).willReturn(Optional.of(existingMenu));
+        given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
+        given(menuRepository.save(any(Menu.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        menuService.updateMenu(userId, menuId, request);
+
+        // then
+        ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
+        verify(menuRepository).save(menuCaptor.capture());
+
+        Menu savedMenu = menuCaptor.getValue();
+        assertEquals(200L, savedMenu.getStock());
+        assertEquals(300L, savedMenu.getInitialStock(), "명시한 initialStock이 그대로 사용되어야 함");
+    }
+
+    @Test
     @DisplayName("version 0인 새 메뉴도 정상 처리")
     void updateMenu_VersionZero() {
         // given
