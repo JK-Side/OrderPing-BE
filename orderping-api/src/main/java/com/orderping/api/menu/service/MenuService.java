@@ -102,12 +102,7 @@ public class MenuService {
 
         long newStock = request.stock() != null ? request.stock() : existing.getStock();
         long stockDiff = newStock - existing.getStock();
-        long newInitialStock;
-        if (request.initialStock() != null) {
-            newInitialStock = request.initialStock();
-        } else {
-            newInitialStock = existing.getInitialStock() + stockDiff;
-        }
+        long newInitialStock = existing.getInitialStock() + stockDiff;
 
         Menu updated = Menu.builder()
             .id(existing.getId())

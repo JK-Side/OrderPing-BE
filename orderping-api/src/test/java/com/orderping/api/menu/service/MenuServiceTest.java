@@ -210,9 +210,10 @@ class MenuServiceTest {
     }
 
     @Test
-    @DisplayName("initialStock을 직접 명시하면 자동 보정 없이 해당 값이 사용된다")
-    void updateMenu_ExplicitInitialStock_UsedDirectly() {
-        // given: stock도 함께 변경하면서 initialStock을 명시적으로 지정
+    @DisplayName("request에 initialStock이 포함되어도 자동 보정이 적용된다")
+    void updateMenu_InitialStockInRequestIgnored() {
+        // given: initialStock=100, stock=50 → soldCount=50
+        // request에 initialStock=300, stock=200 포함 → stockDiff=150, newInitialStock=250, soldCount=50
         MenuUpdateRequest request = new MenuUpdateRequest(
             null, null, null, null, null, 300L, 200L, null
         );
@@ -230,7 +231,8 @@ class MenuServiceTest {
 
         Menu savedMenu = menuCaptor.getValue();
         assertEquals(200L, savedMenu.getStock());
-        assertEquals(300L, savedMenu.getInitialStock(), "명시한 initialStock이 그대로 사용되어야 함");
+        assertEquals(250L, savedMenu.getInitialStock(), "request의 initialStock은 무시되고 stockDiff로 자동 보정되어야 함");
+        assertEquals(50L, savedMenu.getSoldCount());
     }
 
     @Test
