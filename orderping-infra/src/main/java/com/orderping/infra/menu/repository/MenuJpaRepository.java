@@ -23,6 +23,8 @@ public interface MenuJpaRepository extends JpaRepository<MenuEntity, Long> {
 
     List<MenuEntity> findByStoreIdAndIsSoldOutFalse(Long storeId);
 
+    void deleteByStoreId(Long storeId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT m FROM MenuEntity m WHERE m.id = :id")
     Optional<MenuEntity> findByIdWithLock(@Param("id") Long id);

@@ -24,4 +24,6 @@ public interface OrderRepository {
     List<Order> findByStoreIdAndCreatedAtBetween(Long storeId, LocalDateTime from, LocalDateTime to);
 
     void deleteById(Long id);
+
+    void deleteByStoreId(Long storeId);
 }

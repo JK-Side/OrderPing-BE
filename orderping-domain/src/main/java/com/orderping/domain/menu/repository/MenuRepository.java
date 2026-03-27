@@ -23,6 +23,8 @@ public interface MenuRepository {
 
     void deleteById(Long id);
 
+    void deleteByStoreId(Long storeId);
+
     int increaseStock(Long id, Long quantity);
 
     Optional<Menu> findByIdWithLock(Long id);

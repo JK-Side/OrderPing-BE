@@ -27,4 +27,6 @@ public interface StoreTableRepository {
     List<StoreTable> findAllByIds(List<Long> ids);
 
     void deleteById(Long id);
+
+    void deleteByStoreId(Long storeId);
 }

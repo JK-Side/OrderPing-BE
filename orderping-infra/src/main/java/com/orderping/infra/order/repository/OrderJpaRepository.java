@@ -19,4 +19,6 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Long> {
     List<OrderEntity> findByStoreIdAndStatus(Long storeId, OrderStatus status);
 
     List<OrderEntity> findByStoreIdAndCreatedAtBetween(Long storeId, LocalDateTime from, LocalDateTime to);
+
+    void deleteByStoreId(Long storeId);
 }
