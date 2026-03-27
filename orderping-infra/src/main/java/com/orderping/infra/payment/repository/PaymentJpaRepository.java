@@ -12,4 +12,6 @@ public interface PaymentJpaRepository extends JpaRepository<PaymentEntity, Long>
     List<PaymentEntity> findByOrderId(Long orderId);
 
     List<PaymentEntity> findByOrderIdAndStatus(Long orderId, PaymentStatus status);
+
+    void deleteByOrderIdIn(List<Long> orderIds);
 }

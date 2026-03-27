@@ -13,9 +13,11 @@ import com.orderping.api.user.dto.UserResponse;
 import com.orderping.domain.bank.Bank;
 import com.orderping.domain.bank.repository.BankRepository;
 import com.orderping.domain.exception.NotFoundException;
+import com.orderping.domain.exception.UserWithdrawException;
 import com.orderping.domain.menu.repository.MenuRepository;
 import com.orderping.domain.order.repository.OrderMenuRepository;
 import com.orderping.domain.order.repository.OrderRepository;
+import com.orderping.domain.payment.repository.PaymentRepository;
 import com.orderping.domain.store.StoreAccount;
 import com.orderping.domain.store.repository.StoreAccountRepository;
 import com.orderping.domain.store.repository.StoreRepository;
@@ -41,6 +43,7 @@ public class UserService {
     private final MenuRepository menuRepository;
     private final OrderRepository orderRepository;
     private final OrderMenuRepository orderMenuRepository;
+    private final PaymentRepository paymentRepository;
     private final BankRepository bankRepository;
 
     @Transactional
@@ -62,22 +65,39 @@ public class UserService {
 
     @Transactional
     public void deleteUser(Long id) {
-        // 주문메뉴 → 주문 → 메뉴 → 테이블 → 주점계좌 → 주점 → 인증 정보 → 유저 순으로 삭제
+        // 결제 → 주문메뉴 → 주문 → 메뉴 → 테이블 → 주점계좌 → 주점 → 인증 정보 → 유저 순으로 삭제
         storeRepository.findByUserId(id).forEach(store -> {
             Long storeId = store.getId();
-            List<Long> orderIds = orderRepository.findByStoreId(storeId).stream()
-                .map(order -> order.getId())
-                .toList();
-            orderMenuRepository.deleteByOrderIds(orderIds);
-            orderRepository.deleteByStoreId(storeId);
-            menuRepository.deleteByStoreId(storeId);
-            storeTableRepository.deleteByStoreId(storeId);
-            storeAccountRepository.deleteByStoreId(storeId);
+            try {
+                List<Long> orderIds = orderRepository.findByStoreId(storeId).stream()
+                    .map(order -> order.getId())
+                    .toList();
+                paymentRepository.deleteByOrderIds(orderIds);
+                orderMenuRepository.deleteByOrderIds(orderIds);
+                orderRepository.deleteByStoreId(storeId);
+                menuRepository.deleteByStoreId(storeId);
+                storeTableRepository.deleteByStoreId(storeId);
+                storeAccountRepository.deleteByStoreId(storeId);
+            } catch (Exception e) {
+                throw new UserWithdrawException("storeId=" + storeId + " 관련 데이터 삭제 실패", e);
+            }
         });
-        storeRepository.deleteByUserId(id);
-        refreshTokenRepository.deleteByUserId(id);
-        authAccountRepository.deleteByUserId(id);
-        userRepository.deleteById(id);
+        try {
+            storeRepository.deleteByUserId(id);
+        } catch (Exception e) {
+            throw new UserWithdrawException("주점 삭제 실패", e);
+        }
+        try {
+            refreshTokenRepository.deleteByUserId(id);
+            authAccountRepository.deleteByUserId(id);
+        } catch (Exception e) {
+            throw new UserWithdrawException("인증 정보 삭제 실패", e);
+        }
+        try {
+            userRepository.deleteById(id);
+        } catch (Exception e) {
+            throw new UserWithdrawException("유저 삭제 실패", e);
+        }
     }
 
     public MyPageResponse getMyPage(Long userId) {

@@ -17,4 +17,6 @@ public interface PaymentRepository {
     List<Payment> findByOrderIdAndStatus(Long orderId, PaymentStatus status);
 
     void deleteById(Long id);
+
+    void deleteByOrderIds(List<Long> orderIds);
 }

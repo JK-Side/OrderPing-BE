@@ -49,4 +49,12 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
     }
+
+    @Override
+    public void deleteByOrderIds(List<Long> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            return;
+        }
+        jpaRepository.deleteByOrderIdIn(orderIds);
+    }
 }

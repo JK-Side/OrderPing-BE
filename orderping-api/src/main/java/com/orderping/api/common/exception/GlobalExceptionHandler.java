@@ -18,6 +18,7 @@ import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.exception.OutOfStockException;
 import com.orderping.domain.exception.UnauthorizedException;
+import com.orderping.domain.exception.UserWithdrawException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -145,6 +146,17 @@ public class GlobalExceptionHandler {
             "필수 쿠키가 누락되었습니다: " + e.getCookieName()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(UserWithdrawException.class)
+    public ResponseEntity<ErrorResponse> handleUserWithdrawException(UserWithdrawException e) {
+        log.error("회원 탈퇴 실패: {}", e.getMessage(), e.getCause());
+        ErrorResponse response = ErrorResponse.of(
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "USER_WITHDRAW_FAILED",
+            e.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
     @ExceptionHandler(Exception.class)
