@@ -16,4 +16,6 @@ public interface OrderMenuRepository {
     List<OrderMenu> findByOrderIds(List<Long> orderIds);
 
     void deleteById(Long id);
+
+    void deleteByOrderIds(List<Long> orderIds);
 }

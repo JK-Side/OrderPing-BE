@@ -13,9 +13,13 @@ import com.orderping.api.user.dto.UserResponse;
 import com.orderping.domain.bank.Bank;
 import com.orderping.domain.bank.repository.BankRepository;
 import com.orderping.domain.exception.NotFoundException;
+import com.orderping.domain.menu.repository.MenuRepository;
+import com.orderping.domain.order.repository.OrderMenuRepository;
+import com.orderping.domain.order.repository.OrderRepository;
 import com.orderping.domain.store.StoreAccount;
 import com.orderping.domain.store.repository.StoreAccountRepository;
 import com.orderping.domain.store.repository.StoreRepository;
+import com.orderping.domain.store.repository.StoreTableRepository;
 import com.orderping.domain.user.User;
 import com.orderping.domain.user.repository.AuthAccountRepository;
 import com.orderping.domain.user.repository.RefreshTokenRepository;
@@ -33,6 +37,10 @@ public class UserService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final StoreRepository storeRepository;
     private final StoreAccountRepository storeAccountRepository;
+    private final StoreTableRepository storeTableRepository;
+    private final MenuRepository menuRepository;
+    private final OrderRepository orderRepository;
+    private final OrderMenuRepository orderMenuRepository;
     private final BankRepository bankRepository;
 
     @Transactional
@@ -54,9 +62,18 @@ public class UserService {
 
     @Transactional
     public void deleteUser(Long id) {
-        // 주점 계좌 → 주점 → 인증 정보 → 유저 순으로 삭제
-        storeRepository.findByUserId(id)
-            .forEach(store -> storeAccountRepository.deleteByStoreId(store.getId()));
+        // 주문메뉴 → 주문 → 메뉴 → 테이블 → 주점계좌 → 주점 → 인증 정보 → 유저 순으로 삭제
+        storeRepository.findByUserId(id).forEach(store -> {
+            Long storeId = store.getId();
+            List<Long> orderIds = orderRepository.findByStoreId(storeId).stream()
+                .map(order -> order.getId())
+                .toList();
+            orderMenuRepository.deleteByOrderIds(orderIds);
+            orderRepository.deleteByStoreId(storeId);
+            menuRepository.deleteByStoreId(storeId);
+            storeTableRepository.deleteByStoreId(storeId);
+            storeAccountRepository.deleteByStoreId(storeId);
+        });
         storeRepository.deleteByUserId(id);
         refreshTokenRepository.deleteByUserId(id);
         authAccountRepository.deleteByUserId(id);

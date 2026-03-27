@@ -11,4 +11,6 @@ public interface OrderMenuJpaRepository extends JpaRepository<OrderMenuEntity, L
     List<OrderMenuEntity> findByOrderId(Long orderId);
 
     List<OrderMenuEntity> findByOrderIdIn(List<Long> orderIds);
+
+    void deleteByOrderIdIn(List<Long> orderIds);
 }

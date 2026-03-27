@@ -1,5 +1,6 @@
 package com.orderping.infra.order.repository;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,5 +48,13 @@ public class OrderMenuRepositoryImpl implements OrderMenuRepository {
     @Override
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteByOrderIds(List<Long> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            return;
+        }
+        jpaRepository.deleteByOrderIdIn(orderIds);
     }
 }
