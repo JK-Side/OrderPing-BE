@@ -148,6 +148,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupportedException(
+        org.springframework.web.HttpRequestMethodNotSupportedException e) {
+        ErrorResponse response = ErrorResponse.of(
+            HttpStatus.METHOD_NOT_ALLOWED.value(),
+            "METHOD_NOT_ALLOWED",
+            e.getMethod() + " 메서드는 지원하지 않습니다."
+        );
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(response);
+    }
+
     @ExceptionHandler(UserWithdrawException.class)
     public ResponseEntity<ErrorResponse> handleUserWithdrawException(UserWithdrawException e) {
         log.error("회원 탈퇴 실패: {}", e.getMessage(), e.getCause());
