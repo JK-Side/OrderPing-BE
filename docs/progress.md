@@ -1603,6 +1603,134 @@ GET /api/statistics/menus?storeId=1&from=20260303&to=20260303
 - 회원 탈퇴 시 주점/계좌는 하드 딜리트, 주문/결제 데이터는 고아로 유지
 - 글자수 제한은 DB DDL이 아닌 Bean Validation 코드 레벨에서 처리
 
+### 2026-03-22 (PR #45, #46)
+
+**작업 내용**:
+
+#### 재고 변경 시 soldCount 음수 방지
+
+- 메뉴 재고(`stock`)를 직접 수정할 때 `soldCount`가 음수가 되는 버그 수정
+- 재고 변경 시 `stockDiff = newStock - currentStock` 만큼 `initialStock`을 자동 보정
+  - 예: initialStock=100, stock=50 → soldCount=50 / stock을 200으로 변경 → initialStock=250, soldCount=50 유지
+- request에 `initialStock`이 포함되어도 무시하고 stockDiff 기반 자동 보정 적용
+- `MenuServiceTest` 추가 (stock 증가/감소/initialStock 무시 케이스)
+
+**변경 파일**:
+
+- `MenuService.java` - `updateMenu()` stock 변경 시 initialStock 자동 보정 로직 추가
+- `MenuServiceTest.java` - stock 증가/감소/initialStock 무시/version 보존 테스트 추가
+
+**주요 결정**:
+
+- `initialStock`은 클라이언트가 직접 설정하지 않고, stock 변경분에 따라 서버가 자동 계산
+- soldCount = initialStock - stock 공식이 항상 유지되도록 보정
+
+---
+
+### 2026-03-28 (PR #47, #48)
+
+**작업 내용**:
+
+#### 회원 탈퇴 FK 의존성 오류 수정
+
+- 주점이 있는 계정 탈퇴 시 FK constraint violation으로 500 에러 발생하던 문제 수정
+- 삭제 순서를 의존성 역순으로 재정의:
+  1. payments (order_id FK)
+  2. order_menus (order_id FK)
+  3. orders
+  4. menus
+  5. store_tables
+  6. store_accounts
+  7. stores
+  8. refresh_tokens
+  9. auth_accounts
+  10. user
+- 각 단계에서 실패 시 `UserWithdrawException(step, cause)` 발생 → 어느 단계에서 실패했는지 식별
+- `UserWithdrawException` → GlobalExceptionHandler에서 500으로 처리, 실패 단계 메시지 포함
+
+**변경 파일**:
+
+- `UserService.java` - `deleteUser()` 삭제 순서 전면 재작성, 단계별 try-catch 추가
+- `UserWithdrawException.java` - 신규 (step + cause 포함 커스텀 예외)
+- `GlobalExceptionHandler.java` - `UserWithdrawException` → 500 핸들러 추가
+- `PaymentRepository.java` / `PaymentJpaRepository.java` / `PaymentRepositoryImpl.java` - `deleteByOrderIds()` 추가
+- `MenuRepository.java` / `MenuJpaRepository.java` / `MenuRepositoryImpl.java` - `deleteByStoreId()` 추가
+- `OrderRepository.java` / `OrderJpaRepository.java` / `OrderRepositoryImpl.java` - `deleteByStoreId()` 추가
+- `OrderMenuRepository.java` / `OrderMenuJpaRepository.java` / `OrderMenuRepositoryImpl.java` - `deleteByOrderIds()` 추가
+- `StoreTableRepository.java` / `StoreTableJpaRepository.java` / `StoreTableRepositoryImpl.java` - `deleteByStoreId()` 추가
+- `UserServiceTest.java` - 신규 (5개 테스트: 주점+주문 있을 때, 주점+주문 없을 때, 주점 여러 개, 주점 없을 때)
+
+**주요 결정**:
+
+- PR #47에서 payments 누락으로 배포 후 여전히 실패 → PR #48에서 payments 삭제 추가
+- 주문/결제 데이터는 하드 딜리트 (통계 데이터 소실 감수, 탈퇴 우선)
+- Spring Data JPA 파생 삭제 메서드는 `@Modifying` 불필요
+
+---
+
+### 2026-03-31 (PR #49)
+
+**작업 내용**:
+
+#### HTTP 405 에러 핸들링
+
+- 프론트엔드가 `GET /api/auth/refresh`를 호출해 500 에러가 발생하던 문제 수정
+  - 올바른 메서드는 `POST /api/auth/refresh`
+- `HttpRequestMethodNotSupportedException` → 405 응답으로 처리 (기존 500 → 수정)
+- `MissingRequestCookieException` → 400 응답으로 처리
+
+**변경 파일**:
+
+- `GlobalExceptionHandler.java` - `HttpRequestMethodNotSupportedException` (405), `MissingRequestCookieException` (400) 핸들러 추가
+
+**주요 결정**:
+
+- 잘못된 HTTP 메서드 호출은 Spring 기본 동작 대신 통일된 에러 응답 포맷으로 반환
+
+---
+
+### 2026-04-14 (feat/first-order)
+
+**작업 내용**:
+
+#### 테이블비 기능 구현
+
+축제 주점에서 테이블 착석 시 1회 부과하는 테이블비를 자동 주문에 포함시키는 기능.
+
+**비즈니스 규칙**:
+- 점주가 `isTableFee=true`인 메뉴를 미리 생성
+- 해당 테이블의 **첫 번째 주문** 시에만 테이블비 메뉴가 자동으로 OrderMenu로 추가
+- 테이블비 메뉴는 고객 메뉴판에 노출되지 않음 (주문 상세/내역에는 표시)
+- 재고 차감/복구 없음 (재고 개념 없는 항목)
+
+**구현 상세**:
+- `Menu.isTableFee` 필드 추가 (Boolean, default false)
+- 첫 주문 감지: `orderRepository.findByTableId(tableId).isEmpty()` 확인
+- 테이블비 자동 추가: `menuRepository.findTableFeeMenusByStoreId(storeId)`로 조회 후 OrderMenu 저장
+- 고객 메뉴 노출 제어: `findCustomerVisibleByStoreId()` — `isTableFee=false`인 메뉴만 반환
+- `deleteOrder()` 재고 복구 시 `isTableFee=true` 메뉴 스킵
+- `createOrder()` 재고 차감 로직에서 테이블비 메뉴는 별도 처리 (일반 루프 제외)
+
+**변경 파일**:
+
+- `Menu.java` - `isTableFee` 필드 추가
+- `MenuEntity.java` - `is_table_fee` 컬럼 추가, `@PrePersist` 기본값 false
+- `MenuCreateRequest.java` / `MenuUpdateRequest.java` / `MenuResponse.java` - `isTableFee` 필드 추가
+- `MenuService.java` - create/update 시 `isTableFee` 처리
+- `MenuRepository.java` - `findTableFeeMenusByStoreId()`, `findCustomerVisibleByStoreId()` 추가
+- `MenuJpaRepository.java` - `findByStoreIdAndIsTableFeeTrue()`, `findByStoreIdAndIsTableFeeFalse()`, `findByStoreIdAndIsSoldOutFalseAndIsTableFeeFalse()` 추가
+- `MenuRepositoryImpl.java` - 위 메서드 구현 추가, `findAvailableByStoreId()` 테이블비 제외로 수정
+- `OrderService.java` - 첫 주문 감지 + 테이블비 자동 추가 + 재고 복구 스킵 로직 추가
+- `CustomerTableService.java` - `findByStoreId()` → `findCustomerVisibleByStoreId()`
+- `StoreService.java` - `getStoreForOrder()` → `findCustomerVisibleByStoreId()`
+- `MenuServiceTest.java` - `MenuUpdateRequest` 생성자 인자 수 수정 (isTableFee 추가로 인한 빌드 오류 수정)
+
+**주요 결정**:
+
+- 재고/soldCount 추적 대상 제외 (테이블비는 수량 개념이 없는 항목)
+- 점주 관리 화면(`forManage`)에는 테이블비 메뉴 노출 유지 (관리 목적)
+- `findCustomerVisibleByStoreId`는 품절 메뉴 포함 (품절이어도 메뉴판에 표시), `findAvailableByStoreId`만 품절 제외
+
 <!--
 새 작업 추가 시 아래 형식으로 작성:
 
