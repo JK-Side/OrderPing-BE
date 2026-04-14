@@ -16,6 +16,7 @@ public class Menu {
     private final Long initialStock;
     private final Long stock;
     private final Boolean isSoldOut;
+    private final Boolean isTableFee;
     private final Long version;
 
     public Long getSoldCount() {

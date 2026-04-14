@@ -71,7 +71,7 @@ class MenuServiceTest {
     void updateMenu_VersionPreserved() {
         // given
         MenuUpdateRequest request = new MenuUpdateRequest(
-            null, "수정된 메뉴", 15000L, null, null, null, null, null
+            null, "수정된 메뉴", 15000L, null, null, null, null, null, null
         );
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(existingMenu));
@@ -111,7 +111,7 @@ class MenuServiceTest {
     void updateMenu_VersionNotNull() {
         // given
         MenuUpdateRequest request = new MenuUpdateRequest(
-            null, "수정된 메뉴", null, null, null, null, null, null
+            null, "수정된 메뉴", null, null, null, null, null, null, null
         );
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(existingMenu));
@@ -135,7 +135,7 @@ class MenuServiceTest {
     void updateMenu_PreserveUnchangedFields() {
         // given
         MenuUpdateRequest request = new MenuUpdateRequest(
-            null, "수정된 메뉴", null, null, null, null, null, null
+            null, "수정된 메뉴", null, null, null, null, null, null, null
         );
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(existingMenu));
@@ -163,7 +163,7 @@ class MenuServiceTest {
         // given: initialStock=100, stock=50 → soldCount=50
         // stock을 200으로 증가 → newInitialStock = 100 + (200-50) = 250, soldCount = 50 유지
         MenuUpdateRequest request = new MenuUpdateRequest(
-            null, null, null, null, null, null, 200L, null
+            null, null, null, null, null, null, 200L, null, null
         );
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(existingMenu));
@@ -189,7 +189,7 @@ class MenuServiceTest {
         // given: initialStock=100, stock=50 → soldCount=50
         // stock을 30으로 감소 → newInitialStock = 100 + (30-50) = 80, soldCount = 50 유지
         MenuUpdateRequest request = new MenuUpdateRequest(
-            null, null, null, null, null, null, 30L, null
+            null, null, null, null, null, null, 30L, null, null
         );
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(existingMenu));
@@ -215,7 +215,7 @@ class MenuServiceTest {
         // given: initialStock=100, stock=50 → soldCount=50
         // request에 initialStock=300, stock=200 포함 → stockDiff=150, newInitialStock=250, soldCount=50
         MenuUpdateRequest request = new MenuUpdateRequest(
-            null, null, null, null, null, 300L, 200L, null
+            null, null, null, null, null, 300L, 200L, null, null
         );
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(existingMenu));
@@ -252,7 +252,7 @@ class MenuServiceTest {
             .build();
 
         MenuUpdateRequest request = new MenuUpdateRequest(
-            null, "수정된 메뉴", null, null, null, null, null, null
+            null, "수정된 메뉴", null, null, null, null, null, null, null
         );
 
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menuWithVersionZero));

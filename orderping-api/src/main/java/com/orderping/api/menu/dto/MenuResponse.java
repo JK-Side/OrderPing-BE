@@ -13,7 +13,8 @@ public record MenuResponse(
     Long initialStock,
     Long stock,
     Long soldCount,
-    Boolean isSoldOut
+    Boolean isSoldOut,
+    Boolean isTableFee
 ) {
     public static MenuResponse from(Menu menu) {
         return new MenuResponse(
@@ -27,7 +28,8 @@ public record MenuResponse(
             menu.getInitialStock(),
             menu.getStock(),
             menu.getSoldCount(),
-            menu.getIsSoldOut()
+            menu.getIsSoldOut(),
+            menu.getIsTableFee()
         );
     }
 }

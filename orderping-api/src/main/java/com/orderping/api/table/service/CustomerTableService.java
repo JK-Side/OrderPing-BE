@@ -65,7 +65,7 @@ public class CustomerTableService {
 
     private TableQrInfoResponse buildTableInfoResponse(Store store, StoreTable table) {
         List<Category> categories = categoryRepository.findAll();
-        List<Menu> menus = menuRepository.findByStoreId(store.getId());
+        List<Menu> menus = menuRepository.findCustomerVisibleByStoreId(store.getId());
 
         Map<Long, List<Menu>> menusByCategory = menus.stream()
             .collect(Collectors.groupingBy(Menu::getCategoryId));

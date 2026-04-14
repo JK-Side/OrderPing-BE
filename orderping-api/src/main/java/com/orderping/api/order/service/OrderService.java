@@ -53,6 +53,9 @@ public class OrderService {
     public OrderResponse createOrder(OrderCreateRequest request) {
         StoreTable table = tableResolverService.resolveActiveTable(request.storeId(), request.tableNum());
 
+        // 첫 번째 주문 여부 확인 (테이블비 자동 추가 여부 결정)
+        boolean isFirstOrder = orderRepository.findByTableId(table.getId()).isEmpty();
+
         // 메뉴 조회, 재고 검증 및 가격 계산
         long totalPrice = 0L;
         Map<Long, Menu> menuMap = new java.util.HashMap<>();
@@ -84,6 +87,14 @@ public class OrderService {
             totalPrice += menu.getPrice() * menuRequest.quantity();
         }
 
+        // 첫 주문이면 테이블비를 totalPrice에 미리 합산
+        List<Menu> tableFeeMenus = isFirstOrder
+            ? menuRepository.findTableFeeMenusByStoreId(request.storeId())
+            : List.of();
+        for (Menu tableFeeMenu : tableFeeMenus) {
+            totalPrice += tableFeeMenu.getPrice();
+        }
+
         Long couponAmount = request.couponAmount() != null ? request.couponAmount() : 0L;
         if (couponAmount > totalPrice) {
             throw new BadRequestException("쿠폰 금액이 주문 금액을 초과할 수 없습니다.");
@@ -111,6 +122,18 @@ public class OrderService {
                 .isService(false)
                 .build();
             orderMenuRepository.save(orderMenu);
+        }
+
+        // 테이블비 OrderMenu 저장
+        for (Menu tableFeeMenu : tableFeeMenus) {
+            OrderMenu tableFeeOrderMenu = OrderMenu.builder()
+                .orderId(savedOrder.getId())
+                .menuId(tableFeeMenu.getId())
+                .quantity(1L)
+                .price(tableFeeMenu.getPrice())
+                .isService(false)
+                .build();
+            orderMenuRepository.save(tableFeeOrderMenu);
         }
 
         return OrderResponse.from(savedOrder);
@@ -303,13 +326,17 @@ public class OrderService {
         // 주문 취소 시 재고 복구 (삭제된 메뉴는 복구 불가 - 건너뜀)
         List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(id);
         List<Long> menuIds = orderMenus.stream().map(OrderMenu::getMenuId).distinct().toList();
-        Set<Long> existingMenuIds = menuRepository.findAllByIds(menuIds).stream()
-            .map(Menu::getId)
-            .collect(Collectors.toSet());
+
+        Map<Long, Menu> existingMenus = menuRepository.findAllByIds(menuIds).stream()
+            .collect(Collectors.toMap(Menu::getId, m -> m));
 
         for (OrderMenu orderMenu : orderMenus) {
-            if (!existingMenuIds.contains(orderMenu.getMenuId())) {
+            Menu menu = existingMenus.get(orderMenu.getMenuId());
+            if (menu == null) {
                 log.warn("삭제된 메뉴의 재고를 복구할 수 없습니다: menuId={}, orderId={}", orderMenu.getMenuId(), id);
+                continue;
+            }
+            if (Boolean.TRUE.equals(menu.getIsTableFee())) {
                 continue;
             }
             menuRepository.increaseStock(orderMenu.getMenuId(), orderMenu.getQuantity());

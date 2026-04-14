@@ -11,6 +11,7 @@ public record MenuCreateRequest(
     @Size(max = 30, message = "메뉴 설명은 30자를 초과할 수 없습니다.")
     String description,
     String imageUrl,
-    Long stock
+    Long stock,
+    Boolean isTableFee
 ) {
 }
