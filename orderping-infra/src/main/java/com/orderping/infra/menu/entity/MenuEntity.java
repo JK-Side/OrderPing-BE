@@ -53,12 +53,15 @@ public class MenuEntity {
     @Column(name = "is_sold_out", nullable = false)
     private Boolean isSoldOut;
 
+    @Column(name = "is_table_fee", nullable = false)
+    private Boolean isTableFee;
+
     @Version
     private Long version;
 
     @Builder
     public MenuEntity(Long id, Long storeId, Long categoryId, String name, Long price, String description,
-        String imageUrl, Long initialStock, Long stock, Boolean isSoldOut, Long version) {
+        String imageUrl, Long initialStock, Long stock, Boolean isSoldOut, Boolean isTableFee, Long version) {
         this.id = id;
         this.storeId = storeId;
         this.categoryId = categoryId;
@@ -69,6 +72,7 @@ public class MenuEntity {
         this.initialStock = initialStock;
         this.stock = stock;
         this.isSoldOut = isSoldOut;
+        this.isTableFee = isTableFee;
         this.version = version;
     }
 
@@ -85,6 +89,7 @@ public class MenuEntity {
             .initialStock(menu.getInitialStock())
             .stock(menu.getStock())
             .isSoldOut(menu.getIsSoldOut())
+            .isTableFee(menu.getIsTableFee() != null ? menu.getIsTableFee() : false)
             .version(menu.getVersion())
             .build();
     }
@@ -99,6 +104,9 @@ public class MenuEntity {
         }
         if (this.isSoldOut == null) {
             this.isSoldOut = false;
+        }
+        if (this.isTableFee == null) {
+            this.isTableFee = false;
         }
     }
 
@@ -115,6 +123,7 @@ public class MenuEntity {
             .initialStock(this.initialStock)
             .stock(this.stock)
             .isSoldOut(this.isSoldOut)
+            .isTableFee(this.isTableFee)
             .version(this.version)
             .build();
     }

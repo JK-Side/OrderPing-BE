@@ -145,7 +145,7 @@ public class StoreService {
             .orElseThrow(() -> new NotFoundException("주점을 찾을 수 없습니다."));
 
         List<Category> categories = categoryRepository.findAll();
-        List<Menu> menus = menuRepository.findByStoreId(storeId);
+        List<Menu> menus = menuRepository.findCustomerVisibleByStoreId(storeId);
 
         return StoreDetailResponse.forOrder(store, categories, menus);
     }

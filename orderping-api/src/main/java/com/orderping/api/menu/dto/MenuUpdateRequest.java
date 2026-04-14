@@ -12,6 +12,7 @@ public record MenuUpdateRequest(
     String imageUrl,
     Long initialStock,
     Long stock,
-    Boolean isSoldOut
+    Boolean isSoldOut,
+    Boolean isTableFee
 ) {
 }

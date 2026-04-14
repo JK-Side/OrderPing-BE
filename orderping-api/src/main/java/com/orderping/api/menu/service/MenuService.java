@@ -41,6 +41,7 @@ public class MenuService {
             .initialStock(stockValue)
             .stock(stockValue)
             .isSoldOut(false)
+            .isTableFee(request.isTableFee() != null ? request.isTableFee() : false)
             .build();
 
         Menu saved = menuRepository.save(menu);
@@ -115,6 +116,7 @@ public class MenuService {
             .initialStock(newInitialStock)
             .stock(newStock)
             .isSoldOut(request.isSoldOut() != null ? request.isSoldOut() : existing.getIsSoldOut())
+            .isTableFee(request.isTableFee() != null ? request.isTableFee() : existing.getIsTableFee())
             .version(existing.getVersion())
             .build();
 

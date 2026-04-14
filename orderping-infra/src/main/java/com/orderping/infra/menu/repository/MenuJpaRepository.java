@@ -21,7 +21,11 @@ public interface MenuJpaRepository extends JpaRepository<MenuEntity, Long> {
 
     List<MenuEntity> findByStoreIdAndCategoryId(Long storeId, Long categoryId);
 
-    List<MenuEntity> findByStoreIdAndIsSoldOutFalse(Long storeId);
+    List<MenuEntity> findByStoreIdAndIsSoldOutFalseAndIsTableFeeFalse(Long storeId);
+
+    List<MenuEntity> findByStoreIdAndIsTableFeeTrue(Long storeId);
+
+    List<MenuEntity> findByStoreIdAndIsTableFeeFalse(Long storeId);
 
     void deleteByStoreId(Long storeId);
 
