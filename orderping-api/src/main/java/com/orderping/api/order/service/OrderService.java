@@ -255,7 +255,8 @@ public class OrderService {
     }
 
     public long getTableFee(Long storeId, Integer tableNum) {
-        StoreTable table = tableResolverService.resolveActiveTable(storeId, tableNum);
+        StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)
+            .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
         boolean isFirstOrder = orderRepository.findByTableId(table.getId()).isEmpty();
         if (!isFirstOrder) {
             return 0L;
