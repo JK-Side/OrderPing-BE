@@ -14,6 +14,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import com.orderping.api.common.dto.ErrorResponse;
 import com.orderping.api.common.dto.OutOfStockErrorResponse;
 import com.orderping.domain.exception.BadRequestException;
+import com.orderping.domain.exception.ConflictException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.exception.OutOfStockException;
@@ -54,6 +55,16 @@ public class GlobalExceptionHandler {
             e.getMessage()
         );
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflictException(ConflictException e) {
+        ErrorResponse response = ErrorResponse.of(
+            HttpStatus.CONFLICT.value(),
+            "CONFLICT",
+            e.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     @ExceptionHandler(BadRequestException.class)

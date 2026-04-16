@@ -11,6 +11,7 @@ import com.orderping.api.store.dto.StoreDetailResponse;
 import com.orderping.api.store.dto.StoreResponse;
 import com.orderping.api.store.dto.StoreUpdateRequest;
 import com.orderping.api.store.event.StoreCreatedEvent;
+import com.orderping.domain.exception.ConflictException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.menu.Category;
@@ -40,6 +41,10 @@ public class StoreService {
 
     @Transactional
     public StoreResponse createStore(Long userId, StoreCreateRequest request) {
+        if (!storeRepository.findByUserId(userId).isEmpty()) {
+            throw new ConflictException("이미 주점을 등록한 사용자입니다.");
+        }
+
         Store store = Store.builder()
             .userId(userId)
             .name(request.name())
