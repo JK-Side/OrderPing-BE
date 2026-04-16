@@ -53,7 +53,7 @@ public class MenuEntity {
     @Column(name = "is_sold_out", nullable = false)
     private Boolean isSoldOut;
 
-    @Column(name = "is_table_fee", nullable = false)
+    @Column(name = "is_table_fee", nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
     private Boolean isTableFee;
 
     @Version

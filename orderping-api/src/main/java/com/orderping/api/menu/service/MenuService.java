@@ -9,6 +9,7 @@ import com.orderping.api.menu.dto.MenuCreateRequest;
 import com.orderping.api.menu.dto.MenuResponse;
 import com.orderping.api.menu.dto.MenuUpdateRequest;
 import com.orderping.domain.exception.BadRequestException;
+import com.orderping.domain.exception.ConflictException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.menu.Menu;
@@ -29,6 +30,12 @@ public class MenuService {
     @Transactional
     public MenuResponse createMenu(Long userId, MenuCreateRequest request) {
         validateStoreOwner(request.storeId(), userId);
+
+        if (Boolean.TRUE.equals(request.isTableFee()) &&
+            !menuRepository.findTableFeeMenusByStoreId(request.storeId()).isEmpty()) {
+            throw new ConflictException("테이블비 메뉴는 주점당 하나만 등록할 수 있습니다.");
+        }
+
         Long stockValue = request.stock() != null ? request.stock() : 0L;
 
         Menu menu = Menu.builder()
@@ -100,6 +107,11 @@ public class MenuService {
         Menu existing = menuRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("메뉴를 찾을 수 없습니다."));
         validateStoreOwner(existing.getStoreId(), userId);
+
+        if (Boolean.TRUE.equals(request.isTableFee()) && !Boolean.TRUE.equals(existing.getIsTableFee()) &&
+            !menuRepository.findTableFeeMenusByStoreId(existing.getStoreId()).isEmpty()) {
+            throw new ConflictException("테이블비 메뉴는 주점당 하나만 등록할 수 있습니다.");
+        }
 
         long newStock = request.stock() != null ? request.stock() : existing.getStock();
         long stockDiff = newStock - existing.getStock();
