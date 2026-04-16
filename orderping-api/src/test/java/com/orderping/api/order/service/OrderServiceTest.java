@@ -293,4 +293,64 @@ class OrderServiceTest {
             assertThrows(NotFoundException.class, () -> orderService.createServiceOrder(request));
         }
     }
+
+    @Nested
+    @DisplayName("테이블비 조회 (getTableFee)")
+    class GetTableFee {
+
+        @Test
+        @DisplayName("첫 주문이면 테이블비 합계를 반환한다")
+        void getTableFee_FirstOrder_ReturnsTableFee() {
+            Menu tableFeeMenu = Menu.builder()
+                .id(200L).storeId(storeId).name("테이블비").price(3000L).isTableFee(true).build();
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(orderRepository.findByTableId(tableId)).willReturn(List.of());
+            given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of(tableFeeMenu));
+
+            long result = orderService.getTableFee(storeId, tableNum);
+
+            assertEquals(3000L, result);
+        }
+
+        @Test
+        @DisplayName("이미 주문이 있으면 0을 반환한다")
+        void getTableFee_NotFirstOrder_ReturnsZero() {
+            Order existingOrder = Order.builder().id(1L).tableId(tableId).storeId(storeId).build();
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(orderRepository.findByTableId(tableId)).willReturn(List.of(existingOrder));
+
+            long result = orderService.getTableFee(storeId, tableNum);
+
+            assertEquals(0L, result);
+        }
+
+        @Test
+        @DisplayName("첫 주문이지만 테이블비 메뉴가 없으면 0을 반환한다")
+        void getTableFee_FirstOrder_NoTableFeeMenu_ReturnsZero() {
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(orderRepository.findByTableId(tableId)).willReturn(List.of());
+            given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of());
+
+            long result = orderService.getTableFee(storeId, tableNum);
+
+            assertEquals(0L, result);
+        }
+
+        @Test
+        @DisplayName("테이블비 메뉴가 여러 개면 합산하여 반환한다")
+        void getTableFee_MultipleTableFeeMenus_ReturnsSum() {
+            Menu fee1 = Menu.builder().id(201L).storeId(storeId).name("테이블비A").price(2000L).isTableFee(true).build();
+            Menu fee2 = Menu.builder().id(202L).storeId(storeId).name("테이블비B").price(1000L).isTableFee(true).build();
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(orderRepository.findByTableId(tableId)).willReturn(List.of());
+            given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of(fee1, fee2));
+
+            long result = orderService.getTableFee(storeId, tableNum);
+
+            assertEquals(3000L, result);
+        }
+    }
 }

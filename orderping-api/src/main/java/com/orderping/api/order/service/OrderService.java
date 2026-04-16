@@ -254,6 +254,17 @@ public class OrderService {
             .toList();
     }
 
+    public long getTableFee(Long storeId, Integer tableNum) {
+        StoreTable table = tableResolverService.resolveActiveTable(storeId, tableNum);
+        boolean isFirstOrder = orderRepository.findByTableId(table.getId()).isEmpty();
+        if (!isFirstOrder) {
+            return 0L;
+        }
+        return menuRepository.findTableFeeMenusByStoreId(storeId).stream()
+            .mapToLong(Menu::getPrice)
+            .sum();
+    }
+
     public List<CustomerOrderDetailResponse> getOrdersWithMenusByStoreAndTableNum(Long storeId, Integer tableNum) {
         StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
