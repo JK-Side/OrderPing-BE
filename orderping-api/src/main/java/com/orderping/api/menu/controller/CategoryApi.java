@@ -21,7 +21,10 @@ public interface CategoryApi {
         @ApiResponse(responseCode = "201", description = "카테고리 생성 성공"),
         @ApiResponse(responseCode = "400", description = "잘못된 요청")
     })
-    ResponseEntity<CategoryResponse> createCategory(CategoryCreateRequest request);
+    ResponseEntity<CategoryResponse> createCategory(
+        @Parameter(hidden = true) Long userId,
+        CategoryCreateRequest request
+    );
 
     @Operation(summary = "카테고리 조회", description = "ID로 카테고리를 조회합니다")
     @ApiResponses({
@@ -42,6 +45,7 @@ public interface CategoryApi {
         @ApiResponse(responseCode = "404", description = "카테고리를 찾을 수 없음")
     })
     ResponseEntity<Void> deleteCategory(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "카테고리 ID", required = true) Long id
     );
 }
