@@ -428,6 +428,11 @@ GET /api/tables?storeId=1&status=ACTIVE
 | 글자수 제한 (주점/계좌/메뉴)              | ✅ 완료  |
 | 주점 있어도 회원 탈퇴 가능                | ✅ 완료  |
 | 통계 재고량 초기 재고 기준                | ✅ 완료  |
+| 테이블비 자동 부과 (첫 주문)              | ✅ 완료  |
+| 장바구니 테이블비 조회 API               | ✅ 완료  |
+| 테이블비/주점 중복 생성 방지 (409)         | ✅ 완료  |
+| 재고 차감 타이밍 (COOKING 전환 시)        | ✅ 완료  |
+| 가용 재고 = 현재 재고 - PENDING 수량     | ✅ 완료  |
 | 카카오 알림톡                        | ⏳ 미구현 |
 
 ---
@@ -1730,6 +1735,145 @@ GET /api/statistics/menus?storeId=1&from=20260303&to=20260303
 - 재고/soldCount 추적 대상 제외 (테이블비는 수량 개념이 없는 항목)
 - 점주 관리 화면(`forManage`)에는 테이블비 메뉴 노출 유지 (관리 목적)
 - `findCustomerVisibleByStoreId`는 품절 메뉴 포함 (품절이어도 메뉴판에 표시), `findAvailableByStoreId`만 품절 제외
+
+---
+
+### 2026-04-23 (fea/table-fee)
+
+**작업 내용**:
+
+#### 1. 장바구니용 테이블비 조회 API 추가
+
+- 프론트엔드 장바구니에서 첫 주문 여부 판단에 사용
+- 첫 주문이면 테이블비 금액 반환, 아니면 0 반환
+
+**API**:
+
+```
+GET /api/customer/orders/table-fee?storeId=1&tableNum=3
+응답: 3000 (첫 주문) 또는 0 (이미 테이블비 부과됨)
+```
+
+**첫 주문 판단 기준**:
+- 해당 테이블의 주문 중 테이블비 메뉴가 포함된 OrderMenu가 존재하는지 확인
+- 주문 건수가 아닌 테이블비 OrderMenu 존재 여부로 판단 → 거절된 주문이 삭제되면 다음 주문에 테이블비 재부과
+
+**변경 파일**:
+
+- `CustomerOrderController.java` - `GET /api/customer/orders/table-fee` 엔드포인트 추가
+- `OrderService.java` - `getTableFee()` 구현, `hasTableFeeOrder()` 내부 메서드 추가
+- `OrderServiceTest.java` - GetTableFee 6개 테스트 케이스 추가 (주문 없음, 테이블비 주문 있음, 일반 주문만 있음, 삭제 후 재부과, 테이블비 메뉴 없음, 메뉴 여러 개)
+
+---
+
+#### 2. 재고 차감 타이밍 변경 (주문 생성 → PENDING→COOKING 전환)
+
+**변경 전**: 주문 생성(PENDING) 시 즉시 재고 차감
+
+**변경 후**: 운영자가 PENDING → COOKING으로 변경 시 재고 차감
+
+**이유**: 주문 후 결제하지 않아도 재고가 무한정 점유되는 문제 방지
+
+**재고 복구 기준**:
+- COOKING 이상 상태 → PENDING으로 되돌릴 때 재고 복구
+- PENDING 상태 주문 삭제 시 재고 복구 없음 (차감 안 했으므로)
+- PENDING 이외 상태 주문 삭제 시 재고 복구
+
+**변경 파일**:
+
+- `OrderService.java`:
+  - `createOrder()`: `findByIdWithLock` → `findById`, 재고 차감 로직 제거
+  - `updateOrderStatus()`: `@Transactional` 추가, PENDING→비PENDING 시 `deductStockForOrder()`, 비PENDING→PENDING 시 `recoverStockForOrder()` 호출
+  - `deleteOrder()`: PENDING 상태이면 재고 복구 스킵
+  - `deductStockForOrder()`, `recoverStockForOrder()` 신규 메서드 추가
+- `OrderServiceTest.java`: `createOrder` 테스트 mock을 `findById`로 변경, `updateOrderStatus` 재고 테스트 추가
+
+---
+
+#### 3. 주문 시 가용 재고 계산 (현재 재고 - PENDING 주문 수량)
+
+**배경**: 재고 차감 타이밍이 COOKING으로 이동하면서, PENDING 상태 주문들이 재고를 물고 있어도 새 주문이 통과하는 문제 발생
+
+**해결**: 주문 생성 시 `가용 재고 = 현재 재고 - Σ(PENDING 상태 주문 수량)`으로 계산
+
+예시: 재고 5개, PENDING 주문 4개 → 가용 재고 1개 → 2개 주문 시 차단
+
+**변경 파일**:
+
+- `OrderService.java`:
+  - `buildPendingQtyMap()` 신규 메서드 (storeId + 요청 menuIds 기준 PENDING 수량 집계)
+  - `createOrder()`에서 `availableStock = menu.getStock() - pendingQty`로 계산
+- `OrderRepository.java` - `findByStoreIdAndStatus()` 추가
+- `OrderServiceTest.java` - 가용 재고 검증 테스트 4개 추가
+
+---
+
+#### 4. 테이블비 메뉴 중복 생성 방지 (409)
+
+- 주점당 테이블비 메뉴(`isTableFee=true`)는 1개만 허용
+- 생성 또는 `false→true` 수정 시 이미 존재하면 409 반환
+
+**API 응답 (409)**:
+
+```json
+{ "status": 409, "code": "CONFLICT", "message": "이미 테이블비 메뉴가 존재합니다." }
+```
+
+**변경 파일**:
+
+- `MenuService.java` - `createMenu()`, `updateMenu()`에 테이블비 중복 검증 추가
+- `ConflictException.java` - 신규 (orderping-domain 모듈)
+- `GlobalExceptionHandler.java` - `ConflictException` → 409 핸들러 추가
+
+---
+
+#### 5. 주점 중복 생성 방지 (409)
+
+**배경**: 프론트엔드에서 주점 목록 API 응답 지연 중 사용자가 폼을 채워 제출하면 주점이 중복 생성되는 문제
+
+**해결**: 서버에서 userId 기준으로 이미 주점이 있으면 409 반환
+
+**변경 파일**:
+
+- `StoreService.java` - `createStore()` 시작 시 `storeRepository.findByUserId(userId)`로 중복 확인
+
+---
+
+#### 6. 버그 수정
+
+##### 6-1. getTableFee read-only 트랜잭션 버그
+
+- **문제**: `@Transactional(readOnly=true)` 컨텍스트에서 `resolveActiveTable()` 호출 시 테이블 CLOSE 처리(write)가 발생하여 트랜잭션 실패
+- **수정**: `findActiveByStoreIdAndTableNum()`으로 교체 (read-only 조회만 수행, 활성 테이블이 여러 개면 첫 번째 사용)
+
+##### 6-2. is_table_fee DB 마이그레이션 실패
+
+- **문제**: `ddl-auto: update`로 `is_table_fee NOT NULL` 컬럼 추가 시 기존 데이터에 DEFAULT가 없어 MySQL strict mode 실패
+- **수정**: `columnDefinition = "BOOLEAN DEFAULT false"` 명시
+
+##### 6-3. createServiceOrder에서 isTableFee 누락
+
+- **문제**: 서비스 주문 생성 시 메뉴 빌더에 `.isTableFee()` 누락 → 기존 테이블비 메뉴가 false로 덮어씌워지는 버그
+- **수정**: `.isTableFee(menu.getIsTableFee())` 추가
+
+**변경 파일**:
+
+- `OrderService.java` - `getTableFee()` 내 `resolveActiveTable` → `findActiveByStoreIdAndTableNum`
+- `MenuEntity.java` - `columnDefinition = "BOOLEAN DEFAULT false"` 추가
+- `OrderService.java` - `createServiceOrder()` 메뉴 빌더에 `.isTableFee()` 추가
+
+---
+
+**구현 상태 요약 업데이트**:
+
+| 기능 | 상태 |
+|------|------|
+| 테이블비 자동 부과 (첫 주문) | ✅ 완료 |
+| 장바구니 테이블비 조회 API | ✅ 완료 |
+| 테이블비 메뉴 중복 방지 (409) | ✅ 완료 |
+| 주점 중복 생성 방지 (409) | ✅ 완료 |
+| 재고 차감 타이밍 (COOKING 전환 시) | ✅ 완료 |
+| 가용 재고 = 현재 재고 - PENDING 수량 | ✅ 완료 |
 
 <!--
 새 작업 추가 시 아래 형식으로 작성:
