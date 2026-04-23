@@ -42,8 +42,8 @@ public class StoreAccountController implements StoreAccountApi {
 
     @GetMapping("/{id}")
     @Override
-    public ResponseEntity<StoreAccountResponse> getStoreAccount(@PathVariable Long id) {
-        StoreAccountResponse response = storeAccountService.getStoreAccount(id);
+    public ResponseEntity<StoreAccountResponse> getStoreAccount(@CurrentUser Long userId, @PathVariable Long id) {
+        StoreAccountResponse response = storeAccountService.getStoreAccount(userId, id);
         return ResponseEntity.ok(response);
     }
 

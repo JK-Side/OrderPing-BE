@@ -42,25 +42,29 @@ public class MenuController implements MenuApi {
 
     @GetMapping("/{id}")
     @Override
-    public ResponseEntity<MenuResponse> getMenu(@PathVariable Long id) {
-        MenuResponse response = menuService.getMenu(id);
+    public ResponseEntity<MenuResponse> getMenu(@CurrentUser Long userId, @PathVariable Long id) {
+        MenuResponse response = menuService.getMenu(userId, id);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
     @Override
     public ResponseEntity<List<MenuResponse>> getMenus(
+        @CurrentUser Long userId,
         @RequestParam(required = false) Long storeId,
         @RequestParam(required = false) Long categoryId
     ) {
-        List<MenuResponse> responses = menuService.getMenus(storeId, categoryId);
+        List<MenuResponse> responses = menuService.getMenus(userId, storeId, categoryId);
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/available/{storeId}")
     @Override
-    public ResponseEntity<List<MenuResponse>> getAvailableMenusByStoreId(@PathVariable Long storeId) {
-        List<MenuResponse> responses = menuService.getAvailableMenusByStoreId(storeId);
+    public ResponseEntity<List<MenuResponse>> getAvailableMenusByStoreId(
+        @CurrentUser Long userId,
+        @PathVariable Long storeId
+    ) {
+        List<MenuResponse> responses = menuService.getAvailableMenusByStoreId(userId, storeId);
         return ResponseEntity.ok(responses);
     }
 

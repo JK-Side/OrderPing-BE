@@ -55,13 +55,15 @@ public class MenuService {
         return MenuResponse.from(saved);
     }
 
-    public MenuResponse getMenu(Long id) {
+    public MenuResponse getMenu(Long userId, Long id) {
         Menu menu = menuRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("메뉴를 찾을 수 없습니다."));
+        validateStoreOwner(menu.getStoreId(), userId);
         return MenuResponse.from(menu);
     }
 
-    public List<MenuResponse> getMenusByStoreId(Long storeId) {
+    public List<MenuResponse> getMenusByStoreId(Long userId, Long storeId) {
+        validateStoreOwner(storeId, userId);
         return menuRepository.findByStoreId(storeId).stream()
             .map(MenuResponse::from)
             .toList();
@@ -73,22 +75,24 @@ public class MenuService {
             .toList();
     }
 
-    public List<MenuResponse> getMenus(Long storeId, Long categoryId) {
+    public List<MenuResponse> getMenus(Long userId, Long storeId, Long categoryId) {
         if (storeId == null && categoryId == null) {
             throw new BadRequestException("storeId 또는 categoryId 중 하나는 필수입니다.");
         }
         if (storeId != null && categoryId != null) {
+            validateStoreOwner(storeId, userId);
             return menuRepository.findByStoreIdAndCategoryId(storeId, categoryId).stream()
                 .map(MenuResponse::from)
                 .toList();
         } else if (storeId != null) {
-            return getMenusByStoreId(storeId);
+            return getMenusByStoreId(userId, storeId);
         } else {
             return getMenusByCategoryId(categoryId);
         }
     }
 
-    public List<MenuResponse> getAvailableMenusByStoreId(Long storeId) {
+    public List<MenuResponse> getAvailableMenusByStoreId(Long userId, Long storeId) {
+        validateStoreOwner(storeId, userId);
         return menuRepository.findAvailableByStoreId(storeId).stream()
             .map(MenuResponse::from)
             .toList();
