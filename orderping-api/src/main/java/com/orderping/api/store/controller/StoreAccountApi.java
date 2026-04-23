@@ -35,6 +35,7 @@ public interface StoreAccountApi {
         @ApiResponse(responseCode = "404", description = "계좌를 찾을 수 없음")
     })
     ResponseEntity<StoreAccountResponse> getStoreAccount(
+        @Parameter(hidden = true) Long userId,
         @Parameter(description = "계좌 ID", required = true) Long id
     );
 

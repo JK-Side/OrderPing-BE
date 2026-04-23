@@ -13,7 +13,6 @@ import com.orderping.api.user.dto.UserResponse;
 import com.orderping.domain.bank.Bank;
 import com.orderping.domain.bank.repository.BankRepository;
 import com.orderping.domain.exception.NotFoundException;
-import com.orderping.domain.exception.UserWithdrawException;
 import com.orderping.domain.menu.repository.MenuRepository;
 import com.orderping.domain.order.repository.OrderMenuRepository;
 import com.orderping.domain.order.repository.OrderRepository;
@@ -68,36 +67,20 @@ public class UserService {
         // 결제 → 주문메뉴 → 주문 → 메뉴 → 테이블 → 주점계좌 → 주점 → 인증 정보 → 유저 순으로 삭제
         storeRepository.findByUserId(id).forEach(store -> {
             Long storeId = store.getId();
-            try {
-                List<Long> orderIds = orderRepository.findByStoreId(storeId).stream()
-                    .map(order -> order.getId())
-                    .toList();
-                paymentRepository.deleteByOrderIds(orderIds);
-                orderMenuRepository.deleteByOrderIds(orderIds);
-                orderRepository.deleteByStoreId(storeId);
-                menuRepository.deleteByStoreId(storeId);
-                storeTableRepository.deleteByStoreId(storeId);
-                storeAccountRepository.deleteByStoreId(storeId);
-            } catch (Exception e) {
-                throw new UserWithdrawException("storeId=" + storeId + " 관련 데이터 삭제 실패", e);
-            }
+            List<Long> orderIds = orderRepository.findByStoreId(storeId).stream()
+                .map(order -> order.getId())
+                .toList();
+            paymentRepository.deleteByOrderIds(orderIds);
+            orderMenuRepository.deleteByOrderIds(orderIds);
+            orderRepository.deleteByStoreId(storeId);
+            menuRepository.deleteByStoreId(storeId);
+            storeTableRepository.deleteByStoreId(storeId);
+            storeAccountRepository.deleteByStoreId(storeId);
         });
-        try {
-            storeRepository.deleteByUserId(id);
-        } catch (Exception e) {
-            throw new UserWithdrawException("주점 삭제 실패", e);
-        }
-        try {
-            refreshTokenRepository.deleteByUserId(id);
-            authAccountRepository.deleteByUserId(id);
-        } catch (Exception e) {
-            throw new UserWithdrawException("인증 정보 삭제 실패", e);
-        }
-        try {
-            userRepository.deleteById(id);
-        } catch (Exception e) {
-            throw new UserWithdrawException("유저 삭제 실패", e);
-        }
+        storeRepository.deleteByUserId(id);
+        refreshTokenRepository.deleteByUserId(id);
+        authAccountRepository.deleteByUserId(id);
+        userRepository.deleteById(id);
     }
 
     public MyPageResponse getMyPage(Long userId) {

@@ -48,9 +48,10 @@ public class StoreAccountService {
         return StoreAccountResponse.from(saved);
     }
 
-    public StoreAccountResponse getStoreAccount(Long id) {
+    public StoreAccountResponse getStoreAccount(Long userId, Long id) {
         StoreAccount storeAccount = storeAccountRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("계좌 정보를 찾을 수 없습니다."));
+        validateStoreOwner(storeAccount.getStoreId(), userId);
         return StoreAccountResponse.from(storeAccount);
     }
 

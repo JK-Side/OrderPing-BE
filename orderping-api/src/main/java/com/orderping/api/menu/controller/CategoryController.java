@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.orderping.api.auth.security.CurrentUser;
 import com.orderping.api.menu.dto.CategoryCreateRequest;
 import com.orderping.api.menu.dto.CategoryResponse;
 import com.orderping.api.menu.service.CategoryService;
@@ -27,7 +28,10 @@ public class CategoryController implements CategoryApi {
 
     @PostMapping
     @Override
-    public ResponseEntity<CategoryResponse> createCategory(@RequestBody CategoryCreateRequest request) {
+    public ResponseEntity<CategoryResponse> createCategory(
+        @CurrentUser Long userId,
+        @RequestBody CategoryCreateRequest request
+    ) {
         CategoryResponse response = categoryService.createCategory(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -48,7 +52,7 @@ public class CategoryController implements CategoryApi {
 
     @DeleteMapping("/{id}")
     @Override
-    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCategory(@CurrentUser Long userId, @PathVariable Long id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();
     }
