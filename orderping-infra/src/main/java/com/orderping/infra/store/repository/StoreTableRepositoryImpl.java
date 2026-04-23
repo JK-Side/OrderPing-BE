@@ -60,7 +60,7 @@ public class StoreTableRepositoryImpl implements StoreTableRepository {
 
     @Override
     public Optional<StoreTable> findActiveByStoreIdAndTableNum(Long storeId, Integer tableNum) {
-        return jpaRepository.findByStoreIdAndTableNumAndStatusNot(storeId, tableNum, TableStatus.CLOSED)
+        return jpaRepository.findFirstByStoreIdAndTableNumAndStatusNot(storeId, tableNum, TableStatus.CLOSED)
             .map(StoreTableEntity::toDomain);
     }
 

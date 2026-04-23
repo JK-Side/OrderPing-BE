@@ -29,9 +29,11 @@ import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.NotFoundException;
+import com.orderping.domain.exception.OutOfStockException;
 import com.orderping.domain.menu.Menu;
 import com.orderping.domain.menu.repository.MenuRepository;
 import com.orderping.domain.order.Order;
+import com.orderping.domain.order.OrderMenu;
 import com.orderping.domain.order.repository.OrderMenuRepository;
 import com.orderping.domain.order.repository.OrderRepository;
 import com.orderping.domain.store.StoreTable;
@@ -93,7 +95,7 @@ class OrderServiceTest {
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
-            given(menuRepository.findByIdWithLock(menuId)).willReturn(Optional.of(testMenu));
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(testMenu));
             given(orderRepository.save(any())).willAnswer(inv -> {
                 Order o = inv.getArgument(0);
                 return Order.builder().id(1L).tableId(o.getTableId()).tableNum(o.getTableNum())
@@ -120,7 +122,7 @@ class OrderServiceTest {
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
-            given(menuRepository.findByIdWithLock(menuId)).willReturn(Optional.of(testMenu));
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(testMenu));
             given(orderRepository.save(any())).willAnswer(inv -> {
                 Order o = inv.getArgument(0);
                 return Order.builder().id(1L).tableId(o.getTableId()).tableNum(o.getTableNum())
@@ -144,7 +146,7 @@ class OrderServiceTest {
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
-            given(menuRepository.findByIdWithLock(menuId)).willReturn(Optional.of(testMenu));
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(testMenu));
             given(orderRepository.save(any())).willAnswer(inv -> {
                 Order o = inv.getArgument(0);
                 return Order.builder().id(1L).tableId(o.getTableId()).tableNum(o.getTableNum())
@@ -168,7 +170,7 @@ class OrderServiceTest {
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
-            given(menuRepository.findByIdWithLock(menuId)).willReturn(Optional.of(testMenu));
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(testMenu));
 
             assertThrows(BadRequestException.class, () -> orderService.createOrder(request));
         }
@@ -194,7 +196,7 @@ class OrderServiceTest {
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
-            given(menuRepository.findByIdWithLock(999L)).willReturn(Optional.empty());
+            given(menuRepository.findById(999L)).willReturn(Optional.empty());
 
             assertThrows(NotFoundException.class, () -> orderService.createOrder(request));
         }
@@ -207,7 +209,7 @@ class OrderServiceTest {
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
-            given(menuRepository.findByIdWithLock(menuId)).willReturn(Optional.of(testMenu));
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(testMenu));
             given(orderRepository.save(any())).willAnswer(inv -> {
                 Order o = inv.getArgument(0);
                 return Order.builder().id(1L).tableId(o.getTableId()).tableNum(o.getTableNum())
@@ -220,6 +222,100 @@ class OrderServiceTest {
             ArgumentCaptor<Order> captor = forClass(Order.class);
             verify(orderRepository).save(captor.capture());
             assertEquals(OrderStatus.PENDING, captor.getValue().getStatus());
+        }
+
+        @Test
+        @DisplayName("PENDING 주문 없으면 실제 재고 기준으로 검증한다")
+        void createOrder_NoPendingOrders_ValidatesAgainstActualStock() {
+            // stock=100, PENDING 없음 → availableStock=100, 수량 100 → 통과
+            OrderCreateRequest request = new OrderCreateRequest(
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 100L))
+            );
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(testMenu));
+            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(List.of());
+            given(orderRepository.save(any())).willAnswer(inv -> {
+                Order o = inv.getArgument(0);
+                return Order.builder().id(1L).tableId(o.getTableId()).storeId(o.getStoreId())
+                    .status(o.getStatus()).totalPrice(o.getTotalPrice()).couponAmount(o.getCouponAmount()).build();
+            });
+
+            orderService.createOrder(request); // 예외 없이 통과
+        }
+
+        @Test
+        @DisplayName("PENDING 주문이 재고를 점유 중이면 가용 재고 기준으로 검증한다")
+        void createOrder_PendingOrdersOccupyStock_ValidatesAgainstAvailableStock() {
+            // stock=5, PENDING에서 4개 점유 → availableStock=1, 수량 2 → OutOfStockException
+            Menu menu = Menu.builder().id(menuId).storeId(storeId).name("소주").price(5000L)
+                .stock(5L).isSoldOut(false).build();
+            Order pendingOrder = Order.builder().id(99L).tableId(tableId).storeId(storeId)
+                .status(OrderStatus.PENDING).build();
+            OrderMenu pendingOrderMenu = OrderMenu.builder().orderId(99L).menuId(menuId)
+                .quantity(4L).price(5000L).build();
+
+            OrderCreateRequest request = new OrderCreateRequest(
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 2L))
+            );
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
+            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(List.of(pendingOrder));
+            given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
+
+            assertThrows(OutOfStockException.class, () -> orderService.createOrder(request));
+        }
+
+        @Test
+        @DisplayName("PENDING 주문 점유 후 남은 재고 내 주문은 통과한다")
+        void createOrder_WithinAvailableStock_OrderSucceeds() {
+            // stock=5, PENDING에서 4개 점유 → availableStock=1, 수량 1 → 통과
+            Menu menu = Menu.builder().id(menuId).storeId(storeId).name("소주").price(5000L)
+                .stock(5L).isSoldOut(false).build();
+            Order pendingOrder = Order.builder().id(99L).tableId(tableId).storeId(storeId)
+                .status(OrderStatus.PENDING).build();
+            OrderMenu pendingOrderMenu = OrderMenu.builder().orderId(99L).menuId(menuId)
+                .quantity(4L).price(5000L).build();
+
+            OrderCreateRequest request = new OrderCreateRequest(
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L))
+            );
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
+            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(List.of(pendingOrder));
+            given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
+            given(orderRepository.save(any())).willAnswer(inv -> {
+                Order o = inv.getArgument(0);
+                return Order.builder().id(1L).tableId(o.getTableId()).storeId(o.getStoreId())
+                    .status(o.getStatus()).totalPrice(o.getTotalPrice()).couponAmount(o.getCouponAmount()).build();
+            });
+
+            orderService.createOrder(request); // 예외 없이 통과
+        }
+
+        @Test
+        @DisplayName("PENDING 주문이 재고를 전부 점유하면 주문이 막힌다")
+        void createOrder_AllStockOccupiedByPending_OrderBlocked() {
+            // stock=5, PENDING에서 5개 점유 → availableStock=0, 수량 1 → OutOfStockException
+            Menu menu = Menu.builder().id(menuId).storeId(storeId).name("소주").price(5000L)
+                .stock(5L).isSoldOut(false).build();
+            Order pendingOrder = Order.builder().id(99L).tableId(tableId).storeId(storeId)
+                .status(OrderStatus.PENDING).build();
+            OrderMenu pendingOrderMenu = OrderMenu.builder().orderId(99L).menuId(menuId)
+                .quantity(5L).price(5000L).build();
+
+            OrderCreateRequest request = new OrderCreateRequest(
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L))
+            );
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
+            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(List.of(pendingOrder));
+            given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
+
+            assertThrows(OutOfStockException.class, () -> orderService.createOrder(request));
         }
     }
 
@@ -298,44 +394,66 @@ class OrderServiceTest {
     @DisplayName("테이블비 조회 (getTableFee)")
     class GetTableFee {
 
-        @Test
-        @DisplayName("첫 주문이면 테이블비 합계를 반환한다")
-        void getTableFee_FirstOrder_ReturnsTableFee() {
-            Menu tableFeeMenu = Menu.builder()
-                .id(200L).storeId(storeId).name("테이블비").price(3000L).isTableFee(true).build();
+        private final Menu tableFeeMenu = Menu.builder()
+            .id(200L).storeId(storeId).name("테이블비").price(3000L).isTableFee(true).build();
 
+        @Test
+        @DisplayName("기존 주문이 없으면 테이블비를 반환한다")
+        void getTableFee_NoOrders_ReturnsTableFee() {
             given(storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)).willReturn(Optional.of(activeTable));
             given(orderRepository.findByTableId(tableId)).willReturn(List.of());
             given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of(tableFeeMenu));
 
-            long result = orderService.getTableFee(storeId, tableNum);
-
-            assertEquals(3000L, result);
+            assertEquals(3000L, orderService.getTableFee(storeId, tableNum));
         }
 
         @Test
-        @DisplayName("이미 주문이 있으면 0을 반환한다")
-        void getTableFee_NotFirstOrder_ReturnsZero() {
+        @DisplayName("테이블비 포함 주문이 이미 있으면 0을 반환한다")
+        void getTableFee_TableFeeOrderExists_ReturnsZero() {
             Order existingOrder = Order.builder().id(1L).tableId(tableId).storeId(storeId).build();
+            OrderMenu tableFeeOrderMenu = OrderMenu.builder().orderId(1L).menuId(200L).quantity(1L).price(3000L).build();
 
             given(storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)).willReturn(Optional.of(activeTable));
             given(orderRepository.findByTableId(tableId)).willReturn(List.of(existingOrder));
+            given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of(tableFeeMenu));
+            given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(tableFeeOrderMenu));
 
-            long result = orderService.getTableFee(storeId, tableNum);
-
-            assertEquals(0L, result);
+            assertEquals(0L, orderService.getTableFee(storeId, tableNum));
         }
 
         @Test
-        @DisplayName("첫 주문이지만 테이블비 메뉴가 없으면 0을 반환한다")
-        void getTableFee_FirstOrder_NoTableFeeMenu_ReturnsZero() {
+        @DisplayName("기존 주문이 있어도 테이블비 없는 주문뿐이면 테이블비를 반환한다")
+        void getTableFee_OnlyNormalOrderExists_ReturnsTableFee() {
+            Order existingOrder = Order.builder().id(1L).tableId(tableId).storeId(storeId).build();
+            OrderMenu normalOrderMenu = OrderMenu.builder().orderId(1L).menuId(menuId).quantity(2L).price(5000L).build();
+
+            given(storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)).willReturn(Optional.of(activeTable));
+            given(orderRepository.findByTableId(tableId)).willReturn(List.of(existingOrder));
+            given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of(tableFeeMenu));
+            given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(normalOrderMenu));
+
+            assertEquals(3000L, orderService.getTableFee(storeId, tableNum));
+        }
+
+        @Test
+        @DisplayName("테이블비 포함 주문이 삭제되면(주문 없음) 테이블비를 다시 반환한다")
+        void getTableFee_TableFeeOrderDeleted_ReturnsTableFeeAgain() {
+            // 테이블비 포함 주문이 삭제된 상태 = 현재 주문 없음
+            given(storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)).willReturn(Optional.of(activeTable));
+            given(orderRepository.findByTableId(tableId)).willReturn(List.of());
+            given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of(tableFeeMenu));
+
+            assertEquals(3000L, orderService.getTableFee(storeId, tableNum));
+        }
+
+        @Test
+        @DisplayName("테이블비 메뉴가 없으면 0을 반환한다")
+        void getTableFee_NoTableFeeMenu_ReturnsZero() {
             given(storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)).willReturn(Optional.of(activeTable));
             given(orderRepository.findByTableId(tableId)).willReturn(List.of());
             given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of());
 
-            long result = orderService.getTableFee(storeId, tableNum);
-
-            assertEquals(0L, result);
+            assertEquals(0L, orderService.getTableFee(storeId, tableNum));
         }
 
         @Test
@@ -348,9 +466,118 @@ class OrderServiceTest {
             given(orderRepository.findByTableId(tableId)).willReturn(List.of());
             given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of(fee1, fee2));
 
-            long result = orderService.getTableFee(storeId, tableNum);
+            assertEquals(3000L, orderService.getTableFee(storeId, tableNum));
+        }
+    }
 
-            assertEquals(3000L, result);
+    @Nested
+    @DisplayName("첫 주문 테이블비 자동 추가 (createOrder)")
+    class CreateOrderTableFee {
+
+        private final Menu tableFeeMenu = Menu.builder()
+            .id(200L).storeId(storeId).name("테이블비").price(3000L).isTableFee(true).build();
+
+        @Test
+        @DisplayName("테이블비 포함 주문이 없으면 totalPrice에 테이블비가 합산된다")
+        void createOrder_NoTableFeeOrder_TableFeeAddedToTotal() {
+            OrderCreateRequest request = new OrderCreateRequest(
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L))
+            );
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(testMenu));
+            given(orderRepository.findByTableId(tableId)).willReturn(List.of());
+            given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of(tableFeeMenu));
+            given(orderRepository.save(any())).willAnswer(inv -> {
+                Order o = inv.getArgument(0);
+                return Order.builder().id(1L).tableId(o.getTableId()).storeId(o.getStoreId())
+                    .status(o.getStatus()).totalPrice(o.getTotalPrice()).couponAmount(o.getCouponAmount()).build();
+            });
+
+            orderService.createOrder(request);
+
+            ArgumentCaptor<Order> captor = forClass(Order.class);
+            verify(orderRepository).save(captor.capture());
+            assertEquals(8000L, captor.getValue().getTotalPrice()); // 메뉴 5000 + 테이블비 3000
+        }
+
+        @Test
+        @DisplayName("테이블비 포함 주문이 이미 있으면 totalPrice에 테이블비가 합산되지 않는다")
+        void createOrder_TableFeeOrderExists_TableFeeNotAdded() {
+            OrderCreateRequest request = new OrderCreateRequest(
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L))
+            );
+            Order existingOrder = Order.builder().id(1L).tableId(tableId).storeId(storeId).build();
+            OrderMenu tableFeeOrderMenu = OrderMenu.builder().orderId(1L).menuId(200L).quantity(1L).price(3000L).build();
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(testMenu));
+            given(orderRepository.findByTableId(tableId)).willReturn(List.of(existingOrder));
+            given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of(tableFeeMenu));
+            given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(tableFeeOrderMenu));
+            given(orderRepository.save(any())).willAnswer(inv -> {
+                Order o = inv.getArgument(0);
+                return Order.builder().id(2L).tableId(o.getTableId()).storeId(o.getStoreId())
+                    .status(o.getStatus()).totalPrice(o.getTotalPrice()).couponAmount(o.getCouponAmount()).build();
+            });
+
+            orderService.createOrder(request);
+
+            ArgumentCaptor<Order> captor = forClass(Order.class);
+            verify(orderRepository).save(captor.capture());
+            assertEquals(5000L, captor.getValue().getTotalPrice()); // 메뉴 5000만
+        }
+
+        @Test
+        @DisplayName("기존 주문이 있어도 테이블비 없는 주문뿐이면 테이블비가 합산된다")
+        void createOrder_OnlyNormalOrderExists_TableFeeAdded() {
+            OrderCreateRequest request = new OrderCreateRequest(
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L))
+            );
+            Order existingOrder = Order.builder().id(1L).tableId(tableId).storeId(storeId).build();
+            OrderMenu normalOrderMenu = OrderMenu.builder().orderId(1L).menuId(menuId).quantity(2L).price(5000L).build();
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(testMenu));
+            given(orderRepository.findByTableId(tableId)).willReturn(List.of(existingOrder));
+            given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of(tableFeeMenu));
+            given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(normalOrderMenu));
+            given(orderRepository.save(any())).willAnswer(inv -> {
+                Order o = inv.getArgument(0);
+                return Order.builder().id(2L).tableId(o.getTableId()).storeId(o.getStoreId())
+                    .status(o.getStatus()).totalPrice(o.getTotalPrice()).couponAmount(o.getCouponAmount()).build();
+            });
+
+            orderService.createOrder(request);
+
+            ArgumentCaptor<Order> captor = forClass(Order.class);
+            verify(orderRepository).save(captor.capture());
+            assertEquals(8000L, captor.getValue().getTotalPrice()); // 메뉴 5000 + 테이블비 3000
+        }
+
+        @Test
+        @DisplayName("테이블비 포함 주문 삭제 후 재주문 시 테이블비가 다시 합산된다")
+        void createOrder_AfterTableFeeOrderDeleted_TableFeeAddedAgain() {
+            // 테이블비 포함 주문이 삭제된 상태 = 현재 주문 없음
+            OrderCreateRequest request = new OrderCreateRequest(
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L))
+            );
+
+            given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
+            given(menuRepository.findById(menuId)).willReturn(Optional.of(testMenu));
+            given(orderRepository.findByTableId(tableId)).willReturn(List.of());
+            given(menuRepository.findTableFeeMenusByStoreId(storeId)).willReturn(List.of(tableFeeMenu));
+            given(orderRepository.save(any())).willAnswer(inv -> {
+                Order o = inv.getArgument(0);
+                return Order.builder().id(2L).tableId(o.getTableId()).storeId(o.getStoreId())
+                    .status(o.getStatus()).totalPrice(o.getTotalPrice()).couponAmount(o.getCouponAmount()).build();
+            });
+
+            orderService.createOrder(request);
+
+            ArgumentCaptor<Order> captor = forClass(Order.class);
+            verify(orderRepository).save(captor.capture());
+            assertEquals(8000L, captor.getValue().getTotalPrice()); // 테이블비 다시 부과
         }
     }
 }

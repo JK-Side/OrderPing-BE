@@ -53,36 +53,36 @@ public class OrderService {
     public OrderResponse createOrder(OrderCreateRequest request) {
         StoreTable table = tableResolverService.resolveActiveTable(request.storeId(), request.tableNum());
 
-        // 첫 번째 주문 여부 확인 (테이블비 자동 추가 여부 결정)
-        boolean isFirstOrder = orderRepository.findByTableId(table.getId()).isEmpty();
+        // 테이블비 포함 주문이 없을 때만 첫 주문으로 판단 (거절된 주문 삭제 시 재부과 가능)
+        boolean isFirstOrder = !hasTableFeeOrder(table.getId(), request.storeId());
+
+        // PENDING 주문의 메뉴별 수량 합산 (실제 주문 가능 수량 계산용)
+        List<Long> requestMenuIds = request.menus().stream()
+            .map(OrderCreateRequest.OrderMenuRequest::menuId)
+            .toList();
+        Map<Long, Long> pendingQtyByMenu = buildPendingQtyMap(request.storeId(), requestMenuIds);
 
         // 메뉴 조회, 재고 검증 및 가격 계산
         long totalPrice = 0L;
         Map<Long, Menu> menuMap = new java.util.HashMap<>();
 
         for (OrderCreateRequest.OrderMenuRequest menuRequest : request.menus()) {
-            Menu menu = menuRepository.findByIdWithLock(menuRequest.menuId())
+            Menu menu = menuRepository.findById(menuRequest.menuId())
                 .orElseThrow(() -> new NotFoundException("메뉴 ID " + menuRequest.menuId() + "를 찾을 수 없습니다."));
 
             if (!menu.getStoreId().equals(request.storeId())) {
                 throw new BadRequestException("메뉴 ID " + menuRequest.menuId() + "는 해당 주점의 메뉴가 아닙니다.");
             }
 
-            if (menu.getStock() < menuRequest.quantity()) {
+            long pendingQty = pendingQtyByMenu.getOrDefault(menu.getId(), 0L);
+            long availableStock = menu.getStock() - pendingQty;
+            if (menuRequest.quantity() > availableStock) {
                 throw new OutOfStockException(
-                    String.format("'%s' 메뉴의 재고가 부족합니다. (현재: %d, 요청: %d)",
-                        menu.getName(), menu.getStock(), menuRequest.quantity()),
-                    menu.getStock());
+                    String.format("'%s' 메뉴의 주문 가능 수량이 부족합니다. (재고: %d, 결제 대기 중: %d, 주문 가능: %d, 요청: %d)",
+                        menu.getName(), menu.getStock(), pendingQty, availableStock, menuRequest.quantity()),
+                    availableStock);
             }
 
-            long newStock = menu.getStock() - menuRequest.quantity();
-            menuRepository.save(Menu.builder()
-                .id(menu.getId()).storeId(menu.getStoreId()).categoryId(menu.getCategoryId())
-                .name(menu.getName()).price(menu.getPrice()).description(menu.getDescription())
-                .imageUrl(menu.getImageUrl()).initialStock(menu.getInitialStock())
-                .stock(newStock).isSoldOut(newStock == 0)
-                .version(menu.getVersion())
-                .build());
             menuMap.put(menu.getId(), menu);
             totalPrice += menu.getPrice() * menuRequest.quantity();
         }
@@ -150,6 +150,7 @@ public class OrderService {
             Menu menu = menuRepository.findByIdWithLock(menuRequest.menuId())
                 .orElseThrow(() -> new NotFoundException("메뉴 ID " + menuRequest.menuId() + "를 찾을 수 없습니다."));
 
+
             if (!menu.getStoreId().equals(request.storeId())) {
                 throw new BadRequestException("메뉴 ID " + menuRequest.menuId() + "는 해당 주점의 메뉴가 아닙니다.");
             }
@@ -167,6 +168,7 @@ public class OrderService {
                 .name(menu.getName()).price(menu.getPrice()).description(menu.getDescription())
                 .imageUrl(menu.getImageUrl()).initialStock(menu.getInitialStock())
                 .stock(newStock).isSoldOut(newStock == 0)
+                .isTableFee(menu.getIsTableFee())
                 .version(menu.getVersion())
                 .build());
             menuMap.put(menu.getId(), menu);
@@ -257,8 +259,7 @@ public class OrderService {
     public long getTableFee(Long storeId, Integer tableNum) {
         StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
-        boolean isFirstOrder = orderRepository.findByTableId(table.getId()).isEmpty();
-        if (!isFirstOrder) {
+        if (hasTableFeeOrder(table.getId(), storeId)) {
             return 0L;
         }
         return menuRepository.findTableFeeMenusByStoreId(storeId).stream()
@@ -313,13 +314,25 @@ public class OrderService {
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
         validateStoreOwner(order.getStoreId(), userId);
 
+        OrderStatus prevStatus = order.getStatus();
+        OrderStatus newStatus = request.status();
+
+        // PENDING → 조리중/완료: 재고 차감
+        if (prevStatus == OrderStatus.PENDING && newStatus != OrderStatus.PENDING) {
+            deductStockForOrder(id);
+        }
+        // 조리중/완료 → PENDING: 재고 복구
+        else if (prevStatus != OrderStatus.PENDING && newStatus == OrderStatus.PENDING) {
+            recoverStockForOrder(id);
+        }
+
         Order updated = Order.builder()
             .id(order.getId())
             .tableId(order.getTableId())
             .tableNum(order.getTableNum())
             .storeId(order.getStoreId())
             .depositorName(order.getDepositorName())
-            .status(request.status())
+            .status(newStatus)
             .totalPrice(order.getTotalPrice())
             .couponAmount(order.getCouponAmount())
             .createdAt(order.getCreatedAt())
@@ -335,26 +348,72 @@ public class OrderService {
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
         validateStoreOwner(order.getStoreId(), userId);
 
-        // 주문 취소 시 재고 복구 (삭제된 메뉴는 복구 불가 - 건너뜀)
-        List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(id);
-        List<Long> menuIds = orderMenus.stream().map(OrderMenu::getMenuId).distinct().toList();
-
-        Map<Long, Menu> existingMenus = menuRepository.findAllByIds(menuIds).stream()
-            .collect(Collectors.toMap(Menu::getId, m -> m));
-
-        for (OrderMenu orderMenu : orderMenus) {
-            Menu menu = existingMenus.get(orderMenu.getMenuId());
-            if (menu == null) {
-                log.warn("삭제된 메뉴의 재고를 복구할 수 없습니다: menuId={}, orderId={}", orderMenu.getMenuId(), id);
-                continue;
-            }
-            if (Boolean.TRUE.equals(menu.getIsTableFee())) {
-                continue;
-            }
-            menuRepository.increaseStock(orderMenu.getMenuId(), orderMenu.getQuantity());
+        // PENDING 상태는 재고 차감이 아직 안 됐으므로 복구 불필요
+        if (order.getStatus() != OrderStatus.PENDING) {
+            recoverStockForOrder(id);
         }
 
         orderRepository.deleteById(id);
+    }
+
+    private void deductStockForOrder(Long orderId) {
+        List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(orderId);
+        for (OrderMenu orderMenu : orderMenus) {
+            Menu menu = menuRepository.findByIdWithLock(orderMenu.getMenuId()).orElse(null);
+            if (menu == null || Boolean.TRUE.equals(menu.getIsTableFee())) continue;
+            if (menu.getStock() < orderMenu.getQuantity()) {
+                throw new OutOfStockException(
+                    String.format("'%s' 메뉴의 재고가 부족합니다. (현재: %d, 요청: %d)",
+                        menu.getName(), menu.getStock(), orderMenu.getQuantity()),
+                    menu.getStock());
+            }
+            long newStock = menu.getStock() - orderMenu.getQuantity();
+            menuRepository.save(Menu.builder()
+                .id(menu.getId()).storeId(menu.getStoreId()).categoryId(menu.getCategoryId())
+                .name(menu.getName()).price(menu.getPrice()).description(menu.getDescription())
+                .imageUrl(menu.getImageUrl()).initialStock(menu.getInitialStock())
+                .stock(newStock).isSoldOut(newStock == 0)
+                .isTableFee(menu.getIsTableFee())
+                .version(menu.getVersion())
+                .build());
+        }
+    }
+
+    private void recoverStockForOrder(Long orderId) {
+        List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(orderId);
+        List<Long> menuIds = orderMenus.stream().map(OrderMenu::getMenuId).distinct().toList();
+        Map<Long, Menu> existingMenus = menuRepository.findAllByIds(menuIds).stream()
+            .collect(Collectors.toMap(Menu::getId, m -> m));
+        for (OrderMenu orderMenu : orderMenus) {
+            Menu menu = existingMenus.get(orderMenu.getMenuId());
+            if (menu == null) {
+                log.warn("삭제된 메뉴의 재고를 복구할 수 없습니다: menuId={}, orderId={}", orderMenu.getMenuId(), orderId);
+                continue;
+            }
+            if (Boolean.TRUE.equals(menu.getIsTableFee())) continue;
+            menuRepository.increaseStock(orderMenu.getMenuId(), orderMenu.getQuantity());
+        }
+    }
+
+    private Map<Long, Long> buildPendingQtyMap(Long storeId, List<Long> menuIds) {
+        List<Order> pendingOrders = orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING);
+        if (pendingOrders.isEmpty()) return Map.of();
+        List<Long> pendingOrderIds = pendingOrders.stream().map(Order::getId).toList();
+        return orderMenuRepository.findByOrderIds(pendingOrderIds).stream()
+            .filter(om -> menuIds.contains(om.getMenuId()))
+            .collect(Collectors.groupingBy(OrderMenu::getMenuId, Collectors.summingLong(OrderMenu::getQuantity)));
+    }
+
+    private boolean hasTableFeeOrder(Long tableId, Long storeId) {
+        List<Order> orders = orderRepository.findByTableId(tableId);
+        if (orders.isEmpty()) return false;
+        List<Long> tableFeeMenuIds = menuRepository.findTableFeeMenusByStoreId(storeId).stream()
+            .map(Menu::getId)
+            .toList();
+        if (tableFeeMenuIds.isEmpty()) return false;
+        List<Long> orderIds = orders.stream().map(Order::getId).toList();
+        return orderMenuRepository.findByOrderIds(orderIds).stream()
+            .anyMatch(om -> tableFeeMenuIds.contains(om.getMenuId()));
     }
 
     private void validateStoreOwner(Long storeId, Long userId) {
