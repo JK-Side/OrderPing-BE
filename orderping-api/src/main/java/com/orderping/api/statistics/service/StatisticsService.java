@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -61,8 +62,24 @@ public class StatisticsService {
         List<OrderMenu> allOrderMenus = orderIds.isEmpty() ? List.of() : orderMenuRepository.findByOrderIds(orderIds);
 
         List<Long> menuIds = allOrderMenus.stream().map(OrderMenu::getMenuId).distinct().toList();
-        Map<Long, String> menuNameMap = menuRepository.findAllByIds(menuIds).stream()
+        List<Menu> fetchedMenus = menuRepository.findAllByIds(menuIds);
+        Map<Long, String> menuNameMap = fetchedMenus.stream()
             .collect(Collectors.toMap(Menu::getId, Menu::getName));
+
+        Set<Long> tableFeeMenuIds = fetchedMenus.stream()
+            .filter(m -> Boolean.TRUE.equals(m.getIsTableFee()))
+            .map(Menu::getId)
+            .collect(Collectors.toSet());
+
+        long tableFeeQuantity = allOrderMenus.stream()
+            .filter(om -> tableFeeMenuIds.contains(om.getMenuId()))
+            .mapToLong(OrderMenu::getQuantity)
+            .sum();
+
+        long tableFeeRevenue = allOrderMenus.stream()
+            .filter(om -> tableFeeMenuIds.contains(om.getMenuId()))
+            .mapToLong(om -> om.getPrice() * om.getQuantity())
+            .sum();
 
         Map<Long, List<OrderMenu>> orderMenuMap = allOrderMenus.stream()
             .collect(Collectors.groupingBy(OrderMenu::getOrderId));
@@ -89,7 +106,7 @@ public class StatisticsService {
             })
             .toList();
 
-        return new StatisticsResponse(totalRevenue, transferRevenue, couponRevenue, orders.size(), orderSummaries);
+        return new StatisticsResponse(totalRevenue, transferRevenue, couponRevenue, tableFeeQuantity, tableFeeRevenue, orders.size(), orderSummaries);
     }
 
     public MenuStatisticsResponse getMenuStatistics(Long userId, Long storeId, LocalDate from, LocalDate to) {

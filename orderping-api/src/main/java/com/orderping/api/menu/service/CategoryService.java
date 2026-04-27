@@ -24,6 +24,7 @@ public class CategoryService {
     public CategoryResponse createCategory(CategoryCreateRequest request) {
         Category category = Category.builder()
             .name(request.name())
+            .isTableFee(request.isTableFee() != null ? request.isTableFee() : false)
             .build();
 
         Category saved = categoryRepository.save(category);

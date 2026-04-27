@@ -12,7 +12,9 @@ import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ConflictException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
+import com.orderping.domain.menu.Category;
 import com.orderping.domain.menu.Menu;
+import com.orderping.domain.menu.repository.CategoryRepository;
 import com.orderping.domain.menu.repository.MenuRepository;
 import com.orderping.domain.store.Store;
 import com.orderping.domain.store.repository.StoreRepository;
@@ -25,14 +27,19 @@ import lombok.RequiredArgsConstructor;
 public class MenuService {
 
     private final MenuRepository menuRepository;
+    private final CategoryRepository categoryRepository;
     private final StoreRepository storeRepository;
 
     @Transactional
     public MenuResponse createMenu(Long userId, MenuCreateRequest request) {
         validateStoreOwner(request.storeId(), userId);
 
-        if (Boolean.TRUE.equals(request.isTableFee()) &&
-            !menuRepository.findTableFeeMenusByStoreId(request.storeId()).isEmpty()) {
+        Category category = categoryRepository.findById(request.categoryId())
+            .orElseThrow(() -> new NotFoundException("카테고리를 찾을 수 없습니다."));
+
+        boolean isTableFee = Boolean.TRUE.equals(category.getIsTableFee());
+
+        if (isTableFee && !menuRepository.findByStoreIdAndCategoryId(request.storeId(), request.categoryId()).isEmpty()) {
             throw new ConflictException("테이블비 메뉴는 주점당 하나만 등록할 수 있습니다.");
         }
 
@@ -48,7 +55,7 @@ public class MenuService {
             .initialStock(stockValue)
             .stock(stockValue)
             .isSoldOut(false)
-            .isTableFee(request.isTableFee() != null ? request.isTableFee() : false)
+            .isTableFee(isTableFee)
             .build();
 
         Menu saved = menuRepository.save(menu);
@@ -112,8 +119,15 @@ public class MenuService {
             .orElseThrow(() -> new NotFoundException("메뉴를 찾을 수 없습니다."));
         validateStoreOwner(existing.getStoreId(), userId);
 
-        if (Boolean.TRUE.equals(request.isTableFee()) && !Boolean.TRUE.equals(existing.getIsTableFee()) &&
-            !menuRepository.findTableFeeMenusByStoreId(existing.getStoreId()).isEmpty()) {
+        Long newCategoryId = request.categoryId() != null ? request.categoryId() : existing.getCategoryId();
+        Category category = categoryRepository.findById(newCategoryId)
+            .orElseThrow(() -> new NotFoundException("카테고리를 찾을 수 없습니다."));
+
+        boolean isTableFee = Boolean.TRUE.equals(category.getIsTableFee());
+        boolean categoryChanged = !newCategoryId.equals(existing.getCategoryId());
+
+        if (isTableFee && categoryChanged &&
+            !menuRepository.findByStoreIdAndCategoryId(existing.getStoreId(), newCategoryId).isEmpty()) {
             throw new ConflictException("테이블비 메뉴는 주점당 하나만 등록할 수 있습니다.");
         }
 
@@ -124,7 +138,7 @@ public class MenuService {
         Menu updated = Menu.builder()
             .id(existing.getId())
             .storeId(existing.getStoreId())
-            .categoryId(request.categoryId() != null ? request.categoryId() : existing.getCategoryId())
+            .categoryId(newCategoryId)
             .name(request.name() != null ? request.name() : existing.getName())
             .price(request.price() != null ? request.price() : existing.getPrice())
             .description(request.description() != null ? request.description() : existing.getDescription())
@@ -132,7 +146,7 @@ public class MenuService {
             .initialStock(newInitialStock)
             .stock(newStock)
             .isSoldOut(request.isSoldOut() != null ? request.isSoldOut() : existing.getIsSoldOut())
-            .isTableFee(request.isTableFee() != null ? request.isTableFee() : existing.getIsTableFee())
+            .isTableFee(isTableFee)
             .version(existing.getVersion())
             .build();
 

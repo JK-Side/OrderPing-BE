@@ -63,21 +63,14 @@ public class MenuRepositoryImpl implements MenuRepository {
 
     @Override
     public List<Menu> findAvailableByStoreId(Long storeId) {
-        return jpaRepository.findByStoreIdAndIsSoldOutFalseAndIsTableFeeFalse(storeId).stream()
-            .map(MenuEntity::toDomain)
-            .toList();
-    }
-
-    @Override
-    public List<Menu> findTableFeeMenusByStoreId(Long storeId) {
-        return jpaRepository.findByStoreIdAndIsTableFeeTrue(storeId).stream()
+        return jpaRepository.findByStoreIdAndIsSoldOutFalse(storeId).stream()
             .map(MenuEntity::toDomain)
             .toList();
     }
 
     @Override
     public List<Menu> findCustomerVisibleByStoreId(Long storeId) {
-        return jpaRepository.findByStoreIdAndIsTableFeeFalse(storeId).stream()
+        return jpaRepository.findByStoreId(storeId).stream()
             .map(MenuEntity::toDomain)
             .toList();
     }
