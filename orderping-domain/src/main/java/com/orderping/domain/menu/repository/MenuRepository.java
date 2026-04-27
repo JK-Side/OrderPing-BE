@@ -21,8 +21,6 @@ public interface MenuRepository {
 
     List<Menu> findAvailableByStoreId(Long storeId);
 
-    List<Menu> findTableFeeMenusByStoreId(Long storeId);
-
     List<Menu> findCustomerVisibleByStoreId(Long storeId);
 
     void deleteById(Long id);

@@ -7,6 +7,8 @@ public record StatisticsResponse(
     long totalRevenue,
     long transferRevenue,
     long couponRevenue,
+    long tableFeeQuantity,
+    long tableFeeRevenue,
     int orderCount,
     List<OrderSummary> orders
 ) {

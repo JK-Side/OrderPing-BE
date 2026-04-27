@@ -53,10 +53,7 @@ public class OrderService {
     public OrderResponse createOrder(OrderCreateRequest request) {
         StoreTable table = tableResolverService.resolveActiveTable(request.storeId(), request.tableNum());
 
-        // 테이블비 포함 주문이 없을 때만 첫 주문으로 판단 (거절된 주문 삭제 시 재부과 가능)
-        boolean isFirstOrder = !hasTableFeeOrder(table.getId(), request.storeId());
-
-        // PENDING 주문의 메뉴별 수량 합산 (실제 주문 가능 수량 계산용)
+        // PENDING 주문의 메뉴별 수량 합산 (실제 주문 가능 수량 계산용, 테이블비 제외)
         List<Long> requestMenuIds = request.menus().stream()
             .map(OrderCreateRequest.OrderMenuRequest::menuId)
             .toList();
@@ -74,25 +71,20 @@ public class OrderService {
                 throw new BadRequestException("메뉴 ID " + menuRequest.menuId() + "는 해당 주점의 메뉴가 아닙니다.");
             }
 
-            long pendingQty = pendingQtyByMenu.getOrDefault(menu.getId(), 0L);
-            long availableStock = menu.getStock() - pendingQty;
-            if (menuRequest.quantity() > availableStock) {
-                throw new OutOfStockException(
-                    String.format("'%s' 메뉴의 주문 가능 수량이 부족합니다. (재고: %d, 결제 대기 중: %d, 주문 가능: %d, 요청: %d)",
-                        menu.getName(), menu.getStock(), pendingQty, availableStock, menuRequest.quantity()),
-                    availableStock);
+            // 테이블비 메뉴는 재고 관리 대상이 아니므로 재고 검증 건너뜀
+            if (!Boolean.TRUE.equals(menu.getIsTableFee())) {
+                long pendingQty = pendingQtyByMenu.getOrDefault(menu.getId(), 0L);
+                long availableStock = menu.getStock() - pendingQty;
+                if (menuRequest.quantity() > availableStock) {
+                    throw new OutOfStockException(
+                        String.format("'%s' 메뉴의 주문 가능 수량이 부족합니다. (재고: %d, 결제 대기 중: %d, 주문 가능: %d, 요청: %d)",
+                            menu.getName(), menu.getStock(), pendingQty, availableStock, menuRequest.quantity()),
+                        availableStock);
+                }
             }
 
             menuMap.put(menu.getId(), menu);
             totalPrice += menu.getPrice() * menuRequest.quantity();
-        }
-
-        // 첫 주문이면 테이블비를 totalPrice에 미리 합산
-        List<Menu> tableFeeMenus = isFirstOrder
-            ? menuRepository.findTableFeeMenusByStoreId(request.storeId())
-            : List.of();
-        for (Menu tableFeeMenu : tableFeeMenus) {
-            totalPrice += tableFeeMenu.getPrice();
         }
 
         Long couponAmount = request.couponAmount() != null ? request.couponAmount() : 0L;
@@ -122,18 +114,6 @@ public class OrderService {
                 .isService(false)
                 .build();
             orderMenuRepository.save(orderMenu);
-        }
-
-        // 테이블비 OrderMenu 저장
-        for (Menu tableFeeMenu : tableFeeMenus) {
-            OrderMenu tableFeeOrderMenu = OrderMenu.builder()
-                .orderId(savedOrder.getId())
-                .menuId(tableFeeMenu.getId())
-                .quantity(1L)
-                .price(tableFeeMenu.getPrice())
-                .isService(false)
-                .build();
-            orderMenuRepository.save(tableFeeOrderMenu);
         }
 
         return OrderResponse.from(savedOrder);
@@ -254,17 +234,6 @@ public class OrderService {
         return orders.stream()
             .map(this::toOrderDetailResponse)
             .toList();
-    }
-
-    public long getTableFee(Long storeId, Integer tableNum) {
-        StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)
-            .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
-        if (hasTableFeeOrder(table.getId(), storeId)) {
-            return 0L;
-        }
-        return menuRepository.findTableFeeMenusByStoreId(storeId).stream()
-            .mapToLong(Menu::getPrice)
-            .sum();
     }
 
     public List<CustomerOrderDetailResponse> getOrdersWithMenusByStoreAndTableNum(Long storeId, Integer tableNum) {
@@ -402,18 +371,6 @@ public class OrderService {
         return orderMenuRepository.findByOrderIds(pendingOrderIds).stream()
             .filter(om -> menuIds.contains(om.getMenuId()))
             .collect(Collectors.groupingBy(OrderMenu::getMenuId, Collectors.summingLong(OrderMenu::getQuantity)));
-    }
-
-    private boolean hasTableFeeOrder(Long tableId, Long storeId) {
-        List<Order> orders = orderRepository.findByTableId(tableId);
-        if (orders.isEmpty()) return false;
-        List<Long> tableFeeMenuIds = menuRepository.findTableFeeMenusByStoreId(storeId).stream()
-            .map(Menu::getId)
-            .toList();
-        if (tableFeeMenuIds.isEmpty()) return false;
-        List<Long> orderIds = orders.stream().map(Order::getId).toList();
-        return orderMenuRepository.findByOrderIds(orderIds).stream()
-            .anyMatch(om -> tableFeeMenuIds.contains(om.getMenuId()));
     }
 
     private void validateStoreOwner(Long storeId, Long userId) {

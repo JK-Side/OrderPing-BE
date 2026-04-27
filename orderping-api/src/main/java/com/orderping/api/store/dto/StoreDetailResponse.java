@@ -35,6 +35,7 @@ public record StoreDetailResponse(
                 menusByCategory.getOrDefault(category.getId(), List.of()),
                 isManage
             ))
+            .filter(cr -> isManage || !cr.menus().isEmpty())
             .toList();
 
         return new StoreDetailResponse(

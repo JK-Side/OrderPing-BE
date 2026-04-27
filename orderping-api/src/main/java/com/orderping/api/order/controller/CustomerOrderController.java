@@ -43,16 +43,6 @@ public class CustomerOrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Operation(summary = "테이블비 조회", description = "첫 주문이면 테이블비 합계를 반환하고, 이미 주문이 있으면 0을 반환합니다 (인증 불필요)")
-    @ApiResponse(responseCode = "200", description = "조회 성공")
-    @GetMapping("/table-fee")
-    public ResponseEntity<Long> getTableFee(
-        @RequestParam Long storeId,
-        @RequestParam Integer tableNum
-    ) {
-        return ResponseEntity.ok(orderService.getTableFee(storeId, tableNum));
-    }
-
     @Operation(summary = "테이블 주문 내역 조회", description = "storeId + tableNum으로 활성 테이블의 주문 내역을 조회합니다 (인증 불필요)")
     @ApiResponse(responseCode = "200", description = "조회 성공")
     @GetMapping("/table")

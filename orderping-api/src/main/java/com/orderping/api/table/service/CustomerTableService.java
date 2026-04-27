@@ -76,6 +76,7 @@ public class CustomerTableService {
                 menusByCategory.getOrDefault(category.getId(), List.of()),
                 false
             ))
+            .filter(cr -> !cr.menus().isEmpty())
             .toList();
 
         AccountInfo accountInfo = getAccountInfo(store.getId());

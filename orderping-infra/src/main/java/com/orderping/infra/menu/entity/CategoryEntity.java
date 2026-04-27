@@ -27,10 +27,14 @@ public class CategoryEntity {
     @Column(nullable = false, length = 100, unique = true)
     private String name;
 
+    @Column(name = "is_table_fee", nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
+    private Boolean isTableFee;
+
     @Builder
-    public CategoryEntity(Long id, String name) {
+    public CategoryEntity(Long id, String name, Boolean isTableFee) {
         this.id = id;
         this.name = name;
+        this.isTableFee = isTableFee != null ? isTableFee : false;
     }
 
     // Domain -> Entity
@@ -38,6 +42,7 @@ public class CategoryEntity {
         return CategoryEntity.builder()
             .id(category.getId())
             .name(category.getName())
+            .isTableFee(category.getIsTableFee())
             .build();
     }
 
@@ -46,6 +51,7 @@ public class CategoryEntity {
         return Category.builder()
             .id(this.id)
             .name(this.name)
+            .isTableFee(this.isTableFee)
             .build();
     }
 }

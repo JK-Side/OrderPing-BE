@@ -8,4 +8,5 @@ import lombok.Getter;
 public class Category {
     private final Long id;
     private final String name;
+    private final Boolean isTableFee;
 }

@@ -99,6 +99,19 @@ class StatisticsServiceTest {
             .build();
     }
 
+    private Menu tableFeeMenu(Long menuId, String name, Long price) {
+        return Menu.builder()
+            .id(menuId)
+            .storeId(storeId)
+            .name(name)
+            .price(price)
+            .initialStock(0L)
+            .stock(0L)
+            .isSoldOut(false)
+            .isTableFee(true)
+            .build();
+    }
+
     @Nested
     @DisplayName("통계 조회 (getStatistics)")
     class GetStatistics {
@@ -247,6 +260,48 @@ class StatisticsServiceTest {
 
             assertEquals(3, result.orders().get(0).orderNumber()); // 3번째 주문
             assertEquals(5, result.orders().get(1).orderNumber()); // 5번째 주문
+        }
+
+        @Test
+        @DisplayName("테이블비 메뉴의 판매 수량과 수익이 집계된다")
+        void getStatistics_TableFeeMenuSoldQuantityAndRevenueAggregated() {
+            Order o1 = order(1L, 15000L, 0L);
+            Menu normalMenu = menu(100L, "소주", 50L);
+            Menu feeMenu = tableFeeMenu(200L, "테이블비", 3000L);
+            OrderMenu normalOm = orderMenu(1L, 100L, 2L, 5000L, false);   // 소주 2개
+            OrderMenu feeOm = orderMenu(1L, 200L, 3L, 3000L, false);      // 테이블비 3인분
+
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
+            given(orderRepository.findByStoreIdAndCreatedAtBetween(eq(storeId), any(), any()))
+                .willReturn(List.of(o1));
+            given(orderRepository.findByStoreId(storeId)).willReturn(List.of(o1));
+            given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(normalOm, feeOm));
+            given(menuRepository.findAllByIds(List.of(100L, 200L))).willReturn(List.of(normalMenu, feeMenu));
+
+            StatisticsResponse result = statisticsService.getStatistics(userId, storeId, from, to);
+
+            assertEquals(3L, result.tableFeeQuantity());   // 3인분
+            assertEquals(9000L, result.tableFeeRevenue()); // 3000 * 3
+        }
+
+        @Test
+        @DisplayName("테이블비 메뉴가 없으면 tableFeeQuantity와 tableFeeRevenue가 0이다")
+        void getStatistics_NoTableFeeMenu_TableFeeFieldsAreZero() {
+            Order o1 = order(1L, 10000L, 0L);
+            OrderMenu om = orderMenu(1L, 100L, 2L, 5000L, false);
+            Menu m = menu(100L, "소주", 50L);
+
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
+            given(orderRepository.findByStoreIdAndCreatedAtBetween(eq(storeId), any(), any()))
+                .willReturn(List.of(o1));
+            given(orderRepository.findByStoreId(storeId)).willReturn(List.of(o1));
+            given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(om));
+            given(menuRepository.findAllByIds(List.of(100L))).willReturn(List.of(m));
+
+            StatisticsResponse result = statisticsService.getStatistics(userId, storeId, from, to);
+
+            assertEquals(0L, result.tableFeeQuantity());
+            assertEquals(0L, result.tableFeeRevenue());
         }
 
         @Test
