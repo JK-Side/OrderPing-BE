@@ -129,6 +129,7 @@ public class StatisticsService {
 
         List<Menu> menus = menuRepository.findByStoreId(storeId);
         List<MenuStatisticsResponse.MenuStat> menuStats = menus.stream()
+            .filter(menu -> !Boolean.TRUE.equals(menu.getIsTableFee()))
             .map(menu -> new MenuStatisticsResponse.MenuStat(
                 menu.getId(),
                 menu.getName(),
