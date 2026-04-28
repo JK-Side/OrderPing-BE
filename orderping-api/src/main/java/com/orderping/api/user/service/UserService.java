@@ -93,12 +93,13 @@ public class UserService {
                 MyPageResponse.AccountInfo accountInfo = accounts.isEmpty()
                     ? MyPageResponse.AccountInfo.empty()
                     : new MyPageResponse.AccountInfo(
-                        accounts.get(0).getBankCode(),
-                        bankNameByCode.getOrDefault(accounts.get(0).getBankCode(), "알 수 없는 은행"),
-                        accounts.get(0).getAccountHolder(),
-                        accounts.get(0).getAccountNumberEnc()
-                    );
-                return new MyPageResponse.StoreInfo(store.getId(), store.getName(), store.getDescription(), store.getImageUrl(), accountInfo);
+                    accounts.get(0).getBankCode(),
+                    bankNameByCode.getOrDefault(accounts.get(0).getBankCode(), "알 수 없는 은행"),
+                    accounts.get(0).getAccountHolder(),
+                    accounts.get(0).getAccountNumberEnc()
+                );
+                return new MyPageResponse.StoreInfo(store.getId(), store.getName(), store.getDescription(),
+                    store.getImageUrl(), accountInfo);
             })
             .toList();
 

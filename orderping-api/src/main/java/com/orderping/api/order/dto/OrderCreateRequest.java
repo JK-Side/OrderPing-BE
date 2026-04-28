@@ -18,7 +18,8 @@ public record OrderCreateRequest(
     Long couponAmount,
     @NotEmpty(message = "메뉴를 1개 이상 선택해야 합니다.")
     @Valid
-    List<OrderMenuRequest> menus
+    List<OrderMenuRequest> menus,
+    String idempotencyKey
 ) {
     public record OrderMenuRequest(
         @NotNull(message = "메뉴 ID는 필수입니다.")

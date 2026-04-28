@@ -91,7 +91,7 @@ class OrderServiceTest {
         @DisplayName("storeId + tableNum으로 테이블을 조회해 주문을 생성한다")
         void createOrder_ResolvesTableByStoreAndTableNum() {
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 2L))
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 2L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
@@ -118,7 +118,7 @@ class OrderServiceTest {
         @DisplayName("가격은 서버의 메뉴 DB 기준으로 계산된다")
         void createOrder_PriceCalculatedFromMenu() {
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 3L))
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 3L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
@@ -142,7 +142,7 @@ class OrderServiceTest {
         @DisplayName("쿠폰 금액이 null이면 0으로 처리된다")
         void createOrder_NullCouponAmount_TreatedAsZero() {
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", null, List.of(new OrderMenuRequest(menuId, 1L))
+                tableNum, storeId, "홍길동", null, List.of(new OrderMenuRequest(menuId, 1L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
@@ -166,7 +166,7 @@ class OrderServiceTest {
         void createOrder_CouponExceedsTotalPrice_ThrowsBadRequestException() {
             // testMenu 가격 5000, 수량 1 → totalPrice = 5000, couponAmount = 6000
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", 6000L, List.of(new OrderMenuRequest(menuId, 1L))
+                tableNum, storeId, "홍길동", 6000L, List.of(new OrderMenuRequest(menuId, 1L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
@@ -179,7 +179,7 @@ class OrderServiceTest {
         @DisplayName("테이블을 찾을 수 없으면 NotFoundException 발생")
         void createOrder_TableNotFound_ThrowsNotFoundException() {
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L))
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum))
@@ -192,7 +192,7 @@ class OrderServiceTest {
         @DisplayName("메뉴를 찾을 수 없으면 NotFoundException 발생")
         void createOrder_MenuNotFound_ThrowsNotFoundException() {
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(999L, 1L))
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(999L, 1L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
@@ -205,7 +205,7 @@ class OrderServiceTest {
         @DisplayName("주문 상태는 PENDING으로 생성된다")
         void createOrder_StatusIsPending() {
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L))
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
@@ -229,7 +229,7 @@ class OrderServiceTest {
         void createOrder_NoPendingOrders_ValidatesAgainstActualStock() {
             // stock=100, PENDING 없음 → availableStock=100, 수량 100 → 통과
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 100L))
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 100L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
@@ -256,12 +256,13 @@ class OrderServiceTest {
                 .quantity(4L).price(5000L).build();
 
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 2L))
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 2L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
             given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(List.of(pendingOrder));
+            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(
+                List.of(pendingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
 
             assertThrows(OutOfStockException.class, () -> orderService.createOrder(request));
@@ -279,12 +280,13 @@ class OrderServiceTest {
                 .quantity(4L).price(5000L).build();
 
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L))
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
             given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(List.of(pendingOrder));
+            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(
+                List.of(pendingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
             given(orderRepository.save(any())).willAnswer(inv -> {
                 Order o = inv.getArgument(0);
@@ -307,12 +309,13 @@ class OrderServiceTest {
                 .quantity(5L).price(5000L).build();
 
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L))
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
             given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(List.of(pendingOrder));
+            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(
+                List.of(pendingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
 
             assertThrows(OutOfStockException.class, () -> orderService.createOrder(request));

@@ -12,7 +12,8 @@ public record MyPageResponse(
         String description,
         String imageUrl,
         AccountInfo account
-    ) {}
+    ) {
+    }
 
     public record AccountInfo(
         String bankCode,

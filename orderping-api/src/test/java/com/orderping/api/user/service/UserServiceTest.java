@@ -3,9 +3,7 @@ package com.orderping.api.user.service;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
 
@@ -35,17 +33,28 @@ import com.orderping.domain.user.repository.UserRepository;
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
-    @Mock private UserRepository userRepository;
-    @Mock private AuthAccountRepository authAccountRepository;
-    @Mock private RefreshTokenRepository refreshTokenRepository;
-    @Mock private StoreRepository storeRepository;
-    @Mock private StoreAccountRepository storeAccountRepository;
-    @Mock private StoreTableRepository storeTableRepository;
-    @Mock private MenuRepository menuRepository;
-    @Mock private OrderRepository orderRepository;
-    @Mock private OrderMenuRepository orderMenuRepository;
-    @Mock private PaymentRepository paymentRepository;
-    @Mock private BankRepository bankRepository;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private AuthAccountRepository authAccountRepository;
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
+    @Mock
+    private StoreRepository storeRepository;
+    @Mock
+    private StoreAccountRepository storeAccountRepository;
+    @Mock
+    private StoreTableRepository storeTableRepository;
+    @Mock
+    private MenuRepository menuRepository;
+    @Mock
+    private OrderRepository orderRepository;
+    @Mock
+    private OrderMenuRepository orderMenuRepository;
+    @Mock
+    private PaymentRepository paymentRepository;
+    @Mock
+    private BankRepository bankRepository;
 
     @InjectMocks
     private UserService userService;

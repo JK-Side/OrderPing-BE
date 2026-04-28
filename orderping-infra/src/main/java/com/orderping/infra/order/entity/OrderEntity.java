@@ -55,10 +55,13 @@ public class OrderEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "idempotency_key", unique = true, length = 100)
+    private String idempotencyKey;
+
     @Builder
     public OrderEntity(Long id, Long tableId, Integer tableNum, Long storeId, String depositorName,
         OrderStatus status,
-        Long totalPrice, Long couponAmount, LocalDateTime createdAt) {
+        Long totalPrice, Long couponAmount, LocalDateTime createdAt, String idempotencyKey) {
         this.id = id;
         this.tableId = tableId;
         this.tableNum = tableNum;
@@ -68,6 +71,7 @@ public class OrderEntity {
         this.totalPrice = totalPrice;
         this.couponAmount = couponAmount;
         this.createdAt = createdAt;
+        this.idempotencyKey = idempotencyKey;
     }
 
     // Domain -> Entity
@@ -82,6 +86,7 @@ public class OrderEntity {
             .totalPrice(order.getTotalPrice())
             .couponAmount(order.getCouponAmount())
             .createdAt(order.getCreatedAt())
+            .idempotencyKey(order.getIdempotencyKey())
             .build();
     }
 
@@ -111,6 +116,7 @@ public class OrderEntity {
             .totalPrice(this.totalPrice)
             .couponAmount(this.couponAmount)
             .createdAt(this.createdAt)
+            .idempotencyKey(this.idempotencyKey)
             .build();
     }
 }
