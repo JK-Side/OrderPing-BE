@@ -78,7 +78,7 @@ public record StoreDetailResponse(
                 menu.getName(),
                 menu.getPrice(),
                 menu.getImageUrl(),
-                isManage ? menu.getStock() : null,  // 운영자만 재고 표시
+                menu.getStock(),
                 menu.getIsSoldOut()                  // 둘 다 품절 여부 표시
             );
         }
