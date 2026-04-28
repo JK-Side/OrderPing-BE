@@ -19,6 +19,7 @@ public class Order {
     private final Long totalPrice;
     private final Long couponAmount;
     private final LocalDateTime createdAt;
+    private final String idempotencyKey;
 
     public Long getCashAmount() {
         long coupon = couponAmount != null ? couponAmount : 0L;

@@ -2,6 +2,7 @@ package com.orderping.api.order.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -18,6 +19,8 @@ import com.orderping.api.order.dto.ServiceOrderCreateRequest;
 import com.orderping.api.table.service.TableResolverService;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
+import org.springframework.dao.DataIntegrityViolationException;
+
 import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
@@ -51,6 +54,13 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest request) {
+        if (request.idempotencyKey() != null) {
+            Optional<Order> existing = orderRepository.findByIdempotencyKey(request.idempotencyKey());
+            if (existing.isPresent()) {
+                return OrderResponse.from(existing.get());
+            }
+        }
+
         StoreTable table = tableResolverService.resolveActiveTable(request.storeId(), request.tableNum());
 
         // PENDING 주문의 메뉴별 수량 합산 (실제 주문 가능 수량 계산용, 테이블비 제외)
@@ -100,9 +110,17 @@ public class OrderService {
             .status(OrderStatus.PENDING)
             .totalPrice(totalPrice)
             .couponAmount(couponAmount)
+            .idempotencyKey(request.idempotencyKey())
             .build();
 
-        Order savedOrder = orderRepository.save(order);
+        Order savedOrder;
+        try {
+            savedOrder = orderRepository.save(order);
+        } catch (DataIntegrityViolationException e) {
+            return orderRepository.findByIdempotencyKey(request.idempotencyKey())
+                .map(OrderResponse::from)
+                .orElseThrow(() -> e);
+        }
 
         for (OrderCreateRequest.OrderMenuRequest menuRequest : request.menus()) {
             Menu menu = menuMap.get(menuRequest.menuId());

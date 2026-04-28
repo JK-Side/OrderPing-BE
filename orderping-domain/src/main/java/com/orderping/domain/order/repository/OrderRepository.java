@@ -23,6 +23,8 @@ public interface OrderRepository {
 
     List<Order> findByStoreIdAndCreatedAtBetween(Long storeId, LocalDateTime from, LocalDateTime to);
 
+    Optional<Order> findByIdempotencyKey(String idempotencyKey);
+
     void deleteById(Long id);
 
     void deleteByStoreId(Long storeId);
