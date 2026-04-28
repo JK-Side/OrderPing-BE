@@ -6,11 +6,11 @@ import org.springframework.http.ResponseEntity;
 
 import com.orderping.api.table.dto.StoreTableBulkClearRequest;
 import com.orderping.api.table.dto.StoreTableBulkCreateRequest;
-import com.orderping.api.table.dto.StoreTableMemoUpdateRequest;
 import com.orderping.api.table.dto.StoreTableBulkDeleteRequest;
 import com.orderping.api.table.dto.StoreTableBulkQrUpdateRequest;
 import com.orderping.api.table.dto.StoreTableCreateRequest;
 import com.orderping.api.table.dto.StoreTableDetailResponse;
+import com.orderping.api.table.dto.StoreTableMemoUpdateRequest;
 import com.orderping.api.table.dto.StoreTableResponse;
 import com.orderping.api.table.dto.StoreTableStatusUpdateRequest;
 import com.orderping.api.table.dto.StoreTableUpdateRequest;

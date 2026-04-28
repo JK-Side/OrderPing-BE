@@ -1,8 +1,6 @@
 package com.orderping.api.statistics.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -41,18 +39,19 @@ class StatisticsServiceTest {
     private final Long userId = 1L;
     private final Long storeId = 10L;
     private final Long otherUserId = 99L;
-
-    @Mock private OrderRepository orderRepository;
-    @Mock private OrderMenuRepository orderMenuRepository;
-    @Mock private MenuRepository menuRepository;
-    @Mock private StoreRepository storeRepository;
-
-    @InjectMocks
-    private StatisticsService statisticsService;
-
-    private Store store;
     private final LocalDate from = LocalDate.of(2026, 1, 23);
     private final LocalDate to = LocalDate.of(2026, 1, 24);
+    @Mock
+    private OrderRepository orderRepository;
+    @Mock
+    private OrderMenuRepository orderMenuRepository;
+    @Mock
+    private MenuRepository menuRepository;
+    @Mock
+    private StoreRepository storeRepository;
+    @InjectMocks
+    private StatisticsService statisticsService;
+    private Store store;
 
     @BeforeEach
     void setUp() {

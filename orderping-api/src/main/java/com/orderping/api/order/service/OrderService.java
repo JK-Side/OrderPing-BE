@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,8 +20,6 @@ import com.orderping.api.order.dto.ServiceOrderCreateRequest;
 import com.orderping.api.table.service.TableResolverService;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
-import org.springframework.dao.DataIntegrityViolationException;
-
 import com.orderping.domain.exception.BadRequestException;
 import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
@@ -147,7 +146,6 @@ public class OrderService {
         for (ServiceOrderCreateRequest.ServiceMenuRequest menuRequest : request.menus()) {
             Menu menu = menuRepository.findByIdWithLock(menuRequest.menuId())
                 .orElseThrow(() -> new NotFoundException("메뉴 ID " + menuRequest.menuId() + "를 찾을 수 없습니다."));
-
 
             if (!menu.getStoreId().equals(request.storeId())) {
                 throw new BadRequestException("메뉴 ID " + menuRequest.menuId() + "는 해당 주점의 메뉴가 아닙니다.");
@@ -347,7 +345,8 @@ public class OrderService {
         List<OrderMenu> orderMenus = orderMenuRepository.findByOrderId(orderId);
         for (OrderMenu orderMenu : orderMenus) {
             Menu menu = menuRepository.findByIdWithLock(orderMenu.getMenuId()).orElse(null);
-            if (menu == null || Boolean.TRUE.equals(menu.getIsTableFee())) continue;
+            if (menu == null || Boolean.TRUE.equals(menu.getIsTableFee()))
+                continue;
             if (menu.getStock() < orderMenu.getQuantity()) {
                 throw new OutOfStockException(
                     String.format("'%s' 메뉴의 재고가 부족합니다. (현재: %d, 요청: %d)",
@@ -377,14 +376,16 @@ public class OrderService {
                 log.warn("삭제된 메뉴의 재고를 복구할 수 없습니다: menuId={}, orderId={}", orderMenu.getMenuId(), orderId);
                 continue;
             }
-            if (Boolean.TRUE.equals(menu.getIsTableFee())) continue;
+            if (Boolean.TRUE.equals(menu.getIsTableFee()))
+                continue;
             menuRepository.increaseStock(orderMenu.getMenuId(), orderMenu.getQuantity());
         }
     }
 
     private Map<Long, Long> buildPendingQtyMap(Long storeId, List<Long> menuIds) {
         List<Order> pendingOrders = orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING);
-        if (pendingOrders.isEmpty()) return Map.of();
+        if (pendingOrders.isEmpty())
+            return Map.of();
         List<Long> pendingOrderIds = pendingOrders.stream().map(Order::getId).toList();
         return orderMenuRepository.findByOrderIds(pendingOrderIds).stream()
             .filter(om -> menuIds.contains(om.getMenuId()))

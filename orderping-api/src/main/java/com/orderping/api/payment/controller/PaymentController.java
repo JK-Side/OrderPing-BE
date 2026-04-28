@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +20,7 @@ import com.orderping.api.payment.dto.PaymentResponse;
 import com.orderping.api.payment.service.DeeplinkService;
 import com.orderping.api.payment.service.PaymentService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -47,7 +47,8 @@ public class PaymentController implements PaymentApi {
 
     @GetMapping(params = "orderId")
     @Override
-    public ResponseEntity<List<PaymentResponse>> getPaymentsByOrderId(@CurrentUser Long userId, @RequestParam Long orderId) {
+    public ResponseEntity<List<PaymentResponse>> getPaymentsByOrderId(@CurrentUser Long userId,
+        @RequestParam Long orderId) {
         List<PaymentResponse> responses = paymentService.getPaymentsByOrderId(userId, orderId);
         return ResponseEntity.ok(responses);
     }

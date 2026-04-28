@@ -43,7 +43,8 @@ public record CustomerOrderDetailResponse(
     @Schema(description = "테이블 내 주문 순서 (1부터 시작)")
     int orderIndex
 ) {
-    public static CustomerOrderDetailResponse from(Order order, List<OrderDetailResponse.OrderMenuDetail> menus, int orderIndex) {
+    public static CustomerOrderDetailResponse from(Order order, List<OrderDetailResponse.OrderMenuDetail> menus,
+        int orderIndex) {
         return new CustomerOrderDetailResponse(
             order.getId(),
             order.getTableNum(),

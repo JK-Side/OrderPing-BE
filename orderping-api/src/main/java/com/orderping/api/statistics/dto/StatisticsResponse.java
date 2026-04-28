@@ -19,12 +19,14 @@ public record StatisticsResponse(
         List<MenuDetail> menus,
         Long totalPrice,
         String depositorName
-    ) {}
+    ) {
+    }
 
     public record MenuDetail(
         String menuName,
         Long quantity,
         Long price,
         Boolean isService
-    ) {}
+    ) {
+    }
 }

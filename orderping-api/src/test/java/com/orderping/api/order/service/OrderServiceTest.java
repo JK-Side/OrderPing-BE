@@ -261,7 +261,8 @@ class OrderServiceTest {
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
             given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(List.of(pendingOrder));
+            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(
+                List.of(pendingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
 
             assertThrows(OutOfStockException.class, () -> orderService.createOrder(request));
@@ -284,7 +285,8 @@ class OrderServiceTest {
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
             given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(List.of(pendingOrder));
+            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(
+                List.of(pendingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
             given(orderRepository.save(any())).willAnswer(inv -> {
                 Order o = inv.getArgument(0);
@@ -312,7 +314,8 @@ class OrderServiceTest {
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
             given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(List.of(pendingOrder));
+            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(
+                List.of(pendingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
 
             assertThrows(OutOfStockException.class, () -> orderService.createOrder(request));

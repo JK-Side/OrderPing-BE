@@ -17,8 +17,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Optional;
-
 import com.orderping.api.menu.dto.MenuResponse;
 import com.orderping.api.menu.dto.MenuUpdateRequest;
 import com.orderping.domain.menu.Category;
@@ -31,21 +29,16 @@ import com.orderping.domain.store.repository.StoreRepository;
 @ExtendWith(MockitoExtension.class)
 class MenuServiceTest {
 
-    @Mock
-    private MenuRepository menuRepository;
-
-    @Mock
-    private CategoryRepository categoryRepository;
-
-    @Mock
-    private StoreRepository storeRepository;
-
-    @InjectMocks
-    private MenuService menuService;
-
     private final Category normalCategory = Category.builder()
         .id(1L).name("메인 메뉴").isTableFee(false).build();
-
+    @Mock
+    private MenuRepository menuRepository;
+    @Mock
+    private CategoryRepository categoryRepository;
+    @Mock
+    private StoreRepository storeRepository;
+    @InjectMocks
+    private MenuService menuService;
     private Store testStore;
     private Menu existingMenu;
     private Long userId = 1L;

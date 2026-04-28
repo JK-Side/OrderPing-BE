@@ -39,19 +39,23 @@ import com.orderping.domain.store.repository.StoreTableRepository;
 @ExtendWith(MockitoExtension.class)
 class StoreTableServiceTest {
 
-    @Mock private StoreTableRepository storeTableRepository;
-    @Mock private StoreRepository storeRepository;
-    @Mock private OrderRepository orderRepository;
-    @Mock private OrderMenuRepository orderMenuRepository;
-    @Mock private MenuRepository menuRepository;
-    @Mock private QrTokenProvider qrTokenProvider;
-
-    @InjectMocks
-    private StoreTableService storeTableService;
-
-    private Store testStore;
     private final Long userId = 1L;
     private final Long storeId = 1L;
+    @Mock
+    private StoreTableRepository storeTableRepository;
+    @Mock
+    private StoreRepository storeRepository;
+    @Mock
+    private OrderRepository orderRepository;
+    @Mock
+    private OrderMenuRepository orderMenuRepository;
+    @Mock
+    private MenuRepository menuRepository;
+    @Mock
+    private QrTokenProvider qrTokenProvider;
+    @InjectMocks
+    private StoreTableService storeTableService;
+    private Store testStore;
 
     @BeforeEach
     void setUp() {
@@ -73,7 +77,7 @@ class StoreTableServiceTest {
             given(storeTableRepository.save(any(StoreTable.class))).willAnswer(invocation -> {
                 StoreTable table = invocation.getArgument(0);
                 return StoreTable.builder()
-                    .id((long) table.getTableNum()).storeId(table.getStoreId())
+                    .id((long)table.getTableNum()).storeId(table.getStoreId())
                     .tableNum(table.getTableNum()).status(table.getStatus()).build();
             });
 
@@ -314,9 +318,24 @@ class StoreTableServiceTest {
         @Test
         @DisplayName("여러 테이블 조회 - 각 테이블별로 우선순위 계산")
         void getStoreTables_MultipleTables() {
-            StoreTable table1 = StoreTable.builder().id(1L).storeId(storeId).tableNum(1).status(TableStatus.OCCUPIED).build();
-            StoreTable table2 = StoreTable.builder().id(2L).storeId(storeId).tableNum(2).status(TableStatus.OCCUPIED).build();
-            StoreTable table3 = StoreTable.builder().id(3L).storeId(storeId).tableNum(3).status(TableStatus.EMPTY).build();
+            StoreTable table1 = StoreTable.builder()
+                .id(1L)
+                .storeId(storeId)
+                .tableNum(1)
+                .status(TableStatus.OCCUPIED)
+                .build();
+            StoreTable table2 = StoreTable.builder()
+                .id(2L)
+                .storeId(storeId)
+                .tableNum(2)
+                .status(TableStatus.OCCUPIED)
+                .build();
+            StoreTable table3 = StoreTable.builder()
+                .id(3L)
+                .storeId(storeId)
+                .tableNum(3)
+                .status(TableStatus.EMPTY)
+                .build();
 
             Order pendingOrder = createOrder(1L, OrderStatus.PENDING);
             Order cookingOrder = createOrder(2L, OrderStatus.COOKING);

@@ -39,7 +39,8 @@ public class MenuService {
 
         boolean isTableFee = Boolean.TRUE.equals(category.getIsTableFee());
 
-        if (isTableFee && !menuRepository.findByStoreIdAndCategoryId(request.storeId(), request.categoryId()).isEmpty()) {
+        if (isTableFee && !menuRepository.findByStoreIdAndCategoryId(request.storeId(), request.categoryId())
+            .isEmpty()) {
             throw new ConflictException("테이블비 메뉴는 주점당 하나만 등록할 수 있습니다.");
         }
 

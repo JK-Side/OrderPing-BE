@@ -10,5 +10,6 @@ public record MenuStatisticsResponse(
         String menuName,
         Long initialStock,
         Long soldQuantity
-    ) {}
+    ) {
+    }
 }

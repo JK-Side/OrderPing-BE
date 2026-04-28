@@ -1,9 +1,9 @@
 package com.orderping.api.payment.dto;
 
+import com.orderping.domain.enums.PaymentMethod;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-
-import com.orderping.domain.enums.PaymentMethod;
 
 public record PaymentCreateRequest(
     @NotNull(message = "주문 ID는 필수입니다.")

@@ -106,7 +106,8 @@ public class StatisticsService {
             })
             .toList();
 
-        return new StatisticsResponse(totalRevenue, transferRevenue, couponRevenue, tableFeeQuantity, tableFeeRevenue, orders.size(), orderSummaries);
+        return new StatisticsResponse(totalRevenue, transferRevenue, couponRevenue, tableFeeQuantity, tableFeeRevenue,
+            orders.size(), orderSummaries);
     }
 
     public MenuStatisticsResponse getMenuStatistics(Long userId, Long storeId, LocalDate from, LocalDate to) {

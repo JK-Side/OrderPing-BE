@@ -28,19 +28,15 @@ import com.orderping.domain.store.repository.StoreRepository;
 @ExtendWith(MockitoExtension.class)
 class CustomerStoreAccountServiceTest {
 
+    private final Long storeId = 1L;
     @Mock
     private StoreRepository storeRepository;
-
     @Mock
     private StoreAccountRepository storeAccountRepository;
-
     @Mock
     private BankRepository bankRepository;
-
     @InjectMocks
     private CustomerStoreAccountService customerStoreAccountService;
-
-    private final Long storeId = 1L;
     private Store store;
     private StoreAccount storeAccount;
 
