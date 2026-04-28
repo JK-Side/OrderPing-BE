@@ -44,9 +44,8 @@ public class StatisticsService {
 
         List<Order> orders = orderRepository.findByStoreIdAndCreatedAtBetween(storeId, fromDateTime, toDateTime);
 
-        long totalRevenue = orders.stream().mapToLong(Order::getTotalPrice).sum();
+        long rawTotalRevenue = orders.stream().mapToLong(Order::getTotalPrice).sum();
         long couponRevenue = orders.stream().mapToLong(Order::getCouponAmount).sum();
-        long transferRevenue = totalRevenue - couponRevenue;
 
         // 주점 전체 주문을 id 오름차순으로 정렬해 순번 계산
         List<Long> allStoreOrderIds = orderRepository.findByStoreId(storeId).stream()
@@ -81,6 +80,9 @@ public class StatisticsService {
             .mapToLong(om -> om.getPrice() * om.getQuantity())
             .sum();
 
+        long totalRevenue = rawTotalRevenue - tableFeeRevenue;
+        long transferRevenue = totalRevenue - couponRevenue;
+
         Map<Long, List<OrderMenu>> orderMenuMap = allOrderMenus.stream()
             .collect(Collectors.groupingBy(OrderMenu::getOrderId));
 
@@ -88,6 +90,7 @@ public class StatisticsService {
             .map(order -> {
                 List<StatisticsResponse.MenuDetail> menuDetails = orderMenuMap
                     .getOrDefault(order.getId(), List.of()).stream()
+                    .filter(om -> !tableFeeMenuIds.contains(om.getMenuId()))
                     .map(om -> new StatisticsResponse.MenuDetail(
                         menuNameMap.getOrDefault(om.getMenuId(), "삭제된 메뉴"),
                         om.getQuantity(),
