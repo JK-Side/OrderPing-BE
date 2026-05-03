@@ -24,4 +24,6 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Long> {
     Optional<OrderEntity> findByIdempotencyKey(String idempotencyKey);
 
     void deleteByStoreId(Long storeId);
+
+    long countByStoreIdAndIdLessThanEqual(Long storeId, Long id);
 }

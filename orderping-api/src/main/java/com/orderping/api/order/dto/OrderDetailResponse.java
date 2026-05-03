@@ -41,9 +41,12 @@ public record OrderDetailResponse(
     LocalDateTime createdAt,
 
     @Schema(description = "주문 메뉴 목록")
-    List<OrderMenuDetail> menus
+    List<OrderMenuDetail> menus,
+
+    @Schema(description = "매장 내 주문 순번")
+    Long storeOrderNumber
 ) {
-    public static OrderDetailResponse from(Order order, List<OrderMenuDetail> menus) {
+    public static OrderDetailResponse from(Order order, List<OrderMenuDetail> menus, long storeOrderNumber) {
         return new OrderDetailResponse(
             order.getId(),
             order.getTableId(),
@@ -55,8 +58,13 @@ public record OrderDetailResponse(
             order.getCouponAmount(),
             order.getCashAmount(),
             order.getCreatedAt(),
-            menus
+            menus,
+            storeOrderNumber
         );
+    }
+
+    public static OrderDetailResponse from(Order order, List<OrderMenuDetail> menus) {
+        return from(order, menus, 0L);
     }
 
     @Schema(description = "주문 메뉴 상세")

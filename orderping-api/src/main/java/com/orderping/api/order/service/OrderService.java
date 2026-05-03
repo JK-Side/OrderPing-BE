@@ -201,7 +201,9 @@ public class OrderService {
         Order order = orderRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
         validateStoreOwner(order.getStoreId(), userId);
-        return toOrderDetailResponse(order);
+        long storeOrderNumber = orderRepository.countByStoreIdUpToId(order.getStoreId(), id);
+        List<OrderDetailResponse.OrderMenuDetail> menuDetails = buildMenuDetails(order);
+        return OrderDetailResponse.from(order, menuDetails, storeOrderNumber);
     }
 
     public List<OrderResponse> getOrdersByStore(Long userId, Long storeId, OrderStatus status) {

@@ -284,6 +284,34 @@ class StatisticsServiceTest {
         }
 
         @Test
+        @DisplayName("테이블비 메뉴가 주문 상세 메뉴 목록에 포함된다")
+        void getStatistics_TableFeeMenuIncludedInOrderMenuDetails() {
+            Order o1 = order(1L, 15000L, 0L);
+            Menu normalMenu = menu(100L, "소주", 50L);
+            Menu feeMenu = tableFeeMenu(200L, "테이블비", 3000L);
+            OrderMenu normalOm = orderMenu(1L, 100L, 2L, 5000L, false);
+            OrderMenu feeOm = orderMenu(1L, 200L, 3L, 3000L, false);
+
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
+            given(orderRepository.findByStoreIdAndCreatedAtBetween(eq(storeId), any(), any()))
+                .willReturn(List.of(o1));
+            given(orderRepository.findByStoreId(storeId)).willReturn(List.of(o1));
+            given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(normalOm, feeOm));
+            given(menuRepository.findAllByIds(List.of(100L, 200L))).willReturn(List.of(normalMenu, feeMenu));
+
+            StatisticsResponse result = statisticsService.getStatistics(userId, storeId, from, to);
+
+            StatisticsResponse.OrderSummary summary = result.orders().get(0);
+            assertEquals(2, summary.menus().size());
+
+            List<String> menuNames = summary.menus().stream()
+                .map(StatisticsResponse.MenuDetail::menuName)
+                .toList();
+            assertTrue(menuNames.contains("소주"));
+            assertTrue(menuNames.contains("테이블비"));
+        }
+
+        @Test
         @DisplayName("테이블비 메뉴가 없으면 tableFeeQuantity와 tableFeeRevenue가 0이다")
         void getStatistics_NoTableFeeMenu_TableFeeFieldsAreZero() {
             Order o1 = order(1L, 10000L, 0L);
