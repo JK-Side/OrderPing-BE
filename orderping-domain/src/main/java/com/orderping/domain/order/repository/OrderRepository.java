@@ -28,4 +28,6 @@ public interface OrderRepository {
     void deleteById(Long id);
 
     void deleteByStoreId(Long storeId);
+
+    long countByStoreIdUpToId(Long storeId, Long id);
 }

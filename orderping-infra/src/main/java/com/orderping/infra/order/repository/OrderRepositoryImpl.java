@@ -82,4 +82,9 @@ public class OrderRepositoryImpl implements OrderRepository {
     public void deleteByStoreId(Long storeId) {
         jpaRepository.deleteByStoreId(storeId);
     }
+
+    @Override
+    public long countByStoreIdUpToId(Long storeId, Long id) {
+        return jpaRepository.countByStoreIdAndIdLessThanEqual(storeId, id);
+    }
 }
