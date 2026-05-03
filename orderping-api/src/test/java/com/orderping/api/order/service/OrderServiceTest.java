@@ -22,12 +22,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.orderping.api.order.dto.OrderCreateRequest;
 import com.orderping.api.order.dto.OrderCreateRequest.OrderMenuRequest;
+import com.orderping.api.order.dto.OrderDetailResponse;
 import com.orderping.api.order.dto.ServiceOrderCreateRequest;
 import com.orderping.api.order.dto.ServiceOrderCreateRequest.ServiceMenuRequest;
 import com.orderping.api.table.service.TableResolverService;
 import com.orderping.domain.enums.OrderStatus;
 import com.orderping.domain.enums.TableStatus;
 import com.orderping.domain.exception.BadRequestException;
+import com.orderping.domain.exception.ForbiddenException;
 import com.orderping.domain.exception.NotFoundException;
 import com.orderping.domain.exception.OutOfStockException;
 import com.orderping.domain.menu.Menu;
@@ -36,6 +38,7 @@ import com.orderping.domain.order.Order;
 import com.orderping.domain.order.OrderMenu;
 import com.orderping.domain.order.repository.OrderMenuRepository;
 import com.orderping.domain.order.repository.OrderRepository;
+import com.orderping.domain.store.Store;
 import com.orderping.domain.store.StoreTable;
 import com.orderping.domain.store.repository.StoreRepository;
 import com.orderping.domain.store.repository.StoreTableRepository;
@@ -319,6 +322,65 @@ class OrderServiceTest {
             given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
 
             assertThrows(OutOfStockException.class, () -> orderService.createOrder(request));
+        }
+    }
+
+    @Nested
+    @DisplayName("주문 조회 (getOrder)")
+    class GetOrder {
+
+        private final Long callerId = 5L;
+        private final Long orderId = 1L;
+        private Store store;
+        private Order order;
+
+        @BeforeEach
+        void setUp() {
+            store = Store.builder()
+                .id(storeId)
+                .userId(callerId)
+                .build();
+            order = Order.builder()
+                .id(orderId)
+                .storeId(storeId)
+                .tableId(tableId)
+                .tableNum(tableNum)
+                .depositorName("홍길동")
+                .status(OrderStatus.COMPLETE)
+                .totalPrice(10000L)
+                .couponAmount(0L)
+                .build();
+        }
+
+        @Test
+        @DisplayName("storeOrderNumber는 해당 매장 내 주문 순번이다")
+        void getOrder_ReturnsStoreOrderNumber() {
+            given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
+            given(orderRepository.countByStoreIdUpToId(storeId, orderId)).willReturn(3L);
+            given(orderMenuRepository.findByOrderId(orderId)).willReturn(List.of());
+            given(menuRepository.findAllByIds(List.of())).willReturn(List.of());
+
+            OrderDetailResponse result = orderService.getOrder(callerId, orderId);
+
+            assertEquals(3L, result.storeOrderNumber());
+        }
+
+        @Test
+        @DisplayName("주문을 찾을 수 없으면 NotFoundException 발생")
+        void getOrder_NotFound_ThrowsNotFoundException() {
+            given(orderRepository.findById(orderId)).willReturn(Optional.empty());
+
+            assertThrows(NotFoundException.class, () -> orderService.getOrder(callerId, orderId));
+        }
+
+        @Test
+        @DisplayName("본인 매장이 아니면 ForbiddenException 발생")
+        void getOrder_NotOwner_ThrowsForbiddenException() {
+            given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
+
+            assertThrows(ForbiddenException.class, () -> orderService.getOrder(99L, orderId));
         }
     }
 

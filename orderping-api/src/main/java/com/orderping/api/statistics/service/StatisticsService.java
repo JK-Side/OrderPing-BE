@@ -90,7 +90,6 @@ public class StatisticsService {
             .map(order -> {
                 List<StatisticsResponse.MenuDetail> menuDetails = orderMenuMap
                     .getOrDefault(order.getId(), List.of()).stream()
-                    .filter(om -> !tableFeeMenuIds.contains(om.getMenuId()))
                     .map(om -> new StatisticsResponse.MenuDetail(
                         menuNameMap.getOrDefault(om.getMenuId(), "삭제된 메뉴"),
                         om.getQuantity(),
