@@ -62,15 +62,9 @@ public class OrderService {
 
         StoreTable table = tableResolverService.resolveActiveTable(request.storeId(), request.tableNum());
 
-        // PENDING 주문의 메뉴별 수량 합산 (실제 주문 가능 수량 계산용, 테이블비 제외)
-        List<Long> requestMenuIds = request.menus().stream()
-            .map(OrderCreateRequest.OrderMenuRequest::menuId)
-            .toList();
-        Map<Long, Long> pendingQtyByMenu = buildPendingQtyMap(request.storeId(), requestMenuIds);
-
-        // 메뉴 조회, 재고 검증 및 가격 계산
-        long totalPrice = 0L;
+        // 메뉴 조회 및 재고 검증 (pre-check, 실제 차감은 주문 저장 후 deductStockForOrder에서 락과 함께 처리)
         Map<Long, Menu> menuMap = new java.util.HashMap<>();
+        List<OutOfStockException.StockItem> stockFailures = new java.util.ArrayList<>();
 
         for (OrderCreateRequest.OrderMenuRequest menuRequest : request.menus()) {
             Menu menu = menuRepository.findById(menuRequest.menuId())
@@ -80,21 +74,21 @@ public class OrderService {
                 throw new BadRequestException("메뉴 ID " + menuRequest.menuId() + "는 해당 주점의 메뉴가 아닙니다.");
             }
 
-            // 테이블비 메뉴는 재고 관리 대상이 아니므로 재고 검증 건너뜀
-            if (!Boolean.TRUE.equals(menu.getIsTableFee())) {
-                long pendingQty = pendingQtyByMenu.getOrDefault(menu.getId(), 0L);
-                long availableStock = menu.getStock() - pendingQty;
-                if (menuRequest.quantity() > availableStock) {
-                    throw new OutOfStockException(
-                        String.format("'%s' 메뉴의 주문 가능 수량이 부족합니다. (재고: %d, 결제 대기 중: %d, 주문 가능: %d, 요청: %d)",
-                            menu.getName(), menu.getStock(), pendingQty, availableStock, menuRequest.quantity()),
-                        availableStock);
-                }
+            if (!Boolean.TRUE.equals(menu.getIsTableFee()) && menuRequest.quantity() > menu.getStock()) {
+                stockFailures.add(new OutOfStockException.StockItem(
+                    menu.getId(), menu.getName(), menuRequest.quantity(), menu.getStock()));
             }
 
             menuMap.put(menu.getId(), menu);
-            totalPrice += menu.getPrice() * menuRequest.quantity();
         }
+
+        if (!stockFailures.isEmpty()) {
+            throw new OutOfStockException("재고가 부족합니다.", stockFailures);
+        }
+
+        long totalPrice = request.menus().stream()
+            .mapToLong(mr -> menuMap.get(mr.menuId()).getPrice() * mr.quantity())
+            .sum();
 
         Long couponAmount = request.couponAmount() != null ? request.couponAmount() : 0L;
         if (couponAmount > totalPrice) {
@@ -133,6 +127,8 @@ public class OrderService {
             orderMenuRepository.save(orderMenu);
         }
 
+        deductStockForOrder(savedOrder.getId());
+
         return OrderResponse.from(savedOrder);
     }
 
@@ -152,10 +148,8 @@ public class OrderService {
             }
 
             if (menu.getStock() < menuRequest.quantity()) {
-                throw new OutOfStockException(
-                    String.format("'%s' 메뉴의 재고가 부족합니다. (현재: %d, 요청: %d)",
-                        menu.getName(), menu.getStock(), menuRequest.quantity()),
-                    menu.getStock());
+                throw new OutOfStockException("재고가 부족합니다.", List.of(new OutOfStockException.StockItem(
+                    menu.getId(), menu.getName(), menuRequest.quantity(), menu.getStock())));
             }
 
             long newStock = menu.getStock() - menuRequest.quantity();
@@ -258,8 +252,18 @@ public class OrderService {
         StoreTable table = storeTableRepository.findActiveByStoreIdAndTableNum(storeId, tableNum)
             .orElseThrow(() -> new NotFoundException("테이블을 찾을 수 없습니다."));
         List<Order> orders = orderRepository.findByTableIdOrderById(table.getId());
-        return IntStream.range(0, orders.size())
-            .mapToObj(i -> toCustomerOrderDetailResponse(orders.get(i), i + 1))
+
+        List<Long> allStoreOrderIds = orderRepository.findByStoreId(storeId).stream()
+            .map(Order::getId)
+            .sorted()
+            .toList();
+        Map<Long, Integer> storeOrderNumberMap = new java.util.HashMap<>();
+        for (int i = 0; i < allStoreOrderIds.size(); i++) {
+            storeOrderNumberMap.put(allStoreOrderIds.get(i), i + 1);
+        }
+
+        return orders.stream()
+            .map(order -> toCustomerOrderDetailResponse(order, storeOrderNumberMap.getOrDefault(order.getId(), 0)))
             .toList();
     }
 
@@ -301,17 +305,7 @@ public class OrderService {
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
         validateStoreOwner(order.getStoreId(), userId);
 
-        OrderStatus prevStatus = order.getStatus();
         OrderStatus newStatus = request.status();
-
-        // PENDING → 조리중/완료: 재고 차감
-        if (prevStatus == OrderStatus.PENDING && newStatus != OrderStatus.PENDING) {
-            deductStockForOrder(id);
-        }
-        // 조리중/완료 → PENDING: 재고 복구
-        else if (prevStatus != OrderStatus.PENDING && newStatus == OrderStatus.PENDING) {
-            recoverStockForOrder(id);
-        }
 
         Order updated = Order.builder()
             .id(order.getId())
@@ -335,11 +329,7 @@ public class OrderService {
             .orElseThrow(() -> new NotFoundException("주문을 찾을 수 없습니다."));
         validateStoreOwner(order.getStoreId(), userId);
 
-        // PENDING 상태는 재고 차감이 아직 안 됐으므로 복구 불필요
-        if (order.getStatus() != OrderStatus.PENDING) {
-            recoverStockForOrder(id);
-        }
-
+        recoverStockForOrder(id);
         orderRepository.deleteById(id);
     }
 
@@ -350,10 +340,8 @@ public class OrderService {
             if (menu == null || Boolean.TRUE.equals(menu.getIsTableFee()))
                 continue;
             if (menu.getStock() < orderMenu.getQuantity()) {
-                throw new OutOfStockException(
-                    String.format("'%s' 메뉴의 재고가 부족합니다. (현재: %d, 요청: %d)",
-                        menu.getName(), menu.getStock(), orderMenu.getQuantity()),
-                    menu.getStock());
+                throw new OutOfStockException("재고가 부족합니다.", List.of(new OutOfStockException.StockItem(
+                    menu.getId(), menu.getName(), orderMenu.getQuantity(), menu.getStock())));
             }
             long newStock = menu.getStock() - orderMenu.getQuantity();
             menuRepository.save(Menu.builder()
@@ -382,16 +370,6 @@ public class OrderService {
                 continue;
             menuRepository.increaseStock(orderMenu.getMenuId(), orderMenu.getQuantity());
         }
-    }
-
-    private Map<Long, Long> buildPendingQtyMap(Long storeId, List<Long> menuIds) {
-        List<Order> pendingOrders = orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING);
-        if (pendingOrders.isEmpty())
-            return Map.of();
-        List<Long> pendingOrderIds = pendingOrders.stream().map(Order::getId).toList();
-        return orderMenuRepository.findByOrderIds(pendingOrderIds).stream()
-            .filter(om -> menuIds.contains(om.getMenuId()))
-            .collect(Collectors.groupingBy(OrderMenu::getMenuId, Collectors.summingLong(OrderMenu::getQuantity)));
     }
 
     private void validateStoreOwner(Long storeId, Long userId) {

@@ -40,8 +40,8 @@ public record CustomerOrderDetailResponse(
     @Schema(description = "주문 메뉴 목록")
     List<OrderDetailResponse.OrderMenuDetail> menus,
 
-    @Schema(description = "테이블 내 주문 순서 (1부터 시작)")
-    int orderIndex
+    @Schema(description = "매장 내 주문 순번 (1부터 시작)")
+    int storeOrderNumber
 ) {
     public static CustomerOrderDetailResponse from(Order order, List<OrderDetailResponse.OrderMenuDetail> menus,
         int orderIndex) {

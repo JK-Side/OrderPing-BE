@@ -1,5 +1,7 @@
 package com.orderping.api.common.exception;
 
+import java.util.List;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -79,12 +81,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(OutOfStockException.class)
     public ResponseEntity<OutOfStockErrorResponse> handleOutOfStockException(OutOfStockException e) {
-        OutOfStockErrorResponse response = OutOfStockErrorResponse.of(
-            HttpStatus.CONFLICT.value(),
-            "OUT_OF_STOCK",
-            e.getMessage(),
-            e.getCurrentStock()
-        );
+        List<OutOfStockErrorResponse.StockItemDto> items = e.getItems().stream()
+            .map(item -> new OutOfStockErrorResponse.StockItemDto(
+                item.menuId(), item.menuName(), item.requestedQuantity(), item.availableStock()))
+            .toList();
+        OutOfStockErrorResponse response = OutOfStockErrorResponse.of(e.getMessage(), items);
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
