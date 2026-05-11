@@ -80,7 +80,7 @@ public class StatisticsService {
             .mapToLong(om -> om.getPrice() * om.getQuantity())
             .sum();
 
-        long totalRevenue = rawTotalRevenue - tableFeeRevenue;
+        long totalRevenue = rawTotalRevenue;
         long transferRevenue = totalRevenue - couponRevenue;
 
         Map<Long, List<OrderMenu>> orderMenuMap = allOrderMenus.stream()

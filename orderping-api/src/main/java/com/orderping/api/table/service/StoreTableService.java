@@ -100,7 +100,7 @@ public class StoreTableService {
         List<Order> orders = orderRepository.findByTableId(storeTable.getId());
 
         if (orders.isEmpty()) {
-            return StoreTableDetailResponse.from(storeTable, List.of(), List.of(), 0L, null);
+            return StoreTableDetailResponse.from(storeTable, List.of(), List.of(), 0L, 0L, 0L, null);
         }
 
         // 배치 조회: orderMenu N+1, menu N*M 방지
@@ -115,6 +115,10 @@ public class StoreTableService {
         Map<Long, MenuAggregate> orderMenuAggregateMap = new LinkedHashMap<>();
         Map<Long, MenuAggregate> serviceMenuAggregateMap = new LinkedHashMap<>();
         long totalAmount = 0L;
+        long totalCouponAmount = orders.stream()
+            .mapToLong(o -> o.getCouponAmount() != null ? o.getCouponAmount() : 0L)
+            .sum();
+        long totalCashAmount = orders.stream().mapToLong(Order::getCashAmount).sum();
         OrderStatus highestPriorityStatus = null;
 
         for (Order order : orders) {
@@ -156,7 +160,7 @@ public class StoreTableService {
                 entry.getKey(),
                 entry.getValue().menuName,
                 entry.getValue().quantity,
-                entry.getValue().price
+                entry.getValue().price * entry.getValue().quantity
             ))
             .toList();
 
@@ -165,11 +169,12 @@ public class StoreTableService {
                 entry.getKey(),
                 entry.getValue().menuName,
                 entry.getValue().quantity,
-                entry.getValue().price
+                entry.getValue().price * entry.getValue().quantity
             ))
             .toList();
 
-        return StoreTableDetailResponse.from(storeTable, orderMenus, serviceMenus, totalAmount, highestPriorityStatus);
+        return StoreTableDetailResponse.from(storeTable, orderMenus, serviceMenus, totalAmount, totalCouponAmount,
+            totalCashAmount, highestPriorityStatus);
     }
 
     @Transactional
