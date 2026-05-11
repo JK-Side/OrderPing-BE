@@ -1,15 +1,21 @@
 package com.orderping.api.common.dto;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 public record OutOfStockErrorResponse(
-    int status,
     String code,
     String message,
-    long currentStock,
-    LocalDateTime timestamp
+    List<StockItemDto> items
 ) {
-    public static OutOfStockErrorResponse of(int status, String code, String message, long currentStock) {
-        return new OutOfStockErrorResponse(status, code, message, currentStock, LocalDateTime.now());
+    public record StockItemDto(
+        Long menuId,
+        String menuName,
+        Long requestedQuantity,
+        long availableStock
+    ) {
+    }
+
+    public static OutOfStockErrorResponse of(String message, List<StockItemDto> items) {
+        return new OutOfStockErrorResponse("INSUFFICIENT_STOCK", message, items);
     }
 }

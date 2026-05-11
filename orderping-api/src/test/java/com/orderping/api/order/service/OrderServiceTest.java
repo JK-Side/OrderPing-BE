@@ -228,16 +228,15 @@ class OrderServiceTest {
         }
 
         @Test
-        @DisplayName("PENDING 주문 없으면 실제 재고 기준으로 검증한다")
-        void createOrder_NoPendingOrders_ValidatesAgainstActualStock() {
-            // stock=100, PENDING 없음 → availableStock=100, 수량 100 → 통과
+        @DisplayName("재고 내 주문은 통과한다")
+        void createOrder_WithinStock_OrderSucceeds() {
+            // stock=100, 수량 100 → 통과
             OrderCreateRequest request = new OrderCreateRequest(
                 tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 100L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
             given(menuRepository.findById(menuId)).willReturn(Optional.of(testMenu));
-            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(List.of());
             given(orderRepository.save(any())).willAnswer(inv -> {
                 Order o = inv.getArgument(0);
                 return Order.builder().id(1L).tableId(o.getTableId()).storeId(o.getStoreId())
@@ -248,15 +247,11 @@ class OrderServiceTest {
         }
 
         @Test
-        @DisplayName("PENDING 주문이 재고를 점유 중이면 가용 재고 기준으로 검증한다")
-        void createOrder_PendingOrdersOccupyStock_ValidatesAgainstAvailableStock() {
-            // stock=5, PENDING에서 4개 점유 → availableStock=1, 수량 2 → OutOfStockException
+        @DisplayName("재고 초과 주문 시 OutOfStockException 발생")
+        void createOrder_ExceedsStock_ThrowsOutOfStockException() {
+            // stock=1, 수량 2 → OutOfStockException
             Menu menu = Menu.builder().id(menuId).storeId(storeId).name("소주").price(5000L)
-                .stock(5L).isSoldOut(false).build();
-            Order pendingOrder = Order.builder().id(99L).tableId(tableId).storeId(storeId)
-                .status(OrderStatus.PENDING).build();
-            OrderMenu pendingOrderMenu = OrderMenu.builder().orderId(99L).menuId(menuId)
-                .quantity(4L).price(5000L).build();
+                .stock(1L).isSoldOut(false).build();
 
             OrderCreateRequest request = new OrderCreateRequest(
                 tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 2L)), null
@@ -264,33 +259,23 @@ class OrderServiceTest {
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
             given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(
-                List.of(pendingOrder));
-            given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
 
             assertThrows(OutOfStockException.class, () -> orderService.createOrder(request));
         }
 
         @Test
-        @DisplayName("PENDING 주문 점유 후 남은 재고 내 주문은 통과한다")
-        void createOrder_WithinAvailableStock_OrderSucceeds() {
-            // stock=5, PENDING에서 4개 점유 → availableStock=1, 수량 1 → 통과
+        @DisplayName("재고 정확히 일치하면 주문 통과한다")
+        void createOrder_ExactStock_OrderSucceeds() {
+            // stock=5, 수량 5 → 통과
             Menu menu = Menu.builder().id(menuId).storeId(storeId).name("소주").price(5000L)
                 .stock(5L).isSoldOut(false).build();
-            Order pendingOrder = Order.builder().id(99L).tableId(tableId).storeId(storeId)
-                .status(OrderStatus.PENDING).build();
-            OrderMenu pendingOrderMenu = OrderMenu.builder().orderId(99L).menuId(menuId)
-                .quantity(4L).price(5000L).build();
 
             OrderCreateRequest request = new OrderCreateRequest(
-                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L)), null
+                tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 5L)), null
             );
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
             given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(
-                List.of(pendingOrder));
-            given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
             given(orderRepository.save(any())).willAnswer(inv -> {
                 Order o = inv.getArgument(0);
                 return Order.builder().id(1L).tableId(o.getTableId()).storeId(o.getStoreId())
@@ -301,15 +286,11 @@ class OrderServiceTest {
         }
 
         @Test
-        @DisplayName("PENDING 주문이 재고를 전부 점유하면 주문이 막힌다")
-        void createOrder_AllStockOccupiedByPending_OrderBlocked() {
-            // stock=5, PENDING에서 5개 점유 → availableStock=0, 수량 1 → OutOfStockException
+        @DisplayName("재고 0이면 주문이 막힌다")
+        void createOrder_ZeroStock_OrderBlocked() {
+            // stock=0, 수량 1 → OutOfStockException
             Menu menu = Menu.builder().id(menuId).storeId(storeId).name("소주").price(5000L)
-                .stock(5L).isSoldOut(false).build();
-            Order pendingOrder = Order.builder().id(99L).tableId(tableId).storeId(storeId)
-                .status(OrderStatus.PENDING).build();
-            OrderMenu pendingOrderMenu = OrderMenu.builder().orderId(99L).menuId(menuId)
-                .quantity(5L).price(5000L).build();
+                .stock(0L).isSoldOut(true).build();
 
             OrderCreateRequest request = new OrderCreateRequest(
                 tableNum, storeId, "홍길동", 0L, List.of(new OrderMenuRequest(menuId, 1L)), null
@@ -317,9 +298,6 @@ class OrderServiceTest {
 
             given(tableResolverService.resolveActiveTable(storeId, tableNum)).willReturn(activeTable);
             given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-            given(orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PENDING)).willReturn(
-                List.of(pendingOrder));
-            given(orderMenuRepository.findByOrderIds(List.of(99L))).willReturn(List.of(pendingOrderMenu));
 
             assertThrows(OutOfStockException.class, () -> orderService.createOrder(request));
         }

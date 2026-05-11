@@ -1,15 +1,25 @@
 package com.orderping.domain.exception;
 
+import java.util.List;
+
 public class OutOfStockException extends RuntimeException {
 
-    private final long currentStock;
+    private final List<StockItem> items;
 
-    public OutOfStockException(String message, long currentStock) {
+    public OutOfStockException(String message, List<StockItem> items) {
         super(message);
-        this.currentStock = currentStock;
+        this.items = items;
     }
 
-    public long getCurrentStock() {
-        return currentStock;
+    public List<StockItem> getItems() {
+        return items;
+    }
+
+    public record StockItem(
+        Long menuId,
+        String menuName,
+        Long requestedQuantity,
+        long availableStock
+    ) {
     }
 }
