@@ -289,7 +289,7 @@ public class OrderService {
                 om.getMenuId(),
                 menuNames.getOrDefault(om.getMenuId(), "삭제된 메뉴"),
                 om.getQuantity(),
-                om.getPrice(),
+                om.getPrice() * om.getQuantity(),
                 om.getIsService()
             ))
             .toList();

@@ -16,6 +16,8 @@ public record StoreTableDetailResponse(
     List<OrderMenuSummary> orderMenus,
     List<OrderMenuSummary> serviceMenus,
     Long totalOrderAmount,
+    Long couponAmount,
+    Long cashAmount,
     OrderStatus orderStatus
 ) {
     public static StoreTableDetailResponse from(
@@ -23,6 +25,8 @@ public record StoreTableDetailResponse(
         List<OrderMenuSummary> orderMenus,
         List<OrderMenuSummary> serviceMenus,
         Long totalOrderAmount,
+        Long couponAmount,
+        Long cashAmount,
         OrderStatus orderStatus
     ) {
         return new StoreTableDetailResponse(
@@ -35,6 +39,8 @@ public record StoreTableDetailResponse(
             orderMenus,
             serviceMenus,
             totalOrderAmount,
+            couponAmount,
+            cashAmount,
             orderStatus
         );
     }
