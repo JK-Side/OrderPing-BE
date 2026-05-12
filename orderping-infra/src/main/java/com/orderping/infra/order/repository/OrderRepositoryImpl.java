@@ -47,6 +47,16 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
+    public List<Order> findByTableIdIn(List<Long> tableIds) {
+        if (tableIds.isEmpty()) {
+            return List.of();
+        }
+        return jpaRepository.findByTableIdIn(tableIds).stream()
+            .map(OrderEntity::toDomain)
+            .toList();
+    }
+
+    @Override
     public List<Order> findByTableIdOrderById(Long tableId) {
         return jpaRepository.findByTableIdOrderByIdAsc(tableId).stream()
             .map(OrderEntity::toDomain)

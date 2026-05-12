@@ -10,6 +10,8 @@ public interface StoreTableRepository {
 
     StoreTable save(StoreTable storeTable);
 
+    List<StoreTable> saveAll(List<StoreTable> tables);
+
     Optional<StoreTable> findById(Long id);
 
     List<StoreTable> findByStoreId(Long storeId);
@@ -27,6 +29,8 @@ public interface StoreTableRepository {
     List<StoreTable> findAllByIds(List<Long> ids);
 
     void deleteById(Long id);
+
+    void deleteAllByIds(List<Long> ids);
 
     void deleteByStoreId(Long storeId);
 }
