@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -18,7 +19,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "store_tables")
+@Table(name = "store_tables", indexes = {
+    @Index(name = "idx_store_tables_store_id_status", columnList = "store_id, status")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class StoreTableEntity {

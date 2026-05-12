@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -76,16 +77,26 @@ public class StoreTableService {
 
     public List<StoreTableDetailResponse> getStoreTablesByStoreId(Long userId, Long storeId) {
         validateStoreOwner(storeId, userId);
-        return storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED).stream()
-            .map(this::toDetailResponse)
-            .toList();
+        List<StoreTable> tables = storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED);
+        return toDetailResponses(tables);
     }
 
     public List<StoreTableDetailResponse> getStoreTablesByStoreIdAndStatus(Long userId, Long storeId,
         TableStatus status) {
         validateStoreOwner(storeId, userId);
-        return storeTableRepository.findByStoreIdAndStatus(storeId, status).stream()
-            .map(this::toDetailResponse)
+        List<StoreTable> tables = storeTableRepository.findByStoreIdAndStatus(storeId, status);
+        return toDetailResponses(tables);
+    }
+
+    private List<StoreTableDetailResponse> toDetailResponses(List<StoreTable> tables) {
+        if (tables.isEmpty()) {
+            return List.of();
+        }
+        List<Long> tableIds = tables.stream().map(StoreTable::getId).toList();
+        Map<Long, List<Order>> ordersByTableId = orderRepository.findByTableIdIn(tableIds).stream()
+            .collect(Collectors.groupingBy(Order::getTableId));
+        return tables.stream()
+            .map(table -> toDetailResponse(table, ordersByTableId.getOrDefault(table.getId(), List.of())))
             .toList();
     }
 
@@ -96,9 +107,7 @@ public class StoreTableService {
         return getStoreTablesByStoreId(userId, storeId);
     }
 
-    private StoreTableDetailResponse toDetailResponse(StoreTable storeTable) {
-        List<Order> orders = orderRepository.findByTableId(storeTable.getId());
-
+    private StoreTableDetailResponse toDetailResponse(StoreTable storeTable, List<Order> orders) {
         if (orders.isEmpty()) {
             return StoreTableDetailResponse.from(storeTable, List.of(), List.of(), 0L, 0L, 0L, null);
         }
@@ -216,20 +225,20 @@ public class StoreTableService {
             throw new NotFoundException("삭제할 테이블을 찾을 수 없습니다.");
         }
 
-        List<Integer> tablesWithOrders = new ArrayList<>();
-        for (StoreTable table : tables) {
-            if (!orderRepository.findByTableId(table.getId()).isEmpty()) {
-                tablesWithOrders.add(table.getTableNum());
-            }
-        }
+        List<Long> tableIds = tables.stream().map(StoreTable::getId).toList();
+        Set<Long> tableIdsWithOrders = orderRepository.findByTableIdIn(tableIds).stream()
+            .map(Order::getTableId)
+            .collect(Collectors.toSet());
 
-        if (!tablesWithOrders.isEmpty()) {
+        if (!tableIdsWithOrders.isEmpty()) {
+            List<Integer> tablesWithOrders = tables.stream()
+                .filter(t -> tableIdsWithOrders.contains(t.getId()))
+                .map(StoreTable::getTableNum)
+                .toList();
             throw new BadRequestException("주문이 존재하는 테이블은 삭제할 수 없습니다. 테이블 번호: " + tablesWithOrders);
         }
 
-        for (StoreTable table : tables) {
-            storeTableRepository.deleteById(table.getId());
-        }
+        storeTableRepository.deleteAllByIds(tableIds);
     }
 
     private void validateNoOrders(Long tableId) {
@@ -325,29 +334,38 @@ public class StoreTableService {
             throw new NotFoundException("비울 테이블을 찾을 수 없습니다.");
         }
 
-        List<StoreTableResponse> responses = new ArrayList<>();
-        for (StoreTable currentTable : tables) {
-            validateNoActiveOrders(currentTable.getId());
-            StoreTable closedTable = StoreTable.builder()
-                .id(currentTable.getId())
-                .storeId(currentTable.getStoreId())
-                .tableNum(currentTable.getTableNum())
-                .status(TableStatus.CLOSED)
-                .qrImageUrl(currentTable.getQrImageUrl())
-                .build();
-            storeTableRepository.save(closedTable);
+        List<Long> tableIds = tables.stream().map(StoreTable::getId).toList();
+        Set<Long> tableIdsWithActiveOrders = orderRepository.findByTableIdIn(tableIds).stream()
+            .filter(o -> o.getStatus() == OrderStatus.PENDING || o.getStatus() == OrderStatus.COOKING)
+            .map(Order::getTableId)
+            .collect(Collectors.toSet());
 
-            StoreTable newTable = StoreTable.builder()
-                .storeId(currentTable.getStoreId())
-                .tableNum(currentTable.getTableNum())
-                .status(TableStatus.EMPTY)
-                .qrImageUrl(currentTable.getQrImageUrl())
-                .build();
-            StoreTable saved = storeTableRepository.save(newTable);
-            responses.add(StoreTableResponse.from(saved));
+        if (!tableIdsWithActiveOrders.isEmpty()) {
+            throw new BadRequestException("처리 중인 주문이 있는 테이블은 비울 수 없습니다.");
         }
 
-        return responses;
+        List<StoreTable> closedTables = tables.stream()
+            .map(t -> StoreTable.builder()
+                .id(t.getId())
+                .storeId(t.getStoreId())
+                .tableNum(t.getTableNum())
+                .status(TableStatus.CLOSED)
+                .qrImageUrl(t.getQrImageUrl())
+                .build())
+            .toList();
+        storeTableRepository.saveAll(closedTables);
+
+        List<StoreTable> newTables = tables.stream()
+            .map(t -> StoreTable.builder()
+                .storeId(t.getStoreId())
+                .tableNum(t.getTableNum())
+                .status(TableStatus.EMPTY)
+                .qrImageUrl(t.getQrImageUrl())
+                .build())
+            .toList();
+        return storeTableRepository.saveAll(newTables).stream()
+            .map(StoreTableResponse::from)
+            .toList();
     }
 
     @Transactional
@@ -373,20 +391,17 @@ public class StoreTableService {
             throw new BadRequestException("이미 존재하는 테이블 번호입니다: " + duplicateNums);
         }
 
-        List<StoreTableResponse> responses = new ArrayList<>();
-
+        List<StoreTable> toCreate = new ArrayList<>();
         for (int i = 1; i <= request.count(); i++) {
-            StoreTable storeTable = StoreTable.builder()
+            toCreate.add(StoreTable.builder()
                 .storeId(request.storeId())
                 .tableNum(i)
                 .status(TableStatus.EMPTY)
-                .build();
-
-            StoreTable saved = storeTableRepository.save(storeTable);
-            responses.add(StoreTableResponse.from(saved));
+                .build());
         }
-
-        return responses;
+        return storeTableRepository.saveAll(toCreate).stream()
+            .map(StoreTableResponse::from)
+            .toList();
     }
 
     @Transactional
@@ -394,34 +409,35 @@ public class StoreTableService {
         StoreTableBulkQrUpdateRequest request) {
         validateStoreOwner(storeId, userId);
 
-        List<StoreTableResponse> responses = new ArrayList<>();
+        List<Long> updateIds = request.updates().stream().map(StoreTableBulkQrUpdateRequest.TableQrUpdate::tableId).toList();
+        Map<Long, StoreTable> tableMap = storeTableRepository.findAllByIds(updateIds).stream()
+            .collect(Collectors.toMap(StoreTable::getId, t -> t));
+
         List<Long> notFoundIds = new ArrayList<>();
+        List<StoreTable> toUpdate = new ArrayList<>();
 
         for (StoreTableBulkQrUpdateRequest.TableQrUpdate update : request.updates()) {
-            StoreTable table = storeTableRepository.findById(update.tableId()).orElse(null);
-
+            StoreTable table = tableMap.get(update.tableId());
             if (table == null || !table.getStoreId().equals(storeId)) {
                 notFoundIds.add(update.tableId());
                 continue;
             }
-
-            StoreTable updated = StoreTable.builder()
+            toUpdate.add(StoreTable.builder()
                 .id(table.getId())
                 .storeId(table.getStoreId())
                 .tableNum(table.getTableNum())
                 .status(table.getStatus())
                 .qrImageUrl(update.qrImageUrl())
-                .build();
-
-            StoreTable saved = storeTableRepository.save(updated);
-            responses.add(StoreTableResponse.from(saved));
+                .build());
         }
 
         if (!notFoundIds.isEmpty()) {
             throw new NotFoundException("테이블을 찾을 수 없습니다. ID: " + notFoundIds);
         }
 
-        return responses;
+        return storeTableRepository.saveAll(toUpdate).stream()
+            .map(StoreTableResponse::from)
+            .toList();
     }
 
     public TableQrUrlsResponse getQrImageUrls(Long userId, Long storeId) {
