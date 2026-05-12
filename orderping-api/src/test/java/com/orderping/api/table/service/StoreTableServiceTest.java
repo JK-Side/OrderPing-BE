@@ -2,6 +2,7 @@ package com.orderping.api.table.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 
 import java.util.Collections;
@@ -74,11 +75,15 @@ class StoreTableServiceTest {
             StoreTableBulkCreateRequest request = new StoreTableBulkCreateRequest(storeId, count);
 
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
-            given(storeTableRepository.save(any(StoreTable.class))).willAnswer(invocation -> {
-                StoreTable table = invocation.getArgument(0);
-                return StoreTable.builder()
-                    .id((long)table.getTableNum()).storeId(table.getStoreId())
-                    .tableNum(table.getTableNum()).status(table.getStatus()).build();
+            given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
+                .willReturn(List.of());
+            given(storeTableRepository.saveAll(anyList())).willAnswer(invocation -> {
+                List<StoreTable> tables = invocation.getArgument(0);
+                return tables.stream()
+                    .map(table -> StoreTable.builder()
+                        .id((long)table.getTableNum()).storeId(table.getStoreId())
+                        .tableNum(table.getTableNum()).status(table.getStatus()).build())
+                    .toList();
             });
 
             List<StoreTableResponse> responses = storeTableService.createStoreTablesBulk(userId, request);
@@ -118,11 +123,15 @@ class StoreTableServiceTest {
             StoreTableBulkCreateRequest request = new StoreTableBulkCreateRequest(storeId, count);
 
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
-            given(storeTableRepository.save(any(StoreTable.class))).willAnswer(invocation -> {
-                StoreTable table = invocation.getArgument(0);
-                return StoreTable.builder()
-                    .id(1L).storeId(table.getStoreId())
-                    .tableNum(table.getTableNum()).status(table.getStatus()).build();
+            given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
+                .willReturn(List.of());
+            given(storeTableRepository.saveAll(anyList())).willAnswer(invocation -> {
+                List<StoreTable> tables = invocation.getArgument(0);
+                return tables.stream()
+                    .map(table -> StoreTable.builder()
+                        .id(1L).storeId(table.getStoreId())
+                        .tableNum(table.getTableNum()).status(table.getStatus()).build())
+                    .toList();
             });
 
             List<StoreTableResponse> responses = storeTableService.createStoreTablesBulk(userId, request);
@@ -154,7 +163,7 @@ class StoreTableServiceTest {
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
             given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
                 .willReturn(List.of(testTable));
-            given(orderRepository.findByTableId(testTable.getId())).willReturn(Collections.emptyList());
+            given(orderRepository.findByTableIdIn(List.of(testTable.getId()))).willReturn(Collections.emptyList());
 
             List<StoreTableDetailResponse> responses = storeTableService.getStoreTables(userId, storeId, null);
 
@@ -167,13 +176,13 @@ class StoreTableServiceTest {
         @Test
         @DisplayName("PENDING 상태 주문만 있는 테이블 - orderStatus가 PENDING")
         void getStoreTables_OnlyPendingOrders() {
-            Order pendingOrder = createOrder(1L, OrderStatus.PENDING);
+            Order pendingOrder = createOrder(1L, testTable.getId(), OrderStatus.PENDING);
             OrderMenu orderMenu = createOrderMenu(1L, 1L, 2L, 5000L);
 
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
             given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
                 .willReturn(List.of(testTable));
-            given(orderRepository.findByTableId(testTable.getId())).willReturn(List.of(pendingOrder));
+            given(orderRepository.findByTableIdIn(List.of(testTable.getId()))).willReturn(List.of(pendingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(orderMenu));
             given(menuRepository.findAllByIds(List.of(1L))).willReturn(List.of(testMenu));
 
@@ -187,13 +196,13 @@ class StoreTableServiceTest {
         @Test
         @DisplayName("COOKING 상태 주문만 있는 테이블 - orderStatus가 COOKING")
         void getStoreTables_OnlyCookingOrders() {
-            Order cookingOrder = createOrder(1L, OrderStatus.COOKING);
+            Order cookingOrder = createOrder(1L, testTable.getId(), OrderStatus.COOKING);
             OrderMenu orderMenu = createOrderMenu(1L, 1L, 1L, 5000L);
 
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
             given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
                 .willReturn(List.of(testTable));
-            given(orderRepository.findByTableId(testTable.getId())).willReturn(List.of(cookingOrder));
+            given(orderRepository.findByTableIdIn(List.of(testTable.getId()))).willReturn(List.of(cookingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(orderMenu));
             given(menuRepository.findAllByIds(List.of(1L))).willReturn(List.of(testMenu));
 
@@ -206,13 +215,13 @@ class StoreTableServiceTest {
         @Test
         @DisplayName("COMPLETE 상태 주문만 있는 테이블 - orderStatus가 COMPLETE")
         void getStoreTables_OnlyCompleteOrders() {
-            Order completeOrder = createOrder(1L, OrderStatus.COMPLETE);
+            Order completeOrder = createOrder(1L, testTable.getId(), OrderStatus.COMPLETE);
             OrderMenu orderMenu = createOrderMenu(1L, 1L, 1L, 5000L);
 
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
             given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
                 .willReturn(List.of(testTable));
-            given(orderRepository.findByTableId(testTable.getId())).willReturn(List.of(completeOrder));
+            given(orderRepository.findByTableIdIn(List.of(testTable.getId()))).willReturn(List.of(completeOrder));
             given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(orderMenu));
             given(menuRepository.findAllByIds(List.of(1L))).willReturn(List.of(testMenu));
 
@@ -225,15 +234,16 @@ class StoreTableServiceTest {
         @Test
         @DisplayName("PENDING + COOKING 주문이 있는 테이블 - PENDING이 우선")
         void getStoreTables_PendingAndCooking_PendingWins() {
-            Order cookingOrder = createOrder(1L, OrderStatus.COOKING);
-            Order pendingOrder = createOrder(2L, OrderStatus.PENDING);
+            Order cookingOrder = createOrder(1L, testTable.getId(), OrderStatus.COOKING);
+            Order pendingOrder = createOrder(2L, testTable.getId(), OrderStatus.PENDING);
             OrderMenu orderMenu1 = createOrderMenu(1L, 1L, 1L, 5000L);
             OrderMenu orderMenu2 = createOrderMenu(2L, 1L, 1L, 5000L);
 
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
             given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
                 .willReturn(List.of(testTable));
-            given(orderRepository.findByTableId(testTable.getId())).willReturn(List.of(cookingOrder, pendingOrder));
+            given(orderRepository.findByTableIdIn(List.of(testTable.getId())))
+                .willReturn(List.of(cookingOrder, pendingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(1L, 2L))).willReturn(List.of(orderMenu1, orderMenu2));
             given(menuRepository.findAllByIds(List.of(1L))).willReturn(List.of(testMenu));
 
@@ -246,15 +256,16 @@ class StoreTableServiceTest {
         @Test
         @DisplayName("PENDING + COMPLETE 주문이 있는 테이블 - PENDING이 우선")
         void getStoreTables_PendingAndComplete_PendingWins() {
-            Order completeOrder = createOrder(1L, OrderStatus.COMPLETE);
-            Order pendingOrder = createOrder(2L, OrderStatus.PENDING);
+            Order completeOrder = createOrder(1L, testTable.getId(), OrderStatus.COMPLETE);
+            Order pendingOrder = createOrder(2L, testTable.getId(), OrderStatus.PENDING);
             OrderMenu orderMenu1 = createOrderMenu(1L, 1L, 1L, 5000L);
             OrderMenu orderMenu2 = createOrderMenu(2L, 1L, 1L, 5000L);
 
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
             given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
                 .willReturn(List.of(testTable));
-            given(orderRepository.findByTableId(testTable.getId())).willReturn(List.of(completeOrder, pendingOrder));
+            given(orderRepository.findByTableIdIn(List.of(testTable.getId())))
+                .willReturn(List.of(completeOrder, pendingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(1L, 2L))).willReturn(List.of(orderMenu1, orderMenu2));
             given(menuRepository.findAllByIds(List.of(1L))).willReturn(List.of(testMenu));
 
@@ -267,15 +278,16 @@ class StoreTableServiceTest {
         @Test
         @DisplayName("COOKING + COMPLETE 주문이 있는 테이블 - COOKING이 우선")
         void getStoreTables_CookingAndComplete_CookingWins() {
-            Order completeOrder = createOrder(1L, OrderStatus.COMPLETE);
-            Order cookingOrder = createOrder(2L, OrderStatus.COOKING);
+            Order completeOrder = createOrder(1L, testTable.getId(), OrderStatus.COMPLETE);
+            Order cookingOrder = createOrder(2L, testTable.getId(), OrderStatus.COOKING);
             OrderMenu orderMenu1 = createOrderMenu(1L, 1L, 1L, 5000L);
             OrderMenu orderMenu2 = createOrderMenu(2L, 1L, 1L, 5000L);
 
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
             given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
                 .willReturn(List.of(testTable));
-            given(orderRepository.findByTableId(testTable.getId())).willReturn(List.of(completeOrder, cookingOrder));
+            given(orderRepository.findByTableIdIn(List.of(testTable.getId())))
+                .willReturn(List.of(completeOrder, cookingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(1L, 2L))).willReturn(List.of(orderMenu1, orderMenu2));
             given(menuRepository.findAllByIds(List.of(1L))).willReturn(List.of(testMenu));
 
@@ -288,9 +300,9 @@ class StoreTableServiceTest {
         @Test
         @DisplayName("세 가지 상태 모두 있는 테이블 - PENDING이 우선")
         void getStoreTables_AllStatuses_PendingWins() {
-            Order completeOrder = createOrder(1L, OrderStatus.COMPLETE);
-            Order cookingOrder = createOrder(2L, OrderStatus.COOKING);
-            Order pendingOrder = createOrder(3L, OrderStatus.PENDING);
+            Order completeOrder = createOrder(1L, testTable.getId(), OrderStatus.COMPLETE);
+            Order cookingOrder = createOrder(2L, testTable.getId(), OrderStatus.COOKING);
+            Order pendingOrder = createOrder(3L, testTable.getId(), OrderStatus.PENDING);
             OrderMenu orderMenu1 = createOrderMenu(1L, 1L, 1L, 5000L);
             OrderMenu orderMenu2 = createOrderMenu(2L, 2L, 2L, 5000L);
             OrderMenu orderMenu3 = createOrderMenu(3L, 3L, 3L, 5000L);
@@ -300,7 +312,7 @@ class StoreTableServiceTest {
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
             given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
                 .willReturn(List.of(testTable));
-            given(orderRepository.findByTableId(testTable.getId()))
+            given(orderRepository.findByTableIdIn(List.of(testTable.getId())))
                 .willReturn(List.of(completeOrder, cookingOrder, pendingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(1L, 2L, 3L)))
                 .willReturn(List.of(orderMenu1, orderMenu2, orderMenu3));
@@ -319,35 +331,22 @@ class StoreTableServiceTest {
         @DisplayName("여러 테이블 조회 - 각 테이블별로 우선순위 계산")
         void getStoreTables_MultipleTables() {
             StoreTable table1 = StoreTable.builder()
-                .id(1L)
-                .storeId(storeId)
-                .tableNum(1)
-                .status(TableStatus.OCCUPIED)
-                .build();
+                .id(1L).storeId(storeId).tableNum(1).status(TableStatus.OCCUPIED).build();
             StoreTable table2 = StoreTable.builder()
-                .id(2L)
-                .storeId(storeId)
-                .tableNum(2)
-                .status(TableStatus.OCCUPIED)
-                .build();
+                .id(2L).storeId(storeId).tableNum(2).status(TableStatus.OCCUPIED).build();
             StoreTable table3 = StoreTable.builder()
-                .id(3L)
-                .storeId(storeId)
-                .tableNum(3)
-                .status(TableStatus.EMPTY)
-                .build();
+                .id(3L).storeId(storeId).tableNum(3).status(TableStatus.EMPTY).build();
 
-            Order pendingOrder = createOrder(1L, OrderStatus.PENDING);
-            Order cookingOrder = createOrder(2L, OrderStatus.COOKING);
+            Order pendingOrder = createOrder(1L, 1L, OrderStatus.PENDING);
+            Order cookingOrder = createOrder(2L, 2L, OrderStatus.COOKING);
             OrderMenu orderMenu1 = createOrderMenu(1L, 1L, 1L, 5000L);
             OrderMenu orderMenu2 = createOrderMenu(2L, 1L, 1L, 5000L);
 
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
             given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
                 .willReturn(List.of(table1, table2, table3));
-            given(orderRepository.findByTableId(1L)).willReturn(List.of(pendingOrder));
-            given(orderRepository.findByTableId(2L)).willReturn(List.of(cookingOrder));
-            given(orderRepository.findByTableId(3L)).willReturn(Collections.emptyList());
+            given(orderRepository.findByTableIdIn(List.of(1L, 2L, 3L)))
+                .willReturn(List.of(pendingOrder, cookingOrder));
             given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(orderMenu1));
             given(orderMenuRepository.findByOrderIds(List.of(2L))).willReturn(List.of(orderMenu2));
             given(menuRepository.findAllByIds(List.of(1L))).willReturn(List.of(testMenu));
@@ -363,13 +362,13 @@ class StoreTableServiceTest {
         @Test
         @DisplayName("삭제된 메뉴가 있는 경우 - '삭제된 메뉴'로 표시")
         void getStoreTables_DeletedMenu() {
-            Order order = createOrder(1L, OrderStatus.PENDING);
+            Order order = createOrder(1L, testTable.getId(), OrderStatus.PENDING);
             OrderMenu orderMenu = createOrderMenu(1L, 999L, 1L, 5000L);
 
             given(storeRepository.findById(storeId)).willReturn(Optional.of(testStore));
             given(storeTableRepository.findByStoreIdAndStatusNot(storeId, TableStatus.CLOSED))
                 .willReturn(List.of(testTable));
-            given(orderRepository.findByTableId(testTable.getId())).willReturn(List.of(order));
+            given(orderRepository.findByTableIdIn(List.of(testTable.getId()))).willReturn(List.of(order));
             given(orderMenuRepository.findByOrderIds(List.of(1L))).willReturn(List.of(orderMenu));
             given(menuRepository.findAllByIds(List.of(999L))).willReturn(List.of());
 
@@ -379,9 +378,9 @@ class StoreTableServiceTest {
             assertEquals("삭제된 메뉴", responses.get(0).orderMenus().get(0).menuName());
         }
 
-        private Order createOrder(Long id, OrderStatus status) {
+        private Order createOrder(Long id, Long tableId, OrderStatus status) {
             return Order.builder()
-                .id(id).tableId(testTable.getId()).storeId(storeId)
+                .id(id).tableId(tableId).storeId(storeId)
                 .status(status).totalPrice(5000L).build();
         }
 
